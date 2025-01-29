@@ -54,42 +54,68 @@ class _HomePageState extends State<HomePage> {
 
     final List<BottomNavigationBarItem> bottomNavigationBarItems = [
       const BottomNavigationBarItem(
-        icon: Icon(Icons.home),
+        icon: Icon(Icons.home, size: 30), // Menambahkan ukuran ikon
         label: 'Home',
       ),
       if (_isLoggedIn)
         const BottomNavigationBarItem(
-          icon: Icon(Icons.history),
+          icon: Icon(Icons.history, size: 30), // Menambahkan ukuran ikon
           label: 'Riwayat',
         ),
       const BottomNavigationBarItem(
-        icon: Icon(Icons.newspaper),
+        icon: Icon(Icons.newspaper, size: 30), // Menambahkan ukuran ikon
         label: 'Berita',
       ),
       const BottomNavigationBarItem(
-        icon: Icon(Icons.location_on_rounded),
+        icon: Icon(Icons.location_on_rounded,
+            size: 30), // Menambahkan ukuran ikon
         label: 'UPTD/TPS',
       ),
       const BottomNavigationBarItem(
-        icon: Icon(Icons.person),
+        icon: Icon(Icons.person, size: 30), // Menambahkan ukuran ikon
         label: 'Akun',
       ),
     ];
 
     return Scaffold(
       body: SafeArea(
-        child: pages[_selectedIndex],
+        child: AnimatedSwitcher(
+          duration: Duration(milliseconds: 300), // Durasi transisi halus
+          child: pages[_selectedIndex],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: bottomNavigationBarItems,
+        items: bottomNavigationBarItems.map((item) {
+          final int index = bottomNavigationBarItems.indexOf(item);
+          return BottomNavigationBarItem(
+            icon: Column(
+              children: [
+                // Garis hijau di atas ikon
+                if (_selectedIndex == index)
+                  Container(
+                    width: 40, // Panjang garis
+                    height: 3, // Ketebalan garis
+                    color: Color(0xFF78A55A), // Warna garis hijau
+                    margin: const EdgeInsets.only(bottom: 4),
+                  )
+                else
+                  SizedBox(height: 7), // Spacer agar tetap simetris
+                item.icon, // Ikon asli dari item
+              ],
+            ),
+            label: item.label,
+          );
+        }).toList(),
         currentIndex: _selectedIndex,
-        selectedItemColor: BlurStyle,
-        unselectedItemColor: grey,
+        selectedItemColor: Color(0xFF78A55A),
+        unselectedItemColor: Color(0xFF434343),
         onTap: _onItemTapped,
         showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontSize: 12),
+        selectedLabelStyle: const TextStyle(fontSize: 13),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         type: BottomNavigationBarType.fixed,
+        backgroundColor:
+            Color(0xFFD1EFDA), // Ganti dengan warna yang diinginkan
       ),
     );
   }
