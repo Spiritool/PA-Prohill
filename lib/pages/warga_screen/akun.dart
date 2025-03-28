@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dlh_project/pages/warga_screen/qna.dart';
 import 'package:dlh_project/pages/warga_screen/tambah_alamat.dart';
 import 'package:dlh_project/widget/edit_alamat.dart';
 import 'package:flutter/material.dart';
@@ -126,6 +127,7 @@ class _AkunState extends State<Akun> {
               InfoField(label: 'No. HP', value: userPhone),
               _buildAddressField(),
               _buildPasswordResetField(),
+              _buildQnAField()
             ],
           ),
         ),
@@ -398,7 +400,7 @@ class _AkunState extends State<Akun> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'Ganti Password:',
+            'Ganti Password: ',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           TextButton(
@@ -419,6 +421,42 @@ class _AkunState extends State<Akun> {
       ),
     );
   }
+
+  Widget _buildQnAField() {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const QnAPage(),
+        ),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Q & A',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          Icon(
+            Icons.arrow_forward_ios, // Menambahkan ikon panah sebagai indikasi navigasi
+            size: 18,
+            color: Colors.black54,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 
   Widget _buildEditAllButton() {
     return ElevatedButton(
