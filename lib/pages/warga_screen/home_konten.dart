@@ -22,7 +22,7 @@ class HomeKonten extends StatefulWidget {
 
 Future<List<dynamic>> fetchBerita() async {
   final response =
-      await http.get(Uri.parse('http://10.251.134.25:8000/api/berita'));
+      await http.get(Uri.parse('https://jera.kerissumenep.com/api/berita'));
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     if (data['success']) {
@@ -49,7 +49,7 @@ class _HomeKontenState extends State<HomeKonten> {
 
   Future<List<String>> fetchSettings() async {
     const String url =
-        "http://10.251.134.25:8000/api/setting"; // Update with your API endpoint
+        "https://jera.kerissumenep.com/api/setting"; // Update with your API endpoint
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -241,7 +241,7 @@ class _HomeKontenState extends State<HomeKonten> {
                         padding: const EdgeInsets.only(
                             right: 21, top: 30, bottom: 30),
                         child: Image.asset(
-                          'assets/images/ic_dlh.png',
+                          'assets/images/logo.png',
                           width: 90,
                           height: 80,
                         ),
@@ -301,7 +301,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                       ),
                                       child: Center(
                                         child: Image.asset(
-                                          "assets/images/waste-bin.png",
+                                          "assets/images/SampahTerpilah.png",
                                           height: 50,
                                         ),
                                       ),
@@ -346,7 +346,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                         ),
                                         child: Center(
                                           child: Image.asset(
-                                            "assets/images/trash.png",
+                                            "assets/images/SampahLiar.png",
                                             height: 50,
                                           ),
                                         ),
@@ -390,7 +390,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                         ),
                                         child: Center(
                                           child: Image.asset(
-                                            "assets/images/trash.png",
+                                            "assets/images/HargaSampah.png",
                                             height: 50,
                                           ),
                                         ),
@@ -658,7 +658,7 @@ class _HomeKontenState extends State<HomeKonten> {
               );
             },
             backgroundColor: Colors.green, // Warna tombol
-            child: Icon(Icons.chat, color: Colors.white),
+            child: Icon(Icons.support_agent, color: Colors.white),
           ),
         ),
       ],

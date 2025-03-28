@@ -15,10 +15,10 @@ Future<List<SampahData>> fetchSampahData() async {
   }
 
   final urls = [
-    'http://10.251.134.25:8000/api/pengangkutan-sampah/history/$userId/proses',
-    'http://10.251.134.25:8000/api/pengangkutan-sampah/history/$userId/done',
-    'http://10.251.134.25:8000/api/pengangkutan-sampah/history/$userId/pending',
-    'http://10.251.134.25:8000/api/pengangkutan-sampah/history/$userId/failed',
+    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/$userId/proses',
+    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/$userId/done',
+    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/$userId/pending',
+    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/$userId/failed',
   ];
 
   List<SampahData> allData = [];

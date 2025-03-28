@@ -45,14 +45,14 @@ class SplashScreen extends StatelessWidget {
                   left: 0,
                   right: 0,
                   child: Image.asset(
-                    "assets/images/ic_dlh.png",
+                    "assets/images/logo.png",
                     height: 113,
                   ),
                 ),
                 // Center text
                 const Center(
                   child: Text(
-                    'PROHIL DLH CILEGON',
+                    'JEMPOLIN',
                     style: TextStyle(
                       fontSize: 30,
                       color: Colors.white,
