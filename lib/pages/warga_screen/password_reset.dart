@@ -46,7 +46,7 @@ class _PasswordResetState extends State<PasswordReset> {
     }
 
     final url = Uri.parse(
-        'https://jera.kerissumenep.com/api/user/update-password/$userId?_method=PUT');
+        'http://10.251.134.25:8000/api/user/update-password/$userId?_method=PUT');
     final response = await http.put(
       url,
       headers: {

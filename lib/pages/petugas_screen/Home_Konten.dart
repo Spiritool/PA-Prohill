@@ -12,14 +12,15 @@ Future<List<SampahData>> fetchSampahData() async {
   final prefs = await SharedPreferences.getInstance();
   final uptIdString = prefs.getString('upt_id');
   final uptId = int.tryParse(uptIdString ?? '0');
+  final userId = prefs.getInt('user_id') ?? 0;
 
   if (uptId == 0) {
     throw Exception('User ID not found in SharedPreferences');
   }
 
   final urls = [
-    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-upt/$uptId/pending',
-    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-upt/$uptId/proses',
+    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
+    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
   ];
 
   List<SampahData> allData = [];
@@ -42,31 +43,35 @@ Future<List<SampahData>> fetchSampahData() async {
 
 Future<List<SampahLiarData>> fetchSampahLiarData() async {
   final prefs = await SharedPreferences.getInstance();
-  final idUser = prefs.getInt('user_id') ?? 0;
+  final userId = prefs.getInt('user_id') ?? 0;
 
-  if (idUser == 0) {
+  if (userId == 0) {
     throw Exception('User ID not found in SharedPreferences');
   }
 
-  final response = await http.get(Uri.parse(
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-kecamatan/$idUser'));
+  final urls = [
+    'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending',
+    'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses',
+  ];
 
-  if (response.statusCode == 200) {
-    List<dynamic> data = jsonDecode(response.body)['data'];
+  List<SampahLiarData> allData = [];
 
-    // Map and filter the data based on status
-    List<SampahLiarData> sampahLiarDataList =
-        data.map((item) => SampahLiarData.fromJson(item)).toList();
+  for (String url in urls) {
+    final response = await http.get(Uri.parse(url));
 
-    // Filter to include only status 'pending' and 'proses'
-    List<SampahLiarData> filteredData = sampahLiarDataList
-        .where((item) => item.status == 'pending' || item.status == 'proses')
-        .toList();
-
-    return filteredData;
-  } else {
-    throw Exception('Failed to load sampah liar data');
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body)['data'];
+      allData
+          .addAll(data.map((item) => SampahLiarData.fromJson(item)).toList());
+    } else {
+      throw Exception('Failed to load data from $url');
+    }
   }
+
+  // Sort the list by id in descending order
+  allData.sort((a, b) => b.id.compareTo(a.id));
+
+  return allData;
 }
 
 Future<void> updateStatus(
@@ -1348,3 +1353,4 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
     );
   }
 }
+

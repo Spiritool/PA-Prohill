@@ -53,12 +53,12 @@ class _LoginState extends State<Login> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
       await prefs.setString('user_name', user['nama']);
-
       await prefs.setInt(
           'user_id', user['id']); // This is correct if user_id is an integer
       await prefs.setString('user_email', user['email']);
       await prefs.setString('user_phone', user['no_hp']);
       await prefs.setString('user_role', user['role']);
+      prefs.setString('status', user['status'] ?? 'ready');
       await prefs.setString('user_profile_photo', user['foto_profile'] ?? '');
 
       if (user['role'] == 'warga') {
@@ -73,7 +73,8 @@ class _LoginState extends State<Login> {
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
       } else if (user['role'] == 'petugas') {
-        await prefs.setString('upt_id', user['id_upt']);
+        await prefs.setString('upt_id', user['id_upt'].toString());
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Login berhasil!'),
@@ -104,11 +105,48 @@ class _LoginState extends State<Login> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
-    if (token != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+    if (token != null && token.isNotEmpty) {
+      final response = await http.get(
+        Uri.parse('https://jera.kerissumenep.com/api/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
+
+      if (response.statusCode == 200) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      } else {
+        // Token tidak valid atau expired
+        await prefs.remove('token');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Login()),
+        );
+      }
+    }
+  }
+
+  Future<void> fetchData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+
+    final response = await http.get(
+      Uri.parse('https://jera.kerissumenep.com/api/login'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('Data berhasil diambil: $data');
+    } else {
+      print('Gagal mengambil data: ${response.body}');
     }
   }
 

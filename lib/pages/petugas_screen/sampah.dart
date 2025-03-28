@@ -7,6 +7,7 @@ class SampahData {
   final String fotoSampah;
   final String deskripsi;
   final Alamat alamat;
+  final DateTime tanggal; // Menggunakan DateTime
 
   SampahData({
     required this.id,
@@ -17,6 +18,7 @@ class SampahData {
     required this.fotoSampah,
     required this.deskripsi,
     required this.alamat,
+    required this.tanggal,
   });
 
   factory SampahData.fromJson(Map<String, dynamic> json) {
@@ -29,9 +31,11 @@ class SampahData {
       fotoSampah: json['foto_sampah'],
       deskripsi: json['deskripsi'],
       alamat: Alamat.fromJson(json['warga']['alamat'][0]),
+      tanggal: DateTime.parse(json['created_at']), // Parsing tanggal
     );
   }
 }
+
 
 class Alamat {
   final String kelurahan;
@@ -70,6 +74,7 @@ class SampahLiarData {
   final String? fotoPengangkutan; // Nullable
   final String createdAt;
   final String updatedAt;
+  final DateTime tanggal;
   final String? petugas; // Nullable
 
   SampahLiarData({
@@ -86,6 +91,7 @@ class SampahLiarData {
     this.fotoPengangkutan,
     required this.createdAt,
     required this.updatedAt,
+    required this.tanggal,
     this.petugas,
   });
 
@@ -95,7 +101,9 @@ class SampahLiarData {
       idUserPetugas: json['id_user_petugas'] != null
           ? int.tryParse(json['id_user_petugas'].toString())
           : null, // Parse if needed
-      idKecamatan: json['id_kecamatan'] ?? '',
+       idKecamatan: json['id_kecamatan'] != null
+        ? json['id_kecamatan'].toString() // Ubah int menjadi String
+        : '', // Default ke string kosong jika null
       noHp: json['no_hp'] ?? '',
       email: json['email'] ?? '',
       namaUpt: json['petugas'] != null ? json['petugas']['nama'] : '',
@@ -108,6 +116,7 @@ class SampahLiarData {
       createdAt: json['created_at'] ?? '',
       updatedAt: json['updated_at'] ?? '',
       petugas: json['petugas']?.toString(), // Handle nullable
+      tanggal: DateTime.parse(json['created_at']), // Parsing tanggal
     );
   }
 }

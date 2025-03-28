@@ -2,6 +2,7 @@ import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/petugas_screen/Home_Konten.dart';
 import 'package:dlh_project/pages/petugas_screen/akun_petugas.dart';
 import 'package:dlh_project/pages/petugas_screen/historyPetugas.dart';
+import 'package:dlh_project/pages/petugas_screen/activityPetugas.dart';
 import 'package:dlh_project/pages/warga_screen/Berita.dart';
 import 'package:dlh_project/pages/warga_screen/history.dart';
 import 'package:dlh_project/pages/warga_screen/uptd.dart';
@@ -76,10 +77,11 @@ class _HomePetugasPageState extends State<HomePetugasPage> {
         userId: userId ?? 0,
       ),
       if (_isLoggedIn)
-        userRole == 'petugas' ? const HistoryPetugas() : const History(),
+        userRole == 'petugas' ? const ActivityPetugasPage() : const History(),
       const Berita(),
       const Uptd(),
       const AkunPetugas(),
+
     ];
 
     return Scaffold(

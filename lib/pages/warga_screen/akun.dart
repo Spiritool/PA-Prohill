@@ -13,7 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class AlamatService {
   final String baseUrl =
-      "https://jera.kerissumenep.com/api/alamat/get-by-user/";
+      "http://10.251.134.25:8000/api/alamat/get-by-user/";
 
   Future<List<dynamic>> fetchAlamatByUser(int userId) async {
     try {
@@ -335,7 +335,7 @@ class _AkunState extends State<Akun> {
   }
 
   Future<void> _deleteAlamat(int alamatId) async {
-    final url = "https://jera.kerissumenep.com/api/alamat/delete/$alamatId";
+    final url = "http://10.251.134.25:8000/api/alamat/delete/$alamatId";
     final response = await http.delete(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -367,7 +367,7 @@ class _AkunState extends State<Akun> {
 
   Future<void> _updateAlamat(Map<String, dynamic> alamat) async {
     final url =
-        "https://jera.kerissumenep.com/api/alamat/update/${alamat['id']}";
+        "http://10.251.134.25:8000/api/alamat/update/${alamat['id']}";
     final response = await http.post(
       Uri.parse(url),
       headers: {"Content-Type": "application/json"},
@@ -501,7 +501,7 @@ class _AkunState extends State<Akun> {
 
                 // Prepare the API request
                 final String apiUrl =
-                    'https://jera.kerissumenep.com/api/user/update/$idUser?_method=PUT';
+                    'http://10.251.134.25:8000/api/user/update/$idUser?_method=PUT';
                 final String? token = prefs.getString('token');
 
                 final Map<String, String> headers = {

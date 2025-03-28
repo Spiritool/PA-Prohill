@@ -20,6 +20,7 @@ class _AkunPetugasState extends State<AkunPetugas> {
   String userName = 'Guest';
   String userEmail = 'user@example.com';
   String userPhone = '081234567890';
+  String userStatus = 'ready';
   final List<String> _addresses = ['Rumah', 'Kantor', 'Kos'];
   bool _isLoggedIn = false;
 
@@ -27,6 +28,7 @@ class _AkunPetugasState extends State<AkunPetugas> {
   void initState() {
     super.initState();
     _loadUserData();
+    _loadUserStatus();
   }
 
   Future<void> _loadUserData() async {
@@ -35,6 +37,7 @@ class _AkunPetugasState extends State<AkunPetugas> {
       userName = prefs.getString('user_name') ?? 'Guest';
       userEmail = prefs.getString('user_email') ?? 'user@example.com';
       userPhone = prefs.getString('user_phone') ?? '081234567890';
+      userStatus = prefs.getString('status') ?? 'ready';
       _addresses.addAll(prefs.getStringList('addresses') ?? []);
       _isLoggedIn = userName != 'Guest';
     });
@@ -62,6 +65,8 @@ class _AkunPetugasState extends State<AkunPetugas> {
     );
   }
 
+  String _status = 'ready'; // Default value
+
   Widget _buildLoggedInContent() {
     return Column(
       children: [
@@ -70,23 +75,77 @@ class _AkunPetugasState extends State<AkunPetugas> {
         Expanded(
           child: ListView(
             children: [
-              InfoField(label: 'Nama', value: userName),
+              // InfoField(label: 'Nama', value: userName),
+              _buildNameField(), // Custom name field with edit button
+              _buildNomorField(), // Custom phone number field with edit button
               _buildEmailField(), // Custom email field with edit button
-              InfoField(label: 'No. HP ', value: userPhone),
               _buildPasswordResetField(),
+
+              // ✅ Dropdown Status dengan API
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Card(
+                  margin: const EdgeInsets.symmetric(vertical: 5),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Text(
+                        //   'Status: $userStatus',
+                        //   style: TextStyle(
+                        //     fontSize: 16,
+                        //     fontWeight: FontWeight.bold,
+                        //   ),
+                        // ),
+                        const SizedBox(height: 5),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Status: ${_status == "ready" ? "Ready" : "Tidak Ready"}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Switch(
+                              value: _status ==
+                                  "ready", // Jika "ready", maka switch aktif (ON)
+                              onChanged: (bool newValue) async {
+                                String newStatus =
+                                    newValue ? "ready" : "tidak ready";
+
+                                setState(() {
+                                  _status = newStatus;
+                                });
+
+                                SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setString('user_status', newStatus);
+
+                                _updateUserStatus(
+                                    newStatus); // 🔥 Panggil API untuk update status
+                              },
+                              activeColor: Colors.green, // Warna saat ON
+                              inactiveThumbColor: Colors.red, // Warna saat OFF
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: _buildEditAllButton(),
-            ),
+            Expanded(child: _buildEditAllButton()),
             const SizedBox(width: 10),
-            Expanded(
-              child: _buildLogoutButton(),
-            ),
+            Expanded(child: _buildLogoutButton()),
           ],
         ),
         const SizedBox(height: 10),
@@ -111,23 +170,146 @@ class _AkunPetugasState extends State<AkunPetugas> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      height: 140,
-      decoration: BoxDecoration(
-        color: BlurStyle,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Center(
-        child: Text(
-          'Informasi Akun Petugas',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 24,
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+    return Stack(
+      children: [
+        // Container Utama
+        Container(
+          width: double.infinity,
+          height: 140,
+          decoration: BoxDecoration(
+            color: const Color(0xFFD1EFE3),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: const Color.fromARGB(255, 0, 0, 0), // Warna border
+              width: 1, // Ketebalan border
+            ),
+          ),
+          child: const Center(
+            child: Text(
+              'Profil Petugas',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
+
+        // Gambar di Pojok Kanan Atas
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Container(
+            width: 60, // Sesuaikan ukuran gambar
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle, // Agar gambar dalam lingkaran
+              // Warna background jika ingin efek outline
+            ),
+            padding:
+                EdgeInsets.all(4), // Tambahkan padding agar gambar tidak mentok
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/logo.png', // Ganti dengan path gambar kamu
+                fit: BoxFit.cover, // Agar gambar menyesuaikan
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNameField() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white, // Latar belakang putih
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Ikon di sebelah kiri
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Center(child: Image.asset('assets/icons/nama.png')
+                // Jika ingin gambar kustom, ganti dengan Image.asset('assets/icon.png')
+                ),
+          ),
+          const SizedBox(width: 10), // Spasi antara ikon dan teks
+
+          // Nama dan label
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Nama:',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                userName,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNomorField() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white, // Latar belakang putih
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Ikon di sebelah kiri
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Center(child: Image.asset('assets/icons/nomer.png')
+                // Jika ingin gambar kustom, ganti dengan Image.asset('assets/icon.png')
+                ),
+          ),
+          const SizedBox(width: 10), // Spasi antara ikon dan teks
+
+          // Nama dan label
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'No. Hp:',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                userPhone,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -141,21 +323,33 @@ class _AkunPetugasState extends State<AkunPetugas> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Email:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              Text(
-                userEmail,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ],
+          // Ikon di sebelah kiri
+          Image.asset(
+            'assets/icons/email.png', // Sesuaikan dengan path ikon email
+            width: 30, // Ukuran ikon
+            height: 30,
           ),
+          const SizedBox(width: 10), // Spasi antara ikon dan teks
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Email:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold, // Bold seperti pada "Nama:"
+                  ),
+                ),
+                Text(
+                  userEmail,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          // Tombol Edit di sebelah kanan
           TextButton(
             onPressed: () {
               Navigator.push(
@@ -168,7 +362,7 @@ class _AkunPetugasState extends State<AkunPetugas> {
             },
             child: const Text(
               'Edit',
-              style: TextStyle(fontSize: 16, color: red),
+              style: TextStyle(fontSize: 16, color: Colors.red),
             ),
           ),
         ],
@@ -176,39 +370,52 @@ class _AkunPetugasState extends State<AkunPetugas> {
     );
   }
 
-  Widget _buildPasswordResetField() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Ganti Password:',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+Widget _buildPasswordResetField() {
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 5),
+    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.grey[200],
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Row(
+      children: [
+        // Gambar kunci dari assets
+        Image.asset(
+          'assets/icons/password.png', // Pastikan path sesuai
+          width: 24, // Sesuaikan ukuran dengan desain
+          height: 24,
+          fit: BoxFit.contain,
+        ),
+        const SizedBox(width: 10),
+
+        // Teks "Ganti Password:"
+        const Text(
+          'Ganti Password:',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const Spacer(),
+
+        // Tombol "Edit"
+        TextButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PasswordReset(),
+              ),
+            );
+          },
+          child: const Text(
+            'Edit',
+            style: TextStyle(fontSize: 16, color: Colors.red),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PasswordReset(),
-                ),
-              );
-            },
-            child: const Text(
-              'Edit',
-              style: TextStyle(fontSize: 16, color: red),
-            ),
-          )
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildEditAllButton() {
     return ElevatedButton(
@@ -413,5 +620,56 @@ class _AkunPetugasState extends State<AkunPetugas> {
       context,
       MaterialPageRoute(builder: (context) => const Login()),
     );
+  }
+
+  Future<void> _updateUserStatus(String status) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id');
+    final token = prefs.getString('token');
+
+    if (userId == null || token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal mendapatkan data pengguna.')),
+      );
+      return;
+    }
+
+    final requestBody = jsonEncode({'status': status});
+    print('Status yang dikirim: $status'); // ✅ Debugging
+    print('Body JSON yang dikirim: $requestBody');
+
+    final url = Uri.parse(
+        'https://jera.kerissumenep.com/api/user/$userId/status?_method=PUT');
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: requestBody,
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        userStatus = status;
+      });
+      await prefs.setString('status', status); // ✅ Simpan status terbaru
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Status berhasil diperbarui!')),
+      );
+    } else {
+      print('Gagal memperbarui status. Response: ${response.body}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memperbarui status: ${response.body}')),
+      );
+    }
+  }
+
+  Future<void> _loadUserStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _status =
+          prefs.getString('user_status') ?? 'ready'; // ✅ Ambil status terbaru
+    });
   }
 }

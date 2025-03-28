@@ -20,7 +20,7 @@ class HomeKonten extends StatefulWidget {
 
 Future<List<dynamic>> fetchBerita() async {
   final response =
-      await http.get(Uri.parse('https://jera.kerissumenep.com/api/berita'));
+      await http.get(Uri.parse('http://10.251.134.25:8000/api/berita'));
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     if (data['success']) {
@@ -47,7 +47,7 @@ class _HomeKontenState extends State<HomeKonten> {
 
   Future<List<String>> fetchSettings() async {
     const String url =
-        "https://jera.kerissumenep.com/api/setting"; // Update with your API endpoint
+        "http://10.251.134.25:8000/api/setting"; // Update with your API endpoint
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -212,7 +212,7 @@ class _HomeKontenState extends State<HomeKonten> {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                ' PROGRAM HIJAU\nLINGKUNGAN KOTA CILEGON ',
+                                'PROGRAM HIJAU\nLINGKUNGAN KOTA CILEGON ',
                                 textAlign: TextAlign
                                     .center, // Menambahkan untuk memusatkan teks
                                 style: TextStyle(
@@ -352,7 +352,13 @@ class _HomeKontenState extends State<HomeKonten> {
                             const SizedBox(width: 50),
                             GestureDetector(
                               onTap: () {
-                                // Navigasi ke halaman lain
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const SampahLiar(),
+                                  ),
+                                );
                               },
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -420,7 +426,7 @@ class _HomeKontenState extends State<HomeKonten> {
                   itemBuilder: (context, index) {
                     final berita = beritaList[index];
                     final gambarUrl =
-                        'https://jera.kerissumenep.com/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+                        'http://10.251.134.25:8000/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -546,7 +552,7 @@ class _HomeKontenState extends State<HomeKonten> {
                   itemBuilder: (context, index) {
                     final berita = beritaList[index];
                     final gambarUrl =
-                        'https://jera.kerissumenep.com/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+                        'http://10.251.134.25:8000/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
                     final judul = berita['judul'] ?? 'Judul Tidak Tersedia';
 
                     return Container(
