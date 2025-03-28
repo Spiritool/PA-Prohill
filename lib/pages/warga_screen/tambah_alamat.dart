@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart'; // Untuk mengambil lokasi
-import 'package:dlh_project/constant/color.dart';
 import 'package:url_launcher/url_launcher.dart'; // Untuk membuka Google Maps
 
 class TambahAlamat extends StatefulWidget {
@@ -98,7 +97,7 @@ class _TambahAlamatState extends State<TambahAlamat> {
   }
 
   Future<void> _fetchKecamatanData() async {
-    const String url = "https://jera.kerissumenep.com/api/kecamatan";
+    const String url = "http://10.251.134.25:8000/api/kecamatan";
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -140,7 +139,7 @@ class _TambahAlamatState extends State<TambahAlamat> {
       return;
     }
 
-    final url = Uri.parse('https://jera.kerissumenep.com/api/alamat/store');
+    final url = Uri.parse('http://10.251.134.25:8000/api/alamat/store');
     final response = await http.post(
       url,
       headers: {

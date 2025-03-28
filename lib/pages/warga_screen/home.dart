@@ -80,7 +80,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: SafeArea(
         child: AnimatedSwitcher(
-          duration: Duration(milliseconds: 300), // Durasi transisi halus
+          duration: const Duration(milliseconds: 300), // Durasi transisi halus
           child: pages[_selectedIndex],
         ),
       ),
@@ -95,11 +95,11 @@ class _HomePageState extends State<HomePage> {
                   Container(
                     width: 40, // Panjang garis
                     height: 3, // Ketebalan garis
-                    color: Color(0xFF78A55A), // Warna garis hijau
+                    color: const Color(0xFF78A55A), // Warna garis hijau
                     margin: const EdgeInsets.only(bottom: 4),
                   )
                 else
-                  SizedBox(height: 7), // Spacer agar tetap simetris
+                  const SizedBox(height: 7), // Spacer agar tetap simetris
                 item.icon, // Ikon asli dari item
               ],
             ),
@@ -107,15 +107,15 @@ class _HomePageState extends State<HomePage> {
           );
         }).toList(),
         currentIndex: _selectedIndex,
-        selectedItemColor: Color(0xFF78A55A),
-        unselectedItemColor: Color(0xFF434343),
+        selectedItemColor: const Color(0xFF78A55A),
+        unselectedItemColor: const Color(0xFF434343),
         onTap: _onItemTapped,
         showUnselectedLabels: true,
         selectedLabelStyle: const TextStyle(fontSize: 13),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         type: BottomNavigationBarType.fixed,
         backgroundColor:
-            Color(0xFFD1EFDA), // Ganti dengan warna yang diinginkan
+            const Color(0xFFD1EFDA), // Ganti dengan warna yang diinginkan
       ),
     );
   }

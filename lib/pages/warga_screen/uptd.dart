@@ -39,53 +39,105 @@ class _UptdState extends State<Uptd> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      height: 140,
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 57, 87, 254),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Center(
-        child: Text(
-          'Daftar Wilayah\nUPTD/TPS',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 24,
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+    return Stack(
+      children: [
+        // Container Utama
+        Container(
+          width: double.infinity,
+          height: 140,
+          decoration: BoxDecoration(
+            color: const Color(0xFFD1EFE3),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: const Color.fromARGB(255, 0, 0, 0), // Warna border
+              width: 1, // Ketebalan border
+            ),
+          ),
+          child: const Center(
+            child: Text(
+              'Daftar UPTD/TPS',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
-      ),
+
+        // Gambar di Pojok Kanan Atas
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Container(
+            width: 60, // Sesuaikan ukuran gambar
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle, // Agar gambar dalam lingkaran
+              // Warna background jika ingin efek outline
+            ),
+            padding:
+                EdgeInsets.all(4), // Tambahkan padding agar gambar tidak mentok
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/logo.png', // Ganti dengan path gambar kamu
+                fit: BoxFit.cover, // Agar gambar menyesuaikan
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildCard(String title, List<String> items) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      child: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 5),
-            for (var item in items)
-              Text(
-                item,
-                style: const TextStyle(fontSize: 16),
-              ),
-          ],
+  return Container(
+    decoration: BoxDecoration(
+      color: Color(0xFF76C7C0), // Warna latar belakang biru muda
+      borderRadius: BorderRadius.circular(10),
+    ),
+    padding: EdgeInsets.all(10),
+    margin: EdgeInsets.symmetric(vertical: 5),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      ),
-    );
-  }
+        SizedBox(height: 10),
+        Container(
+          height: 1,
+          color: Colors.black, // Garis pemisah hitam
+          width: double.infinity,
+        ),
+        SizedBox(height: 10),
+        Column(
+          children: items.map((item) {
+            return Container(
+              width: double.infinity,
+              margin: EdgeInsets.symmetric(vertical: 5),
+              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+              decoration: BoxDecoration(
+                color: Color(0xFFB2DFDB), // Warna latar belakang item
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                item,
+                style: TextStyle(fontSize: 16),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildListView(List<Map<String, dynamic>> kecamatanList) {
     Map<String, List<String>> groupedKecamatan = {};

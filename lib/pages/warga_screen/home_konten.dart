@@ -22,7 +22,7 @@ class HomeKonten extends StatefulWidget {
 
 Future<List<dynamic>> fetchBerita() async {
   final response =
-      await http.get(Uri.parse('https://jera.kerissumenep.com/api/berita'));
+      await http.get(Uri.parse('http://10.251.134.25:8000/api/berita'));
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     if (data['success']) {
@@ -49,7 +49,7 @@ class _HomeKontenState extends State<HomeKonten> {
 
   Future<List<String>> fetchSettings() async {
     const String url =
-        "https://jera.kerissumenep.com/api/setting"; // Update with your API endpoint
+        "http://10.251.134.25:8000/api/setting"; // Update with your API endpoint
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -241,7 +241,7 @@ class _HomeKontenState extends State<HomeKonten> {
                         padding: const EdgeInsets.only(
                             right: 21, top: 30, bottom: 30),
                         child: Image.asset(
-                          'assets/images/lc-logo.png',
+                          'assets/images/ic_dlh.png',
                           width: 90,
                           height: 80,
                         ),
@@ -301,7 +301,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                       ),
                                       child: Center(
                                         child: Image.asset(
-                                          "assets/images/SampahDaurulang.png",
+                                          "assets/images/waste-bin.png",
                                           height: 50,
                                         ),
                                       ),
@@ -327,7 +327,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            const SampahLiar(),
+                                            SampahLiar(), // Ganti dengan halaman chat
                                       ),
                                     );
                                   },
@@ -346,7 +346,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                         ),
                                         child: Center(
                                           child: Image.asset(
-                                            "assets/images/SampahLiar.png",
+                                            "assets/images/trash.png",
                                             height: 50,
                                           ),
                                         ),
@@ -371,7 +371,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            const HargaSampah(),
+                                            HargaSampah(), // Ganti dengan halaman chat
                                       ),
                                     );
                                   },
@@ -390,7 +390,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                         ),
                                         child: Center(
                                           child: Image.asset(
-                                            "assets/images/HargaSampah.png",
+                                            "assets/images/trash.png",
                                             height: 50,
                                           ),
                                         ),
@@ -643,6 +643,7 @@ class _HomeKontenState extends State<HomeKonten> {
             ],
           ),
         ),
+
         // Tombol Chat Melayang
         Positioned(
           bottom: 20, // Jarak dari bawah
@@ -657,7 +658,7 @@ class _HomeKontenState extends State<HomeKonten> {
               );
             },
             backgroundColor: Colors.green, // Warna tombol
-            child: Icon(Icons.support_agent_rounded, color: Colors.white),
+            child: Icon(Icons.chat, color: Colors.white),
           ),
         ),
       ],

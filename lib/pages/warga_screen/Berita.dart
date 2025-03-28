@@ -8,7 +8,7 @@ class Berita extends StatelessWidget {
 
   Future<List<dynamic>> fetchBerita() async {
     final response =
-        await http.get(Uri.parse('https://jera.kerissumenep.com/api/berita'));
+        await http.get(Uri.parse('http://10.251.134.25:8000/api/berita'));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success']) {
@@ -60,7 +60,7 @@ class Berita extends StatelessWidget {
               // ignore: prefer_interpolation_to_compose_strings
               final gambarUrl =
                   // ignore: prefer_interpolation_to_compose_strings
-                  'https://jera.kerissumenep.com/storage/gambar-berita/' +
+                  'http://10.251.134.25:8000/storage/gambar-berita/' +
                       berita['gambar_konten'][0]['nama'];
 
               return SingleChildScrollView(
