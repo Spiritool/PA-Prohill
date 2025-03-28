@@ -10,7 +10,7 @@ class HargaSampah extends StatefulWidget {
 }
 
 class _HargaSampahState extends State<HargaSampah> {
-  final String baseUrl = 'http://10.251.134.25:8000'; // Base URL API
+  final String baseUrl = 'https://jera.kerissumenep.com'; // Base URL API
 
   Future<List<dynamic>> fetchHargaSampah() async {
     final response = await http.get(Uri.parse('$baseUrl/api/harga-barang'));
