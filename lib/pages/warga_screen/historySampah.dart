@@ -6,6 +6,8 @@ class SampahData {
   final String status;
   final String deskripsi;
   final Alamat alamat;
+  final DateTime tanggal;
+   final DateTime tanggalFormatted; // ⬅️ tambah ini
 
   SampahData({
     required this.id,
@@ -15,10 +17,11 @@ class SampahData {
     required this.status,
     required this.deskripsi,
     required this.alamat,
+    required this.tanggal,
+    required this.tanggalFormatted, // ⬅️ jangan lupa tambahkan juga di constructor
   });
 
   factory SampahData.fromJson(Map<String, dynamic> json) {
-    // Ambil alamat pertama dari list alamat warga
     var alamatJson = (json['warga']?['alamat'] as List?)?.first ?? {};
 
     return SampahData(
@@ -29,6 +32,9 @@ class SampahData {
       status: json['status'] ?? 'Unknown Status',
       deskripsi: json['deskripsi'] ?? 'No Description',
       alamat: Alamat.fromJson(alamatJson),
+      tanggal: DateTime.parse(json['created_at']), 
+      tanggalFormatted: DateTime.parse(json['created_at']), // ⬅️ pastikan format ISO (yyyy-MM-ddTHH:mm:ss)
+      
     );
   }
 }

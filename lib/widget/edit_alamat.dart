@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class EditAlamatScreen extends StatefulWidget {
   final Map<String, dynamic> alamat;
@@ -21,25 +21,18 @@ class _EditAlamatScreenState extends State<EditAlamatScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Initialize the controllers with the current values of the alamat data
     _kecamatanController =
         TextEditingController(text: widget.alamat['kecamatan']);
     _kelurahanController =
         TextEditingController(text: widget.alamat['kelurahan']);
     _deskripsiController =
         TextEditingController(text: widget.alamat['deskripsi']);
-
-    // Set the initial selected kecamatan name to the current one
     _selectedKecamatanName = widget.alamat['kecamatan'];
-
-    // Fetch kecamatan data when the screen is loaded
     _fetchKecamatanData();
   }
 
   @override
   void dispose() {
-    // Dispose the controllers when the widget is removed from the widget tree
     _kecamatanController.dispose();
     _kelurahanController.dispose();
     _deskripsiController.dispose();
@@ -62,7 +55,8 @@ class _EditAlamatScreenState extends State<EditAlamatScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Error'),
+          title: const Text('Error',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           content: Text(message),
           actions: <Widget>[
             TextButton(
@@ -85,13 +79,11 @@ class _EditAlamatScreenState extends State<EditAlamatScreen> {
         final data = jsonDecode(response.body);
         setState(() {
           _kecamatanList = List<Map<String, dynamic>>.from(data['data']);
-
-          // Periksa apakah kecamatan yang dipilih ada dalam daftar
           if (_kecamatanList.any(
               (item) => item['nama_kecamatan'] == _selectedKecamatanName)) {
             _selectedKecamatanName = widget.alamat['kecamatan'];
           } else {
-            _selectedKecamatanName = null; // Set ke null jika tidak ditemukan
+            _selectedKecamatanName = null;
           }
         });
       } else {
@@ -107,16 +99,34 @@ class _EditAlamatScreenState extends State<EditAlamatScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text(
-          'Edit Alamat',
-          textAlign: TextAlign.center,
+        backgroundColor: Colors.grey[200], // Latar belakang abu-abu putih
+        elevation: 1,
+        title: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left,
+                  color: Colors.black), // Ganti ikon kembali
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Edit Alamat',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
+            ),
+          ],
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // Dropdown for Kecamatan with icon
             DropdownButtonFormField<String>(
               value: _selectedKecamatanName,
               hint: const Text('Pilih Kecamatan'),
@@ -129,39 +139,78 @@ class _EditAlamatScreenState extends State<EditAlamatScreen> {
                 (Map<String, dynamic> item) {
                   return DropdownMenuItem<String>(
                     value: item['nama_kecamatan'],
-                    child: Text(item['nama_kecamatan']),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.grey[700]),
+                        const SizedBox(width: 10),
+                        Text(item['nama_kecamatan']),
+                      ],
+                    ),
                   );
                 },
               ).toList(),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'Kecamatan',
+                labelStyle: const TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               ),
             ),
             const SizedBox(height: 20),
+
+            // Kelurahan input with icon
             TextField(
               controller: _kelurahanController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Kelurahan',
-                border: OutlineInputBorder(),
+                labelStyle: const TextStyle(color: Colors.grey),
+                prefixIcon: const Icon(Icons.place, color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               ),
             ),
             const SizedBox(height: 20),
+
+            // Deskripsi input with icon
             TextField(
               controller: _deskripsiController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Deskripsi (Rumah, Toko, Kantor, RT/RW)',
-                border: OutlineInputBorder(),
+                labelStyle: const TextStyle(color: Colors.grey),
+                prefixIcon: const Icon(Icons.edit, color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveChanges,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-              ),
-              child: const Text(
-                'Save',
-                style: TextStyle(color: Colors.white),
+            const SizedBox(height: 30),
+
+            // Save Button with gradient
+            Center(
+              child: ElevatedButton(
+                onPressed: _saveChanges,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[600], // Tombol abu-abu
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  side: const BorderSide(width: 2, color: Colors.white),
+                ),
+                child: const Text(
+                  'Save',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],

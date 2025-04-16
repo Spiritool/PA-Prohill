@@ -123,7 +123,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
         _showErrorDialog(
             'Terjadi kesalahan dalam pengambilan data. Status: ${response.statusCode}');
       }
-        } catch (e) {
+    } catch (e) {
       _showErrorDialog('Error: $e');
     }
   }
@@ -239,8 +239,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
       request.fields['id_user_warga'] = userId.toString();
       request.fields['deskripsi'] = _deskripsi;
 
-      var file =
-          await http.MultipartFile.fromPath('foto_sampah', _image!.path);
+      var file = await http.MultipartFile.fromPath('foto_sampah', _image!.path);
       request.files.add(file);
 
       var response = await request.send();
@@ -251,7 +250,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
         _showErrorDialog(
             'Gagal mengirimkan Data. Status: ${response.statusCode}');
       }
-        } catch (e) {
+    } catch (e) {
       _showErrorDialog('Error: $e');
     }
   }
@@ -286,7 +285,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
-          'Sampah Terpilah',
+          'Sampah Daur Ulang',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontWeight: FontWeight.w700,
@@ -301,41 +300,48 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: green,
-                borderRadius: BorderRadius.circular(10),
+                color: const Color(
+                    0xFFE0F2F7), // Warna latar belakang header (sesuaikan dengan foto)
+                borderRadius: BorderRadius.circular(30),
               ),
               padding: const EdgeInsets.all(10.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
-                    'Sampah Terpilah',
+                    'Sampah Daur Ulang',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Colors.black, // Warna teks seperti di foto
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 20),
+                    padding: const EdgeInsets.only(left: 10),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.asset(
-                          'assets/images/waste-bin.png',
-                          height: 100,
+                        Transform.translate(
+                          offset: const Offset(
+                              0, -15), // Nilai negatif untuk geser ke atas
+                          child: Image.asset(
+                            'assets/images/SampahDaurulang.png',
+                            height: 100,
+                          ),
                         ),
-                        const SizedBox(width: 30),
+                        const SizedBox(width: 20),
                         const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Sampah terpilah adalah sampah yang dipisahkan berdasarkan jenis sebelum dibuang atau didaur ulang, memudahkan pengelolaan dan mengurangi dampak lingkungan.",
+                                "Sampah Daur Ulang Adalah sampah yang dipisahkan berdasarkan jenis sebelum dibuang, memudahkan pengelolaan dan mengurangi dampak lingkungan.",
                                 style: TextStyle(
-                                    color: white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500),
+                                  color: Colors
+                                      .black, // Warna teks seperti di foto
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               )
                             ],
                           ),
@@ -363,9 +369,10 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
                         const Text(
                           'Data Laporan',
                           style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         DropdownButtonFormField<String>(
@@ -403,14 +410,12 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
                                 value: item['id'].toString(),
                                 child: Text(
                                   '${item['kelurahan']}, ${item['kecamatan']}, ${item['deskripsi']}',
-                                  overflow: TextOverflow
-                                      .ellipsis, // Optional: Wraps text with ellipsis if it is too long
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               );
                             },
                           ).toList(),
-                          isExpanded:
-                              true, // This makes sure the dropdown takes up the available space
+                          isExpanded: true,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                           ),
@@ -469,7 +474,8 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
                     _submitForm();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: BlurStyle, // Replace with desired color
+                    backgroundColor:
+                        const Color(0xFF64B5F6), // Warna tombol "Laporkan"
                   ),
                   child: const Text(
                     'Laporkan!',

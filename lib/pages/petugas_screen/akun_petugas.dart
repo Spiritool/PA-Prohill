@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/form_opening/login.dart';
 import 'package:dlh_project/pages/warga_screen/password_reset.dart';
-import 'package:dlh_project/pages/warga_screen/ganti_email.dart'; // Import GantiEmail page
+import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart'; // Import GantiEmail page
 
 class AkunPetugas extends StatefulWidget {
   const AkunPetugas({super.key});

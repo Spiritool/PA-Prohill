@@ -1,11 +1,11 @@
-import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/petugas_screen/historyPetugas.dart';
+import 'package:dlh_project/pages/warga_screen/akun/userprofile.dart';
 import 'package:dlh_project/pages/warga_screen/history.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_konten.dart';
 import 'berita.dart';
-import 'akun.dart';
+import 'akun/akun.dart';
 import 'uptd.dart';
 
 class HomePage extends StatefulWidget {
@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       userName = prefs.getString('user_name') ?? 'Guest';
       userId = prefs.getInt('user_id') ?? 0;
-      userRole = prefs.getString('user_role') ?? 'warga'; // Default to 'warga'
+      userRole = prefs.getString('user_role') ?? 'warga';
       _isLoggedIn = userName != 'Guest';
     });
   }
@@ -49,80 +49,105 @@ class _HomePageState extends State<HomePage> {
         userRole == 'petugas' ? const HistoryPetugas() : const History(),
       const Berita(),
       const Uptd(),
-      const Akun(),
-    ];
-
-    final List<BottomNavigationBarItem> bottomNavigationBarItems = [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.home, size: 30), // Menambahkan ukuran ikon
-        label: 'Home',
-      ),
-      if (_isLoggedIn)
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.history, size: 30), // Menambahkan ukuran ikon
-          label: 'Riwayat',
-        ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.newspaper, size: 30), // Menambahkan ukuran ikon
-        label: 'Berita',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.location_on_rounded,
-            size: 30), // Menambahkan ukuran ikon
-        label: 'UPTD/TPS',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.person, size: 30), // Menambahkan ukuran ikon
-        label: 'Akun',
-      ),
+      const UserProfile(),
     ];
 
     return Scaffold(
       body: SafeArea(
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300), // Durasi transisi halus
+          duration: const Duration(milliseconds: 300),
           child: pages[_selectedIndex],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: bottomNavigationBarItems.map((item) {
-          final int index = bottomNavigationBarItems.indexOf(item);
-          return BottomNavigationBarItem(
-            icon: Column(
-              children: [
-                // Garis hijau di atas ikon
-                if (_selectedIndex == index)
-                  Container(
-                    width: 40, // Panjang garis
-                    height: 3, // Ketebalan garis
-                    color: const Color(0xFF78A55A), // Warna garis hijau
-                    margin: const EdgeInsets.only(bottom: 4),
-                  )
-                else
-                  const SizedBox(height: 7), // Spacer agar tetap simetris
-                item.icon, // Ikon asli dari item
-              ],
-            ),
-            label: item.label,
-          );
-        }).toList(),
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF78A55A),
-        unselectedItemColor: const Color(0xFF434343),
-        onTap: _onItemTapped,
-        showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontSize: 13),
-        unselectedLabelStyle: const TextStyle(fontSize: 12),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            const Color(0xFFD1EFDA), // Ganti dengan warna yang diinginkan
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: BottomNavigationBar(
+          items: _buildBottomNavigationItems(),
+          currentIndex: _selectedIndex,
+          selectedItemColor: const Color(0xFF78A55A),
+          unselectedItemColor: const Color(0xFF909090),
+          onTap: _onItemTapped,
+          showUnselectedLabels: true,
+          selectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            height: 1.8,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            height: 1.8,
+          ),
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          elevation: 0,
+        ),
       ),
     );
   }
 
+  List<BottomNavigationBarItem> _buildBottomNavigationItems() {
+    return [
+      _buildNavItem(Icons.home_outlined, Icons.home_filled, 'Home', 0),
+      if (_isLoggedIn)
+        _buildNavItem(Icons.history_outlined, Icons.history, 'Riwayat', 1),
+      _buildNavItem(
+          Icons.article_outlined, Icons.article, 'Berita', _isLoggedIn ? 2 : 1),
+      _buildNavItem(Icons.location_on_outlined, Icons.location_on, 'UPTD/TPS',
+          _isLoggedIn ? 3 : 2),
+      _buildNavItem(
+          Icons.person_outline, Icons.person, 'Akun', _isLoggedIn ? 4 : 3),
+    ];
+  }
+
+  BottomNavigationBarItem _buildNavItem(
+      IconData outlineIcon, IconData filledIcon, String label, int index) {
+    final isSelected = _selectedIndex == index;
+    return BottomNavigationBarItem(
+      icon: Container(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? filledIcon : outlineIcon,
+              size: 28,
+              color: isSelected
+                  ? const Color(0xFF78A55A)
+                  : const Color(0xFF909090),
+            ),
+            const SizedBox(height: 4),
+            if (isSelected)
+              Container(
+                width: 24,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF78A55A),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+          ],
+        ),
+      ),
+      label: label,
+    );
+  }
+
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 }
