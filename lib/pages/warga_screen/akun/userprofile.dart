@@ -24,7 +24,21 @@ class UserProfile extends StatefulWidget {
 }
 
 class _UserProfileState extends State<UserProfile> {
-  bool _isLoggedIn = true;
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getString('user_name') !=
+          null; // Memeriksa apakah ada username yang disimpan
+    });
+  }
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -131,7 +145,6 @@ class _UserProfileState extends State<UserProfile> {
                 text: 'Logout',
                 onTap: _confirmLogout,
               ),
-
             const SizedBox(height: 20),
           ],
         ),

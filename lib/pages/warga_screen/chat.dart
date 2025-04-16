@@ -1,7 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  final int userId;
+  final String userName;
+
+  const ChatPage({
+    super.key,
+    required this.userId,
+    required this.userName,
+  });
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -9,27 +19,105 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
+  final List<_ChatMessage> _messages = [];
+  final Set<String> _existingMessages = {}; // untuk mencegah duplikat
 
-  final List<_ChatMessage> _messages = [
-    _ChatMessage(sender: 'admin', text: 'Halo, ada yang bisa dibantu?'),
-    _ChatMessage(sender: 'user', text: 'Iya, saya mau tanya tentang akun.'),
-  ];
+  final String _baseUrl = 'http://192.168.1.3:8000';
+  late String _userId;
+  late String _receiver;
 
-  void _sendMessage() {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _userId = widget.userId.toString();
+    _receiver = '1'; // ID admin
+
+    _loadMessages();
+
+    // Refresh setiap 5 detik
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _loadMessages();
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadMessages() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/contact/get-by-user/$_userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        debugPrint("🟠 DEBUG: Pesan dari API = $data");
+
+        final List<dynamic> messages = data['data'];
+
+        if (messages.isNotEmpty) {
+          setState(() {
+            // Menambahkan pesan baru ke daftar _messages tanpa membalikkan urutannya
+            for (var msg in messages) {
+              final sender = msg['idpengirim'].toString();
+              final receiver = msg['idpenerima'].toString();
+              final text = msg['pesan'];
+
+              final key = "${msg['id']}";
+              if (!_existingMessages.contains(key)) {
+                _messages.add(_ChatMessage(
+                  // Menambahkan pesan baru di bawah
+                  sender: sender,
+                  receiver: receiver,
+                  text: text,
+                ));
+                _existingMessages.add(key);
+              }
+            }
+          });
+        }
+      } else {
+        debugPrint('Gagal memuat pesan: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
+  }
+
+  Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
     setState(() {
-      _messages.add(_ChatMessage(sender: 'user', text: text));
+      _messages
+          .add(_ChatMessage(sender: _userId, receiver: _receiver, text: text));
       _messageController.clear();
-
-      Future.delayed(const Duration(seconds: 1), () {
-        setState(() {
-          _messages.add(
-              _ChatMessage(sender: 'admin', text: 'Baik, akan saya bantu.'));
-        });
-      });
     });
+
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/contact/store'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'idpengirim': _userId,
+          'idpenerima': _receiver,
+          'pesan': text,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('Pesan berhasil dikirim');
+      } else {
+        debugPrint('Gagal mengirim pesan. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error saat mengirim pesan: $e');
+    }
   }
 
   bool _shouldShowAvatar(int index) {
@@ -42,7 +130,16 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
-        title: const Text('Live Chat Admin'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Live Chat Admin'),
+            Text(
+              'User ID: ${widget.userId}',
+              style: const TextStyle(fontSize: 12, color: Colors.white70),
+            ),
+          ],
+        ),
         backgroundColor: Colors.orange,
         elevation: 0,
       ),
@@ -50,11 +147,12 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           Expanded(
             child: ListView.builder(
+              reverse: true,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final msg = _messages[index];
-                final isUser = msg.sender == 'user';
+                final isUser = msg.sender == _userId;
                 final showAvatar = _shouldShowAvatar(index);
 
                 return Padding(
@@ -92,7 +190,7 @@ class _ChatPageState extends State<ChatPage> {
                                 color: Colors.black.withOpacity(0.05),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
-                              )
+                              ),
                             ],
                           ),
                           child: Text(
@@ -117,7 +215,6 @@ class _ChatPageState extends State<ChatPage> {
           ),
           Container(
             padding: const EdgeInsets.all(12),
-            color: Colors.transparent,
             child: Row(
               children: [
                 Expanded(
@@ -146,10 +243,10 @@ class _ChatPageState extends State<ChatPage> {
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: _sendMessage,
-                  child: CircleAvatar(
+                  child: const CircleAvatar(
                     radius: 24,
                     backgroundColor: Colors.orange,
-                    child: const Icon(Icons.send, color: Colors.white),
+                    child: Icon(Icons.send, color: Colors.white),
                   ),
                 ),
               ],
@@ -162,8 +259,13 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class _ChatMessage {
-  final String sender; // 'user' atau 'admin'
+  final String sender;
+  final String receiver;
   final String text;
 
-  _ChatMessage({required this.sender, required this.text});
+  _ChatMessage({
+    required this.sender,
+    required this.receiver,
+    required this.text,
+  });
 }

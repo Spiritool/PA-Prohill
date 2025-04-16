@@ -512,13 +512,39 @@ class _HomeKontenState extends State<HomeKonten> {
               right: 20,
               child: FloatingActionButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ChatPage(), // Ganti dengan halaman chat
-                    ),
-                  );
+                  if (userName != 'Guest') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatPage(
+                          userId: widget
+                              .userId, // Ganti dengan userId yang ada di HomeKonten
+                          userName: userName ??
+                              'Guest', // Ganti dengan userName yang ada atau default ke 'Guest'
+                        ),
+                      ),
+                    );
+                  } else {
+                    // Tindakan alternatif jika user adalah Guest (misalnya menampilkan dialog atau halaman lain)
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('Not Authorized'),
+                          content:
+                              Text('You must be logged in to access the chat.'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: Text('OK'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  }
                 },
                 backgroundColor: Colors.green, // Warna tombol
                 child: Icon(Icons.support_agent, color: Colors.white),
