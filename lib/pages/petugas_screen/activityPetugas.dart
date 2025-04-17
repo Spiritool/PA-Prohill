@@ -1,4 +1,7 @@
 import 'package:dlh_project/pages/petugas_screen/sampah.dart';
+import 'package:dlh_project/pages/petugas_screen/detail_daur_ulang.dart';
+import 'package:dlh_project/pages/petugas_screen/detail_liar.dart';
+import 'package:dlh_project/pages/petugas_screen/mapPetugas.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -22,15 +25,15 @@ Future<http.Response> fetchWithRetry(String url, {int retries = 3}) async {
       return response;
     } else if (response.statusCode == 429) {
       print('⚠️ Attempt $attempt: Too Many Requests. Retrying in 3 seconds...');
-      await Future.delayed(Duration(seconds: 3));
+      await Future.delayed(const Duration(seconds: 3));
     } else {
-      throw Exception('Failed to load data from $url (Status: ${response.statusCode})');
+      throw Exception(
+          'Failed to load data from $url (Status: ${response.statusCode})');
     }
   }
 
   throw Exception('Max retries exceeded for $url');
 }
-
 
 Future<Map<String, List<SampahData>>> fetchSampahData() async {
   final prefs = await SharedPreferences.getInstance();
@@ -60,30 +63,31 @@ Future<Map<String, List<SampahData>>> fetchSampahData() async {
   };
 
   for (var category in urls.keys) {
-  for (var url in urls[category]!) {
-    await Future.delayed(Duration(seconds: 2)); // Tambahkan delay sebelum request
+    for (var url in urls[category]!) {
+      await Future.delayed(
+          const Duration(seconds: 2)); // Tambahkan delay sebelum request
 
-    final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(url));
 
-    print('Fetching: $url');
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}'); // Debugging response
+      print('Fetching: $url');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}'); // Debugging response
 
-    if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body)['data'];
-      List<SampahData> sampahList =
-          data.map((item) => SampahData.fromJson(item)).toList();
-      categorizedData[category]!.addAll(sampahList);
-    } else if (response.statusCode == 429) {
-      print('⚠️ Too Many Requests! Menunggu 5 detik sebelum mencoba lagi...');
-      await Future.delayed(Duration(seconds: 5)); // Tunggu sebelum mencoba lagi
-      continue; // Lewati loop, jangan langsung throw error
-    } else {
-      throw Exception('Failed to load data from $url');
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body)['data'];
+        List<SampahData> sampahList =
+            data.map((item) => SampahData.fromJson(item)).toList();
+        categorizedData[category]!.addAll(sampahList);
+      } else if (response.statusCode == 429) {
+        print('⚠️ Too Many Requests! Menunggu 5 detik sebelum mencoba lagi...');
+        await Future.delayed(
+            const Duration(seconds: 5)); // Tunggu sebelum mencoba lagi
+        continue; // Lewati loop, jangan langsung throw error
+      } else {
+        throw Exception('Failed to load data from $url');
+      }
     }
   }
-}
-
 
   return categorizedData;
 }
@@ -137,13 +141,12 @@ Future<Map<String, List<SampahLiarData>>> fetchSampahLiarData() async {
   return categorizedData;
 }
 
-
 class _ActivityPetugasPageState extends State<ActivityPetugasPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedTab = 0;
   bool showSampahData = true;
-  
+
   late Future<Map<String, List<SampahData>>> futureSampahData;
   late Future<Map<String, List<SampahLiarData>>> futureSampahLiarData;
 
@@ -163,95 +166,110 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Activity Petugas',
-            style: TextStyle(
-                fontStyle: FontStyle.italic, fontWeight: FontWeight.bold),
-          ),
-          bottom: TabBar(
-            controller: _tabController,
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.black,
-            tabs: const [
-              Tab(text: 'Riwayat'),
-              Tab(text: 'Dalam Proses'),
-              Tab(text: 'Pending'),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text(
+        'Activity Petugas',
+        style: TextStyle(
+          fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      bottom: TabBar(
+        controller: _tabController,
+        labelColor: Colors.black,
+        unselectedLabelColor: Colors.grey,
+        indicatorColor: Colors.black,
+        tabs: const [
+          Tab(text: 'Riwayat'),
+          Tab(text: 'Dalam Proses'),
+          Tab(text: 'Pending'),
+        ],
+      ),
+    ),
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildFilterButton(
+                  'Sampah Daur Ulang',
+                  showSampahData,
+                  Colors.blue,
+                  () {
+                    setState(() {
+                      showSampahData = true;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildFilterButton(
+                  'Sampah Liar',
+                  !showSampahData,
+                  Colors.red,
+                  () {
+                    setState(() {
+                      showSampahData = false;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  // Aksi Filter
+                },
+                icon: const Icon(Icons.filter_list,
+                    color: Colors.black, size: 18),
+                label: const Text(
+                  "Filter",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  side: const BorderSide(color: Colors.grey),
+                ),
+              ),
             ],
           ),
         ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildFilterButton(
-                      'Sampah Daur Ulang',
-                      showSampahData,
-                      Colors.blue,
-                      () {
-                        setState(() {
-                          showSampahData = true;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildFilterButton(
-                      'Sampah Liar',
-                      !showSampahData,
-                      Colors.red,
-                      () {
-                        setState(() {
-                          showSampahData = false;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      // Aksi Filter
-                    },
-                    icon: const Icon(Icons.filter_list,
-                        color: Colors.black, size: 18),
-                    label: const Text(
-                      "Filter",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      side: const BorderSide(color: Colors.grey),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildListSampah(0), // ✅ Tab Riwayat
-                  _buildListSampah(1), // ✅ Tab Dalam Proses
-                  _buildListSampah(2), // ✅ Tab Pending
-                ],
-              ),
-            ),
-          ],
-        ));
-  }
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildListSampah(0), // ✅ Tab Riwayat
+              _buildListSampah(1), // ✅ Tab Dalam Proses
+              _buildListSampah(2), // ✅ Tab Pending
+            ],
+          ),
+        ),
+      ],
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const mapPetugas()), // Ganti MapPage sesuai nama file kamu
+        );
+      },
+      backgroundColor: Colors.green,
+      tooltip: 'Lihat Peta',
+      child: const Icon(Icons.map),
+    ),
+  );
+}
 
- Widget _buildFilterButton(
+
+  Widget _buildFilterButton(
       String text, bool isSelected, Color color, VoidCallback onPressed) {
     return Expanded(
       child: ElevatedButton(
@@ -305,20 +323,13 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
             if (showSampahData) {
               final sampahItem = item as SampahData;
               return _buildSampahCard(
-                sampahItem.name,
-                sampahItem.deskripsi,
-                DateFormat('dd-MM-yyyy').format(sampahItem.tanggal),
-                selectedTab == 0 ? Colors.blue : (selectedTab == 1 ? Colors.orange : Colors.grey),
-              );
-            } 
+                sampahItem, selectedTab);
+            }
             // Jika Sampah Liar
             else {
               final sampahLiarItem = item as SampahLiarData;
               return _buildSampahCard(
-                sampahLiarItem.email, // Gunakan email karena name tidak ada
-                sampahLiarItem.deskripsi,
-                DateFormat('dd-MM-yyyy').format(sampahLiarItem.tanggal),
-                selectedTab == 0 ? Colors.red : (selectedTab == 1 ? Colors.orange : Colors.grey),
+                sampahLiarItem, selectedTab
               );
             }
           },
@@ -327,36 +338,62 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
     );
   }
 
-  Widget _buildSampahCard(
-      String title, String description, String date, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            description,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Text(
-              date,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+  Widget _buildSampahCard(dynamic item, int selectedTab) {
+    return GestureDetector(
+      onTap: () {
+        if (showSampahData) {
+          // Navigasi ke Detail Sampah Daur Ulang
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    DetailSampahDaurUlangPage(sampah: item as SampahData)),
+          );
+        } else {
+          // Navigasi ke Detail Sampah Liar
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    DetailSampahLiarPage(sampah: item as SampahLiarData)),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: selectedTab == 0
+              ? (showSampahData ? Colors.blue : Colors.red)
+              : (selectedTab == 1 ? Colors.orange : Colors.grey),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              showSampahData
+                  ? (item as SampahData).name
+                  : (item as SampahLiarData).email,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
             ),
-          ),
-        ],
+            const SizedBox(height: 5),
+            Text(
+              item.deskripsi,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Text(
+                DateFormat('dd-MM-yyyy').format(item.tanggal),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

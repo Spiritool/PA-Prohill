@@ -108,9 +108,9 @@ class _HistoryState extends State<History> {
         final matchesStatus = selectedStatus == 'all' ||
             item.status.toLowerCase() == selectedStatus;
         final matchesDate = (startDate == null ||
-                itemDate.isAfter(startDate!.subtract(Duration(days: 1)))) &&
+                itemDate.isAfter(startDate!.subtract(const Duration(days: 1)))) &&
             (endDate == null ||
-                itemDate.isBefore(endDate!.add(Duration(days: 1))));
+                itemDate.isBefore(endDate!.add(const Duration(days: 1))));
         return matchesStatus && matchesDate;
       }).toList();
     });
@@ -217,15 +217,15 @@ class _HistoryState extends State<History> {
             children: [
               Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
-              SizedBox(height: 5),
+              const SizedBox(height: 5),
               Text(
                 count.toString(),
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
@@ -350,7 +350,7 @@ class _HistoryState extends State<History> {
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     side: const BorderSide(color: Colors.grey),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    minimumSize: Size(0, 36),
+                    minimumSize: const Size(0, 36),
                   ),
                 ),
               ),

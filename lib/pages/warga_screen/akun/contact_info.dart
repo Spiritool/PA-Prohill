@@ -137,10 +137,6 @@ class _ContactInfoState extends State<ContactInfo> {
                 MaterialPageRoute(builder: (context) => const Login()),
               );
             },
-            child: const Text(
-              'Login',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
@@ -148,6 +144,10 @@ class _ContactInfoState extends State<ContactInfo> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
+            ),
+            child: const Text(
+              'Login',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
         ],

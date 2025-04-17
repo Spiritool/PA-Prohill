@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class QnAPage extends StatefulWidget {
-  const QnAPage({Key? key}) : super(key: key);
+  const QnAPage({super.key});
 
   @override
   State<QnAPage> createState() => _QnAPageState();

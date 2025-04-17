@@ -1,7 +1,6 @@
 import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/petugas_screen/Home_Konten.dart';
 import 'package:dlh_project/pages/petugas_screen/akun_petugas.dart';
-import 'package:dlh_project/pages/petugas_screen/historyPetugas.dart';
 import 'package:dlh_project/pages/petugas_screen/activityPetugas.dart';
 import 'package:dlh_project/pages/warga_screen/Berita.dart';
 import 'package:dlh_project/pages/warga_screen/history.dart';

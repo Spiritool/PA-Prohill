@@ -70,7 +70,7 @@ class _UserProfileState extends State<UserProfile> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF7AC142),
+                backgroundColor: const Color(0xFF7AC142),
               ),
               child: const Text('Logout'),
               onPressed: () {
@@ -180,7 +180,7 @@ class ProfileTile extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(icon, color: Color(0xFF7AC142)),
+                Icon(icon, color: const Color(0xFF7AC142)),
                 const SizedBox(width: 20),
                 Expanded(
                   child: Text(

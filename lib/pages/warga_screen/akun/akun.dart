@@ -108,10 +108,10 @@ class _AkunState extends State<Akun> {
                 Navigator.pop(context);
               },
             ),
-            SizedBox(width: 8),
-            Text(
+            const SizedBox(width: 8),
+            const Text(
               'Account', // Menampilkan nama pengguna
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -177,19 +177,19 @@ class _AkunState extends State<Akun> {
                 ),
               );
             },
-            child: const Text(
-              'Login',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               backgroundColor: Colors.blue,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            child: const Text(
+              'Login',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -282,8 +282,8 @@ class _AkunState extends State<Akun> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          children: const [
+        child: const Row(
+          children: [
             Icon(Icons.person_outline, color: Colors.black54),
             SizedBox(width: 16),
             Expanded(
@@ -316,8 +316,8 @@ class _AkunState extends State<Akun> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          children: const [
+        child: const Row(
+          children: [
             Icon(Icons.mail_outline, color: Colors.black54),
             SizedBox(width: 16),
             Expanded(
@@ -350,8 +350,8 @@ class _AkunState extends State<Akun> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          children: const [
+        child: const Row(
+          children: [
             Icon(Icons.lock_outline, color: Colors.black54),
             SizedBox(width: 16),
             Expanded(

@@ -73,12 +73,12 @@ class _UptdState extends State<Uptd> {
           child: Container(
             width: 60, // Sesuaikan ukuran gambar
             height: 60,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle, // Agar gambar dalam lingkaran
               // Warna background jika ingin efek outline
             ),
             padding:
-                EdgeInsets.all(4), // Tambahkan padding agar gambar tidak mentok
+                const EdgeInsets.all(4), // Tambahkan padding agar gambar tidak mentok
             child: ClipOval(
               child: Image.asset(
                 'assets/images/logo.png', // Ganti dengan path gambar kamu
@@ -94,41 +94,41 @@ class _UptdState extends State<Uptd> {
   Widget _buildCard(String title, List<String> items) {
   return Container(
     decoration: BoxDecoration(
-      color: Color(0xFF76C7C0), // Warna latar belakang biru muda
+      color: const Color(0xFF76C7C0), // Warna latar belakang biru muda
       borderRadius: BorderRadius.circular(10),
     ),
-    padding: EdgeInsets.all(10),
-    margin: EdgeInsets.symmetric(vertical: 5),
+    padding: const EdgeInsets.all(10),
+    margin: const EdgeInsets.symmetric(vertical: 5),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Container(
           height: 1,
           color: Colors.black, // Garis pemisah hitam
           width: double.infinity,
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Column(
           children: items.map((item) {
             return Container(
               width: double.infinity,
-              margin: EdgeInsets.symmetric(vertical: 5),
-              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+              margin: const EdgeInsets.symmetric(vertical: 5),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
               decoration: BoxDecoration(
-                color: Color(0xFFB2DFDB), // Warna latar belakang item
+                color: const Color(0xFFB2DFDB), // Warna latar belakang item
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
                 item,
-                style: TextStyle(fontSize: 16),
+                style: const TextStyle(fontSize: 16),
               ),
             );
           }).toList(),

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_konten.dart';
 import 'berita.dart';
-import 'akun/akun.dart';
 import 'uptd.dart';
 
 class HomePage extends StatefulWidget {

@@ -157,7 +157,6 @@ class _GeneralInfoState extends State<GeneralInfo> {
             ElevatedButton(
               onPressed: () => Navigator.push(
                   context, MaterialPageRoute(builder: (_) => const Login())),
-              child: const Text('Login'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
@@ -166,6 +165,7 @@ class _GeneralInfoState extends State<GeneralInfo> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30)),
               ),
+              child: const Text('Login'),
             ),
           ],
         ),
@@ -181,12 +181,12 @@ class _GeneralInfoState extends State<GeneralInfo> {
           const Spacer(),
           ElevatedButton(
             onPressed: _showEditDialog,
-            child: const Text('Edit Semua Data'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
+            child: const Text('Edit Semua Data'),
           ),
         ],
       ),

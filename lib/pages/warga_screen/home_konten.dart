@@ -324,7 +324,9 @@ class _HomeKontenState extends State<HomeKonten> {
                                                           child,
                                                           loadingProgress) {
                                                         if (loadingProgress ==
-                                                            null) return child;
+                                                            null) {
+                                                          return child;
+                                                        }
                                                         return Center(
                                                           child:
                                                               CircularProgressIndicator(
@@ -464,12 +466,13 @@ class _HomeKontenState extends State<HomeKonten> {
                                                 },
                                                 loadingBuilder: (context, child,
                                                     loadingProgress) {
-                                                  if (loadingProgress == null)
+                                                  if (loadingProgress == null) {
                                                     return child;
-                                                  return SizedBox(
+                                                  }
+                                                  return const SizedBox(
                                                     width: 192,
                                                     height: 120,
-                                                    child: const Center(
+                                                    child: Center(
                                                       child:
                                                           CircularProgressIndicator(
                                                               strokeWidth: 2),
@@ -547,7 +550,7 @@ class _HomeKontenState extends State<HomeKonten> {
                   }
                 },
                 backgroundColor: Colors.green, // Warna tombol
-                child: Icon(Icons.support_agent, color: Colors.white),
+                child: const Icon(Icons.support_agent, color: Colors.white),
               ),
             ),
           ],

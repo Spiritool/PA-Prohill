@@ -1,10 +1,8 @@
-import 'package:dlh_project/widget/infoField.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // Untuk jsonEncode
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/form_opening/login.dart';
 import 'package:dlh_project/pages/warga_screen/password_reset.dart';
 import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart'; // Import GantiEmail page
@@ -204,12 +202,12 @@ class _AkunPetugasState extends State<AkunPetugas> {
           child: Container(
             width: 60, // Sesuaikan ukuran gambar
             height: 60,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle, // Agar gambar dalam lingkaran
               // Warna background jika ingin efek outline
             ),
             padding:
-                EdgeInsets.all(4), // Tambahkan padding agar gambar tidak mentok
+                const EdgeInsets.all(4), // Tambahkan padding agar gambar tidak mentok
             child: ClipOval(
               child: Image.asset(
                 'assets/images/logo.png', // Ganti dengan path gambar kamu
