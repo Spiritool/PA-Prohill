@@ -496,7 +496,7 @@ Widget _buildPasswordResetField() {
 
                 // Prepare the API request
                 final String apiUrl =
-                    'https://jera.kerissumenep.com/api/user/update/$idUser?_method=PUT';
+                    'https://prohildlhcilegon.id/api/user/update/$idUser?_method=PUT';
                 final String? token = prefs.getString('token');
 
                 final Map<String, String> headers = {
@@ -571,7 +571,7 @@ Widget _buildPasswordResetField() {
     }
 
     final url = Uri.parse(
-        'https://jera.kerissumenep.com/api/user/update/$userId?_method=PUT');
+        'https://prohildlhcilegon.id/api/user/update/$userId?_method=PUT');
     final response = await http.put(
       url,
       headers: {
@@ -637,7 +637,7 @@ Widget _buildPasswordResetField() {
     print('Body JSON yang dikirim: $requestBody');
 
     final url = Uri.parse(
-        'https://jera.kerissumenep.com/api/user/$userId/status?_method=PUT');
+        'https://prohildlhcilegon.id/api/user/$userId/status?_method=PUT');
     final response = await http.put(
       url,
       headers: {

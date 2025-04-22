@@ -17,7 +17,7 @@ class SelectedItem {
 }
 
 class _HargaSampahState extends State<HargaSampah> {
-  final String baseUrl = 'https://jera.kerissumenep.com';
+  final String baseUrl = 'https://prohildlhcilegon.id';
   List<dynamic> hargaSampahList = [];
   List<dynamic> filteredList = [];
   List<SelectedItem> selectedItems = [];

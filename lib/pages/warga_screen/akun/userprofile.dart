@@ -111,16 +111,27 @@ class _UserProfileState extends State<UserProfile> {
         child: ListView(
           children: [
             const SizedBox(height: 10),
-            ProfileTile(
-              icon: Icons.person,
-              text: 'Account',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Akun()),
-                );
-              },
-            ),
+            _isLoggedIn
+                ? ProfileTile(
+                    icon: Icons.person,
+                    text: 'Account',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const Akun()),
+                      );
+                    },
+                  )
+                : ProfileTile(
+                    icon: Icons.login,
+                    text: 'Login',
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const Login()),
+                      );
+                    },
+                  ),
             const ProfileTile(icon: Icons.apartment, text: 'Recurring Details'),
             const ProfileTile(icon: Icons.mail_outline, text: 'Contact Us'),
             const ProfileTile(
@@ -138,7 +149,6 @@ class _UserProfileState extends State<UserProfile> {
             const ProfileTile(icon: Icons.info_outline, text: 'About'),
             const ProfileTile(
                 icon: Icons.location_on_outlined, text: 'Location'),
-            // Cek apakah sudah login, jika sudah tampilkan tombol logout
             if (_isLoggedIn)
               ProfileTile(
                 icon: Icons.logout,

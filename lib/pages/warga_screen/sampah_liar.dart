@@ -77,7 +77,7 @@ class _SampahLiarState extends State<SampahLiar> {
   }
 
   Future<void> _fetchKecamatanData() async {
-    const String url = "https://jera.kerissumenep.com/api/kecamatan";
+    const String url = "https://prohildlhcilegon.id/api/kecamatan";
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -183,7 +183,7 @@ class _SampahLiarState extends State<SampahLiar> {
         var request = http.MultipartRequest(
           'POST',
           Uri.parse(
-              'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/store'),
+              'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/store'),
         );
         request.fields['id_kecamatan'] = _selectedKecamatanId!;
         request.fields['email'] = _emailController.text;

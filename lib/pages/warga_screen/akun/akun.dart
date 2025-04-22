@@ -17,7 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class AlamatService {
   final String baseUrl =
-      "https://jera.kerissumenep.com/api/alamat/get-by-user/";
+      "https://prohildlhcilegon.id/api/alamat/get-by-user/";
 
   Future<List<dynamic>> fetchAlamatByUser(int userId) async {
     try {
@@ -244,15 +244,15 @@ class _AkunState extends State<Akun> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Gender - Female',
-                style: TextStyle(
+              Text(
+                '${userEmail ?? '-'}',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                 ),
               ),
-              const Text(
-                'Age - 28 year',
+              Text(
+                '$userPhone',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,

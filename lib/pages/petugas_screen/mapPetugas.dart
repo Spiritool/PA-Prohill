@@ -30,12 +30,14 @@ class _mapPetugasState extends State<mapPetugas> {
     _loadUserAndFetchData();
   }
 
+
+
   Future<void> _loadUserAndFetchData() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('user_id') ?? 0;
 
     setState(() {
-      currentPosition = const LatLng(-7.000768, 113.851496);
+      currentPosition = const LatLng(-7.000468646396472, 113.85141955621073);
     });
 
     await _fetchKoordinatFromApi(userId);
@@ -47,10 +49,10 @@ class _mapPetugasState extends State<mapPetugas> {
 
   Future<void> _fetchKoordinatFromApi(int userId) async {
     final urls = [
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses',
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending',
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses',
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending',
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
     ];
 
     List<String> result = [];
@@ -274,6 +276,10 @@ class _mapPetugasState extends State<mapPetugas> {
                     ),
                   ],
                 ),
+              // Layer dari GeoJSON
+              // MarkerLayer(markers: geoJsonParser.markers),
+              // PolylineLayer(polylines: geoJsonParser.polylines),
+              // PolygonLayer(polygons: geoJsonParser.polygons),
             ],
           ),
           Positioned(

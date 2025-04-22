@@ -45,14 +45,14 @@ Future<Map<String, List<SampahData>>> fetchSampahData() async {
 
   final urls = {
     'riwayat': [
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/done',
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/done',
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
     ],
     'proses': [
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
     ],
     'pending': [
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
     ],
   };
 
@@ -102,14 +102,14 @@ Future<Map<String, List<SampahLiarData>>> fetchSampahLiarData() async {
 
   final urls = {
     'riwayat': [
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-petugas/$userId/done',
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-petugas/$userId/failed'
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/done',
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/failed'
     ],
     'proses': [
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses'
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses'
     ],
     'pending': [
-      'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending'
+      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending'
     ],
   };
 
@@ -166,108 +166,109 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text(
-        'Activity Petugas',
-        style: TextStyle(
-          fontStyle: FontStyle.italic,
-          fontWeight: FontWeight.bold,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Activity Petugas',
+          style: TextStyle(
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: Colors.black,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.black,
+          tabs: const [
+            Tab(text: 'Riwayat'),
+            Tab(text: 'Dalam Proses'),
+            Tab(text: 'Pending'),
+          ],
         ),
       ),
-      bottom: TabBar(
-        controller: _tabController,
-        labelColor: Colors.black,
-        unselectedLabelColor: Colors.grey,
-        indicatorColor: Colors.black,
-        tabs: const [
-          Tab(text: 'Riwayat'),
-          Tab(text: 'Dalam Proses'),
-          Tab(text: 'Pending'),
-        ],
-      ),
-    ),
-    body: Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildFilterButton(
-                  'Sampah Daur Ulang',
-                  showSampahData,
-                  Colors.blue,
-                  () {
-                    setState(() {
-                      showSampahData = true;
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildFilterButton(
-                  'Sampah Liar',
-                  !showSampahData,
-                  Colors.red,
-                  () {
-                    setState(() {
-                      showSampahData = false;
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton.icon(
-                onPressed: () {
-                  // Aksi Filter
-                },
-                icon: const Icon(Icons.filter_list,
-                    color: Colors.black, size: 18),
-                label: const Text(
-                  "Filter",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildFilterButton(
+                    'Sampah Daur Ulang',
+                    showSampahData,
+                    Colors.blue,
+                    () {
+                      setState(() {
+                        showSampahData = true;
+                      });
+                    },
                   ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  side: const BorderSide(color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildFilterButton(
+                    'Sampah Liar',
+                    !showSampahData,
+                    Colors.red,
+                    () {
+                      setState(() {
+                        showSampahData = false;
+                      });
+                    },
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    // Aksi Filter
+                  },
+                  icon: const Icon(Icons.filter_list,
+                      color: Colors.black, size: 18),
+                  label: const Text(
+                    "Filter",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    side: const BorderSide(color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildListSampah(0), // ✅ Tab Riwayat
-              _buildListSampah(1), // ✅ Tab Dalam Proses
-              _buildListSampah(2), // ✅ Tab Pending
-            ],
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildListSampah(0), // ✅ Tab Riwayat
+                _buildListSampah(1), // ✅ Tab Dalam Proses
+                _buildListSampah(2), // ✅ Tab Pending
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const mapPetugas()), // Ganti MapPage sesuai nama file kamu
-        );
-      },
-      backgroundColor: Colors.green,
-      tooltip: 'Lihat Peta',
-      child: const Icon(Icons.map),
-    ),
-  );
-}
-
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    const mapPetugas()), // Ganti MapPage sesuai nama file kamu
+          );
+        },
+        backgroundColor: Colors.green,
+        tooltip: 'Lihat Peta',
+        child: const Icon(Icons.map),
+      ),
+    );
+  }
 
   Widget _buildFilterButton(
       String text, bool isSelected, Color color, VoidCallback onPressed) {
@@ -322,15 +323,12 @@ Widget build(BuildContext context) {
             // Jika Sampah Daur Ulang
             if (showSampahData) {
               final sampahItem = item as SampahData;
-              return _buildSampahCard(
-                sampahItem, selectedTab);
+              return _buildSampahCard(sampahItem, selectedTab);
             }
             // Jika Sampah Liar
             else {
               final sampahLiarItem = item as SampahLiarData;
-              return _buildSampahCard(
-                sampahLiarItem, selectedTab
-              );
+              return _buildSampahCard(sampahLiarItem, selectedTab);
             }
           },
         );
@@ -340,23 +338,40 @@ Widget build(BuildContext context) {
 
   Widget _buildSampahCard(dynamic item, int selectedTab) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        bool? updated = false;
+
+        // Navigasi ke halaman detail berdasarkan jenis sampah
         if (showSampahData) {
-          // Navigasi ke Detail Sampah Daur Ulang
-          Navigator.push(
+          // Sampah Daur Ulang
+          updated = await Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) =>
-                    DetailSampahDaurUlangPage(sampah: item as SampahData)),
+              builder: (context) => DetailSampahDaurUlangPage(
+                sampah: item as SampahData,
+              ),
+            ),
           );
         } else {
-          // Navigasi ke Detail Sampah Liar
-          Navigator.push(
+          // Sampah Liar
+          updated = await Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) =>
-                    DetailSampahLiarPage(sampah: item as SampahLiarData)),
+              builder: (context) => DetailSampahLiarPage(
+                sampah: item as SampahLiarData,
+              ),
+            ),
           );
+        }
+
+        // Jika status diperbarui, lakukan refresh pada daftar
+        if (updated == true) {
+          setState(() {
+            // Refresh data atau UI
+            futureSampahData =
+                fetchSampahData(); // Memanggil kembali data terbaru
+            futureSampahLiarData = fetchSampahLiarData();
+          });
         }
       },
       child: Container(

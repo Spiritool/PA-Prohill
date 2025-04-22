@@ -1,3 +1,4 @@
+import 'package:dlh_project/pages/petugas_screen/activityPetugas.dart';
 import 'package:dlh_project/pages/petugas_screen/home.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -98,7 +99,7 @@ class _InputFotoSampahState extends State<InputFotoSampah> {
       var request = http.MultipartRequest(
         'POST',
         Uri.parse(
-          'https://jera.kerissumenep.com/api/pengangkutan-sampah-liar/done/${widget.idSampah}',
+          'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/done/${widget.idSampah}',
         ),
       );
 
@@ -122,7 +123,10 @@ class _InputFotoSampahState extends State<InputFotoSampah> {
       Future.delayed(const Duration(seconds: 2), () {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const HomePetugasPage()),
+          MaterialPageRoute(
+            builder: (context) =>
+                const HomePetugasPage(initialIndex: 1), // 👈 Tab Riwayat
+          ),
           (Route<dynamic> route) => false,
         );
       });
@@ -148,7 +152,14 @@ class _InputFotoSampahState extends State<InputFotoSampah> {
             children: [
               _imageFile == null
                   ? const Text('No image selected.')
-                  : Image.file(_imageFile!),
+                  : Container(
+                      height: 250, // Batasi tinggi gambar
+                      width: double.infinity,
+                      child: Image.file(
+                        _imageFile!,
+                        fit: BoxFit.contain, // Menjaga aspek rasio gambar
+                      ),
+                    ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _showImageSourceSelection,

@@ -8,7 +8,7 @@ class Berita extends StatelessWidget {
 
   Future<List<dynamic>> fetchBerita() async {
     final response =
-        await http.get(Uri.parse('https://jera.kerissumenep.com/api/berita'));
+        await http.get(Uri.parse('https://prohildlhcilegon.id/api/berita'));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success']) {
@@ -140,7 +140,7 @@ class Berita extends StatelessWidget {
 
   Widget _buildMainNewsCard(BuildContext context, dynamic berita) {
     final gambarUrl =
-        'https://jera.kerissumenep.com/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+        'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
     return GestureDetector(
       onTap: () {
@@ -226,7 +226,7 @@ class Berita extends StatelessWidget {
 
   Widget _buildListNewsCard(BuildContext context, dynamic berita) {
     final gambarUrl =
-        'https://jera.kerissumenep.com/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+        'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
     return GestureDetector(
       onTap: () {

@@ -44,7 +44,7 @@ class _HomeKontenState extends State<HomeKonten> {
   }
 
   Future<List<String>> fetchSettings() async {
-    const String url = "https://jera.kerissumenep.com/api/setting";
+    const String url = "https://prohildlhcilegon.id/api/setting";
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -283,7 +283,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                         itemBuilder: (context, index) {
                                           final berita = beritaList[index];
                                           final gambarUrl =
-                                              'https://jera.kerissumenep.com/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+                                              'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
                                           return Container(
                                             margin: const EdgeInsets.symmetric(
@@ -423,7 +423,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                   scrollDirection: Axis.horizontal,
                                   children: beritaList.map((berita) {
                                     final gambarUrl =
-                                        'https://jera.kerissumenep.com/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+                                        'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
                                     final judul = berita['judul'] ??
                                         'Judul Tidak Tersedia';
 
@@ -594,7 +594,7 @@ void _showLoginRequiredDialog(BuildContext context) {
 
 Future<List<dynamic>> fetchBerita() async {
   final response =
-      await http.get(Uri.parse('https://jera.kerissumenep.com/api/berita'));
+      await http.get(Uri.parse('https://prohildlhcilegon.id/api/berita'));
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     if (data['success']) {

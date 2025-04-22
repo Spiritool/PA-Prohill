@@ -90,7 +90,7 @@ class _GeneralInfoState extends State<GeneralInfo> {
 
     final response = await http.put(
       Uri.parse(
-          "https://jera.kerissumenep.com/api/user/update/$userId?_method=PUT"),
+          "https://prohildlhcilegon.id/api/user/update/$userId?_method=PUT"),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',

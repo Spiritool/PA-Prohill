@@ -12,7 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class AlamatService {
   final String baseUrl =
-      "https://jera.kerissumenep.com/api/alamat/get-by-user/";
+      "https://prohildlhcilegon.id/api/alamat/get-by-user/";
 
   Future<List<dynamic>> fetchAlamatByUser(int userId) async {
     try {
@@ -343,7 +343,7 @@ class _ContactInfoState extends State<ContactInfo> {
   }
 
   Future<void> _deleteAlamat(int alamatId) async {
-    final url = "https://jera.kerissumenep.com/api/alamat/delete/$alamatId";
+    final url = "https://prohildlhcilegon.id/api/alamat/delete/$alamatId";
     final response = await http.delete(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -372,7 +372,7 @@ class _ContactInfoState extends State<ContactInfo> {
 
   Future<void> _updateAlamat(Map<String, dynamic> alamat) async {
     final url =
-        "https://jera.kerissumenep.com/api/alamat/update/${alamat['id']}";
+        "https://prohildlhcilegon.id/api/alamat/update/${alamat['id']}";
     final response = await http.post(
       Uri.parse(url),
       headers: {"Content-Type": "application/json"},

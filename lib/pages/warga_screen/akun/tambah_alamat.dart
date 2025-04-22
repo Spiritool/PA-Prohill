@@ -92,7 +92,7 @@ class _TambahAlamatState extends State<TambahAlamat> {
   }
 
   Future<void> _fetchKecamatanData() async {
-    const String url = "http://10.251.134.25:8000/api/kecamatan";
+    const String url = "https://prohildlhcilegon.id/api/kecamatan";
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -134,7 +134,7 @@ class _TambahAlamatState extends State<TambahAlamat> {
       return;
     }
 
-    final url = Uri.parse('http://10.251.134.25:8000/api/alamat/store');
+    final url = Uri.parse('https://prohildlhcilegon.id/api/alamat/store');
     final response = await http.post(
       url,
       headers: {

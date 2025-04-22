@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:dlh_project/pages/petugas_screen/home.dart';
 
 class Penimbangan extends StatefulWidget {
   final int idSampah; // ID for the specific waste item
@@ -40,7 +41,7 @@ class _PenimbanganState extends State<Penimbangan> {
       // Submit penimbangan data
       final penimbanganResponse = await http.post(
         Uri.parse(
-            'https://jera.kerissumenep.com/api/pengangkutan-sampah/penimbangan-sampah/${widget.idSampah}'),
+            'https://prohildlhcilegon.id/api/pengangkutan-sampah/penimbangan-sampah/${widget.idSampah}'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -57,20 +58,33 @@ class _PenimbanganState extends State<Penimbangan> {
         // Update status to 'done'
         final statusUpdateResponse = await http.post(
           Uri.parse(
-              'https://jera.kerissumenep.com/api/pengangkutan-sampah/done/${widget.idSampah}'),
+              'https://prohildlhcilegon.id/api/pengangkutan-sampah/done/${widget.idSampah}'),
           headers: {
             'Content-Type': 'application/json',
           },
         );
 
         if (statusUpdateResponse.statusCode == 200) {
+          // Tutup dialog loading
+          Navigator.of(context, rootNavigator: true).pop();
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text(
-                    'Data penimbangan berhasil disimpan dan status diperbarui menjadi Done')),
+              content: Text(
+                  'Data penimbangan berhasil disimpan dan status diperbarui menjadi Done'),
+            ),
           );
-          Navigator.pop(context, true); // Return success status
+
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  const HomePetugasPage(initialIndex: 1), // 👈 Tab Riwayat
+            ),
+            (Route<dynamic> route) => false,
+          );
         } else {
+          Navigator.of(context, rootNavigator: true).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
@@ -78,6 +92,7 @@ class _PenimbanganState extends State<Penimbangan> {
           );
         }
       } else {
+        Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
@@ -88,8 +103,6 @@ class _PenimbanganState extends State<Penimbangan> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
       );
-    } finally {
-      Navigator.pop(context); // Dismiss loading indicator
     }
   }
 

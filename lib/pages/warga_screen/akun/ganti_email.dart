@@ -36,7 +36,7 @@ class _GantiEmailState extends State<GantiEmail> {
     }
 
     final url = Uri.parse(
-        'https://jera.kerissumenep.com/api/user/update-email/$userId?_method=PUT');
+        'https://prohildlhcilegon.id/api/user/update-email/$userId?_method=PUT');
     final response = await http.put(
       url,
       headers: {

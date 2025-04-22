@@ -9,14 +9,16 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePetugasPage extends StatefulWidget {
-  const HomePetugasPage({super.key});
+  final int initialIndex; // 🆕 Tambahan untuk mengatur tab awal
+
+  const HomePetugasPage({super.key, this.initialIndex = 0});
 
   @override
   State<HomePetugasPage> createState() => _HomePetugasPageState();
 }
 
 class _HomePetugasPageState extends State<HomePetugasPage> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   String? userName;
   int? userId;
   String? userRole;
@@ -25,6 +27,7 @@ class _HomePetugasPageState extends State<HomePetugasPage> {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex; // 🆕 Gunakan initialIndex saat init
     _loadUserData();
   }
 
@@ -33,10 +36,10 @@ class _HomePetugasPageState extends State<HomePetugasPage> {
     setState(() {
       userName = prefs.getString('user_name') ?? 'Guest';
       userId = prefs.getInt('user_id') ?? 0;
-      userRole = prefs.getString('user_role') ?? 'warga'; // Default to 'warga'
+      userRole = prefs.getString('user_role') ?? 'warga'; // Default ke 'warga'
       _isLoggedIn = userName != 'Guest';
 
-      // Check if the user is not 'petugas' and redirect or show a warning
+      // Jika bukan petugas, tampilkan dialog peringatan
       if (userRole != 'petugas') {
         _showAccessDeniedDialog();
       }
@@ -52,8 +55,8 @@ class _HomePetugasPageState extends State<HomePetugasPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-              Navigator.of(context).pop(); // Go back to the previous page
+              Navigator.of(context).pop(); // Tutup dialog
+              Navigator.of(context).pop(); // Kembali ke halaman sebelumnya
             },
             child: const Text('OK'),
           ),
@@ -80,7 +83,6 @@ class _HomePetugasPageState extends State<HomePetugasPage> {
       const Berita(),
       const Uptd(),
       const AkunPetugas(),
-
     ];
 
     return Scaffold(

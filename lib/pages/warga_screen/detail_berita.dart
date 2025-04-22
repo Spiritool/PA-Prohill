@@ -8,7 +8,7 @@ class DetailBerita extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gambarUrl =
-        'https://jera.kerissumenep.com/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+        'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
     return Scaffold(
       body: SafeArea(

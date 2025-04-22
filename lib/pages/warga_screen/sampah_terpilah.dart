@@ -82,7 +82,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
   }
 
   Future<void> _fetchKecamatanData() async {
-    const String url = "https://jera.kerissumenep.com/api/kecamatan";
+    const String url = "https://prohildlhcilegon.id/api/kecamatan";
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -105,7 +105,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
 
       var response = await http.get(
           Uri.parse(
-              'https://jera.kerissumenep.com/api/alamat/get-by-user/$userId'),
+              'https://prohildlhcilegon.id/api/alamat/get-by-user/$userId'),
           headers: {"Accept": "application/json"});
 
       if (response.statusCode == 200) {
@@ -230,7 +230,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
       var request = http.MultipartRequest(
         'POST',
         Uri.parse(
-            'https://jera.kerissumenep.com/api/pengangkutan-sampah/store'),
+            'https://prohildlhcilegon.id/api/pengangkutan-sampah/store'),
       );
 
       request.fields['id_kecamatan'] = _pilihKecamatan!;
