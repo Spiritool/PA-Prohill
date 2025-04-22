@@ -248,7 +248,6 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
               ],
             ),
 
-
             // Status dan Tanggal (dirapikan seperti No HP dan tombol WA)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
