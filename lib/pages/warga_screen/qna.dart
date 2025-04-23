@@ -21,29 +21,30 @@ class _QnAPageState extends State<QnAPage> {
     fetchFAQ();
   }
 
-  
   Future<void> fetchFAQ() async {
-  try {
-    final response = await http.get(Uri.parse('$baseUrl/qna/show-all'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/qna/show-all'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
 
-      setState(() {
-        _faqData = data.map<Map<String, String>>((item) => {
-          'judul': item['judul'].toString(),
-          'deskripsi': item['deskripsi'].toString(),
-        }).toList();
+        setState(() {
+          _faqData = data
+              .map<Map<String, String>>((item) => {
+                    'judul': item['judul'].toString(),
+                    'deskripsi': item['deskripsi'].toString(),
+                  })
+              .toList();
 
-        _isExpanded = List.filled(_faqData.length, false);
-        _isLoading = false;
-      });
-    } else {
-      throw Exception('Gagal mengambil FAQ dari server');
+          _isExpanded = List.filled(_faqData.length, false);
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('Gagal mengambil FAQ dari server');
+      }
+    } catch (e) {
+      print('Error fetching FAQ: $e');
     }
-  } catch (e) {
-    print('Error fetching FAQ: $e');
   }
-}
 
   @override
   Widget build(BuildContext context) {

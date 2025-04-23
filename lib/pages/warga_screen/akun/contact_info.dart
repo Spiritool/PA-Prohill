@@ -11,23 +11,17 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 class AlamatService {
-  final String baseUrl =
-      "https://prohildlhcilegon.id/api/alamat/get-by-user/";
+  final String baseUrl = "https://prohildlhcilegon.id/api/alamat/get-by-user/";
 
   Future<List<dynamic>> fetchAlamatByUser(int userId) async {
     try {
       final response = await http.get(Uri.parse("$baseUrl$userId"));
+      final jsonData = json.decode(response.body);
 
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        if (jsonData['success'] == true) {
-          return jsonData['data'];
-        } else {
-          throw Exception(jsonData['message']);
-        }
+      if (response.statusCode == 200 && jsonData['success']) {
+        return jsonData['data'];
       } else {
-        throw Exception(
-            "Gagal mengambil data. Kode status: ${response.statusCode}");
+        throw Exception(jsonData['message']);
       }
     } catch (e) {
       print("Error: $e");
@@ -40,7 +34,7 @@ class ContactInfo extends StatefulWidget {
   const ContactInfo({super.key});
 
   @override
-  _ContactInfoState createState() => _ContactInfoState();
+  State<ContactInfo> createState() => _ContactInfoState();
 }
 
 class _ContactInfoState extends State<ContactInfo> {
@@ -72,12 +66,9 @@ class _ContactInfoState extends State<ContactInfo> {
     final userId = prefs.getInt('user_id');
 
     if (userId != null) {
-      AlamatService alamatService = AlamatService();
-      List<dynamic> data = await alamatService.fetchAlamatByUser(userId);
-
-      setState(() {
-        _alamatData = data;
-      });
+      final alamatService = AlamatService();
+      final data = await alamatService.fetchAlamatByUser(userId);
+      setState(() => _alamatData = data);
     }
   }
 
@@ -85,70 +76,63 @@ class _ContactInfoState extends State<ContactInfo> {
     if (await canLaunch(url)) {
       await launch(url);
     } else {
-      throw 'Could not launch $url';
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka lokasi')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 2,
+        elevation: 1,
         automaticallyImplyLeading: false,
         title: Row(
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left, color: Colors.black),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             const SizedBox(width: 8),
             const Text(
               'Contact Info',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold),
             ),
           ],
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: _isLoggedIn ? _buildLoggedInContent() : _buildLoginButton(),
+        padding: const EdgeInsets.all(16),
+        child: _isLoggedIn ? _buildLoggedInContent() : _buildLoginPrompt(),
       ),
     );
   }
 
-  Widget _buildLoginButton() {
+  Widget _buildLoginPrompt() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const FaIcon(
-            FontAwesomeIcons.rightToBracket,
-            size: 60,
-            color: Colors.blue,
-          ),
+          const FaIcon(FontAwesomeIcons.rightToBracket,
+              size: 60, color: Colors.blue),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const Login()),
-              );
-            },
+            onPressed: () => Navigator.push(
+                context, MaterialPageRoute(builder: (_) => const Login())),
             style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
               backgroundColor: Colors.blue,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
+                  borderRadius: BorderRadius.circular(30)),
             ),
-            child: const Text(
-              'Login',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            child: const Text('Login',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -156,189 +140,142 @@ class _ContactInfoState extends State<ContactInfo> {
   }
 
   Widget _buildLoggedInContent() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
-        children: [
-          const SizedBox(height: 32),
-          Expanded(
-            child: ListView(
-              children: [
-                _buildAddressField(),
-                const SizedBox(height: 12),
-                _buildEmailField(),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
+    return ListView(
+      children: [
+        _buildEmailCard(),
+        const SizedBox(height: 16),
+        _buildAlamatCard(),
+      ],
+    );
+  }
+
+  Widget _buildEmailCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: const Icon(Icons.email, color: Colors.blue),
+        title:
+            const Text('Email', style: TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(userEmail),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const GantiEmail())),
       ),
     );
   }
 
-  Widget _buildEmailField() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.email, color: Colors.black54),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildAlamatCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Email',
-                    style: TextStyle(fontWeight: FontWeight.w500)),
-                Text(userEmail, style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const GantiEmail()),
-              );
-            },
-            child: const Icon(Icons.chevron_right, color: Colors.black45),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddressField() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Alamat',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const TambahAlamat()));
-                  },
-                  child:
-                      const Icon(Icons.chevron_right, color: Colors.black45)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _alamatData.isEmpty
-              ? const Text("Tidak ada data alamat.")
-              : Column(
-                  children: _alamatData.map((alamat) {
-                    return Container(
-                      margin: const EdgeInsets.only(top: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "${alamat['kecamatan']}, ${alamat['kelurahan']}",
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            alamat['deskripsi'],
-                            style: const TextStyle(color: Colors.black54),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit,
-                                    color: Colors.orange),
-                                onPressed: () => _editAlamat(context, alamat),
-                              ),
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () =>
-                                    _confirmDeleteAlamat(context, alamat['id']),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.location_on,
-                                    color: Colors.blue),
-                                onPressed: () {
-                                  final url = alamat['kordinat'];
-                                  if (url != null) {
-                                    _openGoogleMaps(url);
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                const Text('Alamat',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                IconButton(
+                  icon:
+                      const Icon(Icons.add_circle_outline, color: Colors.blue),
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const TambahAlamat())),
                 ),
-        ],
+              ],
+            ),
+            const Divider(),
+            _alamatData.isEmpty
+                ? const Text('Belum ada alamat yang ditambahkan.')
+                : Column(
+                    children: _alamatData.map((alamat) {
+                      return Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                "${alamat['kecamatan']}, ${alamat['kelurahan']}",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 5),
+                            Text(alamat['deskripsi'] ?? '',
+                                style: const TextStyle(color: Colors.black87)),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit,
+                                      color: Colors.orange),
+                                  onPressed: () => _editAlamat(context, alamat),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () => _confirmDeleteAlamat(
+                                      context, alamat['id']),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.location_on,
+                                      color: Colors.blue),
+                                  onPressed: () {
+                                    final url = alamat['kordinat'];
+                                    if (url != null) _openGoogleMaps(url);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+          ],
+        ),
       ),
     );
+  }
+
+  void _editAlamat(BuildContext context, Map<String, dynamic> alamat) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditAlamatScreen(alamat: alamat)),
+    ).then((updatedAlamat) {
+      if (updatedAlamat != null) {
+        _updateAlamat(updatedAlamat);
+      }
+    });
   }
 
   void _confirmDeleteAlamat(BuildContext context, int alamatId) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Konfirmasi'),
-          content: const Text('Apakah Anda yakin ingin menghapus alamat ini?'),
-          actions: [
-            TextButton(
+      builder: (_) => AlertDialog(
+        title: const Text('Konfirmasi'),
+        content: const Text('Apakah Anda yakin ingin menghapus alamat ini?'),
+        actions: [
+          TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            TextButton(
-              onPressed: () {
-                _deleteAlamat(alamatId);
-                Navigator.pop(context);
-              },
-              child: const Text('Hapus'),
-            ),
-          ],
-        );
-      },
+              child: const Text('Batal')),
+          TextButton(
+            onPressed: () {
+              _deleteAlamat(alamatId);
+              Navigator.pop(context);
+            },
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -349,30 +286,15 @@ class _ContactInfoState extends State<ContactInfo> {
     if (response.statusCode == 200) {
       _fetchAlamatData();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Alamat berhasil dihapus')),
-      );
+          const SnackBar(content: Text('Alamat berhasil dihapus')));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menghapus alamat')),
-      );
+          const SnackBar(content: Text('Gagal menghapus alamat')));
     }
   }
 
-  void _editAlamat(BuildContext context, Map<String, dynamic> alamat) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(
-      builder: (context) => EditAlamatScreen(alamat: alamat),
-    ))
-        .then((updatedAlamat) {
-      if (updatedAlamat != null) {
-        _updateAlamat(updatedAlamat);
-      }
-    });
-  }
-
   Future<void> _updateAlamat(Map<String, dynamic> alamat) async {
-    final url =
-        "https://prohildlhcilegon.id/api/alamat/update/${alamat['id']}";
+    final url = "https://prohildlhcilegon.id/api/alamat/update/${alamat['id']}";
     final response = await http.post(
       Uri.parse(url),
       headers: {"Content-Type": "application/json"},
@@ -382,12 +304,10 @@ class _ContactInfoState extends State<ContactInfo> {
     if (response.statusCode == 200) {
       _fetchAlamatData();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Alamat berhasil diperbarui')),
-      );
+          const SnackBar(content: Text('Alamat berhasil diperbarui')));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal memperbarui alamat')),
-      );
+          const SnackBar(content: Text('Gagal memperbarui alamat')));
     }
   }
 }

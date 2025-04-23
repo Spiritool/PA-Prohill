@@ -48,9 +48,6 @@ class _DaftarState extends State<Daftar> {
         }),
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
@@ -61,12 +58,10 @@ class _DaftarState extends State<Daftar> {
             );
           });
         } else {
-          // Menangani pesan kesalahan
           String errorMessage = _parseErrorMessages(responseData);
           _showAlert('Registrasi gagal: $errorMessage');
         }
       } else {
-        // Menangani pesan kesalahan dengan parsing body jika status code bukan 200 atau 201
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         String errorMessage = _parseErrorMessages(responseData);
         _showAlert('Registrasi gagal: $errorMessage');
@@ -77,7 +72,6 @@ class _DaftarState extends State<Daftar> {
   }
 
   String _parseErrorMessages(Map<String, dynamic> responseData) {
-    // Menggabungkan semua pesan kesalahan menjadi satu string
     String errorMessage = '';
     responseData.forEach((key, value) {
       if (value is List) {
@@ -112,87 +106,161 @@ class _DaftarState extends State<Daftar> {
     );
   }
 
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool obscureText = false,
+    bool isPassword = false,
+    VoidCallback? toggle,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 16, color: Colors.black)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
+                  obscureText: obscureText,
+                  decoration: InputDecoration(
+                    hintText: label,
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                  ),
+                ),
+              ),
+              if (isPassword)
+                IconButton(
+                  icon: Icon(
+                    obscureText
+                        ? Icons.visibility_off_outlined
+                        : Icons.remove_red_eye_outlined,
+                    color: Colors.grey,
+                  ),
+                  onPressed: toggle,
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text(
-          'Daftar',
-          textAlign: TextAlign.center,
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(
-                height: 40,
-              ),
-              TextField(
-                controller: _namaController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              TextField(
-                controller: _noHpController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'No HP ( Awali 62 )',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left, color: Colors.black),
+                      onPressed: () {
+                        Navigator.pop(context); // back ke halaman sebelumnya
+                      },
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Sign up',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF3E2C28),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    _buildTextField(label: 'Nama', controller: _namaController),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                        label: 'Email', controller: _emailController),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                      label: 'No HP ( Awali 62 )',
+                      controller: _noHpController,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                      label: 'Password',
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      isPassword: true,
+                      toggle: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.lightGreen,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Daftar',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Center(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const Login()));
+                  },
+                  child: RichText(
+                    text: const TextSpan(
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
+                      children: [
+                        TextSpan(text: 'Sudah punya akun? '),
+                        TextSpan(
+                          text: 'Log in',
+                          style: TextStyle(
+                            color: Color(0xFFA4DB47),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24.0),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: BlurStyle,
-                  ),
-                  child: const Text(
-                    'Daftar',
-                    style: TextStyle(color: white),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

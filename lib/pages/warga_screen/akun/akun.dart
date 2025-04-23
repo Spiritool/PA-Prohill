@@ -9,7 +9,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/form_opening/login.dart';
-import 'package:dlh_project/pages/warga_screen/password_reset.dart';
+import 'package:dlh_project/pages/warga_screen/akun/password_reset.dart';
 import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart';
 import 'package:dlh_project/widget/infoField.dart';
 import 'package:http/http.dart' as http;

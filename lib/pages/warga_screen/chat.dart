@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class ChatPage extends StatefulWidget {
   final int userId;
@@ -20,23 +21,22 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final List<_ChatMessage> _messages = [];
-  final Set<String> _existingMessages = {}; // untuk mencegah duplikat
+  final Set<String> _existingMessages = {};
+  final ScrollController _scrollController = ScrollController();
 
   final String _baseUrl = 'http://192.168.1.3:8000';
   late String _userId;
   late String _receiver;
-
   Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _userId = widget.userId.toString();
-    _receiver = '1'; // ID admin
+    _receiver = '1';
 
     _loadMessages();
 
-    // Refresh setiap 5 detik
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _loadMessages();
     });
@@ -56,30 +56,27 @@ class _ChatPageState extends State<ChatPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        debugPrint("🟠 DEBUG: Pesan dari API = $data");
-
         final List<dynamic> messages = data['data'];
 
         if (messages.isNotEmpty) {
           setState(() {
-            // Menambahkan pesan baru ke daftar _messages tanpa membalikkan urutannya
             for (var msg in messages) {
-              final sender = msg['idpengirim'].toString();
-              final receiver = msg['idpenerima'].toString();
-              final text = msg['pesan'];
-
               final key = "${msg['id']}";
               if (!_existingMessages.contains(key)) {
-                _messages.add(_ChatMessage(
-                  // Menambahkan pesan baru di bawah
-                  sender: sender,
-                  receiver: receiver,
-                  text: text,
-                ));
+                _messages.add(
+                  _ChatMessage(
+                    sender: msg['idpengirim'].toString(),
+                    receiver: msg['idpenerima'].toString(),
+                    text: msg['pesan'],
+                    timestamp:
+                        DateTime.tryParse(msg['created_at']) ?? DateTime.now(),
+                  ),
+                );
                 _existingMessages.add(key);
               }
             }
           });
+          _scrollToBottom();
         }
       } else {
         debugPrint('Gagal memuat pesan: ${response.body}');
@@ -93,11 +90,18 @@ class _ChatPageState extends State<ChatPage> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
+    final now = DateTime.now();
+
     setState(() {
-      _messages
-          .add(_ChatMessage(sender: _userId, receiver: _receiver, text: text));
+      _messages.add(_ChatMessage(
+        sender: _userId,
+        receiver: _receiver,
+        text: text,
+        timestamp: now,
+      ));
       _messageController.clear();
     });
+    _scrollToBottom();
 
     try {
       final response = await http.post(
@@ -120,16 +124,33 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   bool _shouldShowAvatar(int index) {
     if (index == 0) return true;
     return _messages[index].sender != _messages[index - 1].sender;
   }
 
+  String _formatTimestamp(DateTime timestamp) {
+    return DateFormat('dd MMM yyyy, HH:mm').format(timestamp);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
+        backgroundColor: Colors.orange,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -140,14 +161,12 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ],
         ),
-        backgroundColor: Colors.orange,
-        elevation: 0,
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
-              reverse: true,
+              controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
@@ -157,56 +176,76 @@ class _ChatPageState extends State<ChatPage> {
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: isUser
-                        ? MainAxisAlignment.end
-                        : MainAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: isUser
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
                     children: [
-                      if (!isUser && showAvatar) ...[
-                        CircleAvatar(
-                          backgroundColor: Colors.grey[400],
-                          child: const Icon(Icons.support_agent,
-                              color: Colors.white),
-                        ),
-                        const SizedBox(width: 6),
-                      ] else if (!isUser)
-                        const SizedBox(width: 40),
-                      Flexible(
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 4),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isUser ? Colors.orange[100] : Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(16),
-                              topRight: const Radius.circular(16),
-                              bottomLeft: Radius.circular(isUser ? 16 : 0),
-                              bottomRight: Radius.circular(isUser ? 0 : 16),
+                      Row(
+                        mainAxisAlignment: isUser
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.start,
+                        children: [
+                          if (!isUser && showAvatar) ...[
+                            CircleAvatar(
+                              backgroundColor: Colors.grey[400],
+                              child: const Icon(Icons.support_agent,
+                                  color: Colors.white),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                            const SizedBox(width: 6),
+                          ] else if (!isUser)
+                            const SizedBox(width: 40),
+                          Flexible(
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color:
+                                    isUser ? Colors.orange[100] : Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(16),
+                                  topRight: const Radius.circular(16),
+                                  bottomLeft: Radius.circular(isUser ? 16 : 0),
+                                  bottomRight: Radius.circular(isUser ? 0 : 16),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    msg.text,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatTimestamp(msg.timestamp),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            msg.text,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ),
+                          if (isUser && showAvatar) ...[
+                            const SizedBox(width: 6),
+                            const CircleAvatar(
+                              backgroundColor: Colors.orange,
+                              child: Icon(Icons.person, color: Colors.white),
+                            ),
+                          ] else if (isUser)
+                            const SizedBox(width: 40),
+                        ],
                       ),
-                      if (isUser && showAvatar) ...[
-                        const SizedBox(width: 6),
-                        const CircleAvatar(
-                          backgroundColor: Colors.orange,
-                          child: Icon(Icons.person, color: Colors.white),
-                        ),
-                      ] else if (isUser)
-                        const SizedBox(width: 40),
                     ],
                   ),
                 );
@@ -262,10 +301,12 @@ class _ChatMessage {
   final String sender;
   final String receiver;
   final String text;
+  final DateTime timestamp;
 
   _ChatMessage({
     required this.sender,
     required this.receiver,
     required this.text,
+    required this.timestamp,
   });
 }

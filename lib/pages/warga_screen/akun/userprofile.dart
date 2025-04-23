@@ -142,7 +142,7 @@ class _UserProfileState extends State<UserProfile> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const QnAPage()),
+                  MaterialPageRoute(builder: (context) => QnAPage()),
                 );
               },
             ),

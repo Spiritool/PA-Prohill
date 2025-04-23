@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert'; // Untuk jsonEncode
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dlh_project/pages/form_opening/login.dart';
-import 'package:dlh_project/pages/warga_screen/password_reset.dart';
+import 'package:dlh_project/pages/warga_screen/akun/password_reset.dart';
 import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart'; // Import GantiEmail page
 
 class AkunPetugas extends StatefulWidget {

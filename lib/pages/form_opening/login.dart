@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/petugas_screen/home.dart';
+import 'package:dlh_project/pages/warga_screen/akun/userprofile.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dlh_project/pages/warga_screen/home.dart';
 import 'package:dlh_project/pages/form_opening/lupa_password.dart';
 import 'package:dlh_project/pages/form_opening/daftar.dart';
+import 'package:flutter/services.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -21,6 +23,7 @@ class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   Future<void> _login() async {
     final email = _emailController.text;
     final password = _passwordController.text;
@@ -49,12 +52,10 @@ class _LoginState extends State<Login> {
       final token = responseData['token'];
       final user = responseData['user'];
 
-      // Save session using SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
       await prefs.setString('user_name', user['nama']);
-      await prefs.setInt(
-          'user_id', user['id']); // This is correct if user_id is an integer
+      await prefs.setInt('user_id', user['id']);
       await prefs.setString('user_email', user['email']);
       await prefs.setString('user_phone', user['no_hp']);
       await prefs.setString('user_role', user['role']);
@@ -74,7 +75,6 @@ class _LoginState extends State<Login> {
         );
       } else if (user['role'] == 'petugas') {
         await prefs.setString('upt_id', user['id_upt'].toString());
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Login berhasil!'),
@@ -120,33 +120,12 @@ class _LoginState extends State<Login> {
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
       } else {
-        // Token tidak valid atau expired
         await prefs.remove('token');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const Login()),
         );
       }
-    }
-  }
-
-  Future<void> fetchData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token') ?? '';
-
-    final response = await http.get(
-      Uri.parse('https://jera.kerissumenep.com/api/login'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      print('Data berhasil diambil: $data');
-    } else {
-      print('Gagal mengambil data: ${response.body}');
     }
   }
 
@@ -158,144 +137,183 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text(
-          'Masuk',
-          textAlign: TextAlign.center,
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(
-                  height: 40,
-                ),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const HomePage()),
+                      );
+                    },
+                    icon: const Icon(Icons.chevron_left),
                   ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Email harus diisi';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16.0),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF4D3D36),
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  const Text(
+                    'Email Address',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      hintText: 'Email',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Email harus diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Password',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      hintText: 'Password',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Password harus diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
                       onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const LupaPassword()),
+                        );
                       },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Password harus diisi';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24.0),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: BlurStyle,
-                    ),
-                    child: const Text(
-                      'Masuk',
-                      style: TextStyle(color: white),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LupaPassword()),
-                    );
-                  },
-                  child: const Text('Lupa Password?',
-                      style: TextStyle(fontSize: 16.0, color: BlurStyle)),
-                ),
-                const SizedBox(height: 16.0),
-                RichText(
-                  text: TextSpan(
-                    text: "Belum punya akun? ",
-                    style: const TextStyle(fontSize: 16.0, color: Colors.black),
-                    children: <TextSpan>[
-                      TextSpan(
-                        text: "Daftar",
-                        style: const TextStyle(
-                          color: BlurStyle,
-                          fontWeight: FontWeight.bold,
+                      child: const Text(
+                        'Lupa Password?',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontFamily: 'Poppins',
                         ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const Daftar()),
-                            );
-                          },
                       ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(
-                  height: 15,
-                ),
-                RichText(
-                  text: TextSpan(
-                    text: "Masuk tanpa login? ",
-                    style: const TextStyle(fontSize: 16.0, color: Colors.black),
-                    children: <TextSpan>[
-                      TextSpan(
-                        text: "Masuk",
-                        style: const TextStyle(
-                          color: green,
-                          fontWeight: FontWeight.bold,
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 60,
+                    child: ElevatedButton(
+                      onPressed: _login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFA3D65C),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const HomePage()),
-                            );
-                          },
                       ),
-                    ],
+                      child: const Text(
+                        'Masuk',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  const Spacer(),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: RichText(
+                        text: TextSpan(
+                          text: "Belum punya akun? ",
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontFamily: 'Poppins',
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'Daftar',
+                              style: const TextStyle(
+                                color: Color(0xFFA3D65C),
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Poppins',
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const Daftar()),
+                                  );
+                                },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),

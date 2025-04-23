@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/warga_screen/home.dart';
 import 'package:dlh_project/pages/petugas_screen/home.dart';
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -12,13 +13,12 @@ class SplashScreen extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     final role = prefs.getString('user_role');
 
-    // Determine the next screen based on the user's role
     if (role == 'petugas') {
       return const HomePetugasPage();
     } else if (role == 'warga') {
       return const HomePage();
     } else {
-      return const HomePage();
+      return const HomePage(); // default
     }
   }
 
@@ -28,45 +28,56 @@ class SplashScreen extends StatelessWidget {
       future: _getNextScreen(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
+          // Tetap tampilkan splash dengan loading indicator
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
           );
         } else {
           return AnimatedSplashScreen(
-            splash: Stack(
-              children: [
-                // Background color
-                Container(
-                  color: BlurStyle,
+            duration: 2500,
+            splashIconSize: double.infinity,
+            splash: Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-                // Top logo
-                Positioned(
-                  top: 226,
-                  left: 0,
-                  right: 0,
-                  child: Image.asset(
-                    "assets/images/logo.png",
-                    height: 113,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: MediaQuery.of(context).size.height * 0.18,
                   ),
-                ),
-                // Center text
-                const Center(
-                  child: Text(
+                  const SizedBox(height: 30),
+                  const Text(
                     'JEMPOLIN',
                     style: TextStyle(
-                      fontSize: 30,
-                      color: Colors.white,
+                      fontSize: 34,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 2,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            nextScreen: snapshot.data!,
-            splashIconSize: double.infinity,
             backgroundColor: Colors.transparent,
+            nextScreen: snapshot.data!,
             splashTransition: SplashTransition.fadeTransition,
-            duration: 3000,
           );
         }
       },

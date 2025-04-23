@@ -17,6 +17,9 @@ class _GeneralInfoState extends State<GeneralInfo> {
   String userPhone = '081234567890';
   bool isLoggedIn = false;
 
+  final Color primaryColor = const Color(0xFF006E7F);
+  final Color bgColor = const Color(0xFFF9F9F9);
+
   @override
   void initState() {
     super.initState();
@@ -39,36 +42,47 @@ class _GeneralInfoState extends State<GeneralInfo> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Edit Profil'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nama',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: phoneController,
-              decoration: const InputDecoration(
-                labelText: 'No. HP (Awali dengan 62)',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'No. HP (Awali dengan 62)',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
               ),
-              keyboardType: TextInputType.phone,
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Batal'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () =>
                 _saveChanges(nameController.text, phoneController.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             child: const Text('Simpan'),
           ),
         ],
@@ -120,25 +134,39 @@ class _GeneralInfoState extends State<GeneralInfo> {
     Navigator.pop(context);
   }
 
-  Widget _buildInfoTile(String label, String value, String iconPath) {
+  Widget _buildInfoTile(String label, String value, IconData icon) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Image.asset(iconPath, width: 30, height: 30),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(value),
-            ],
+          CircleAvatar(
+            backgroundColor: primaryColor.withOpacity(0.1),
+            child: Icon(icon, color: primaryColor),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(fontSize: 15)),
+              ],
+            ),
           ),
         ],
       ),
@@ -151,21 +179,24 @@ class _GeneralInfoState extends State<GeneralInfo> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const FaIcon(FontAwesomeIcons.rightToBracket,
-                size: 60, color: Colors.blue),
+            const FaIcon(FontAwesomeIcons.circleUser,
+                size: 80, color: Colors.grey),
             const SizedBox(height: 20),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const Login())),
+                context,
+                MaterialPageRoute(builder: (_) => const Login()),
+              ),
+              icon: const Icon(Icons.login),
+              label: const Text('Login untuk Edit Profil'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30)),
               ),
-              child: const Text('Login'),
             ),
           ],
         ),
@@ -173,20 +204,27 @@ class _GeneralInfoState extends State<GeneralInfo> {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          _buildInfoTile('Nama:', userName, 'assets/icons/nama.png'),
-          _buildInfoTile('No. HP:', userPhone, 'assets/icons/nomer.png'),
+          _buildInfoTile('Nama', userName, Icons.person),
+          _buildInfoTile('No. HP', userPhone, Icons.phone),
           const Spacer(),
-          ElevatedButton(
-            onPressed: _showEditDialog,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _showEditDialog,
+              icon: const Icon(Icons.edit),
+              label: const Text('Edit Profil'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
             ),
-            child: const Text('Edit Semua Data'),
           ),
         ],
       ),
@@ -196,16 +234,15 @@ class _GeneralInfoState extends State<GeneralInfo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
         title: const Text('Edit Profil', style: TextStyle(color: Colors.black)),
-        leading: IconButton(
-          icon: const Icon(Icons.chevron_left, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
         backgroundColor: Colors.white,
         elevation: 1,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: _buildContent(),
     );
