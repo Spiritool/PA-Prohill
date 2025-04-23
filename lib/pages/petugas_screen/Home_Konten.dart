@@ -250,112 +250,112 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                               style: GoogleFonts.poppins(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FutureBuilder<List<dynamic>>(
-                                  future: fetchBerita(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Center(
-                                          child: CircularProgressIndicator());
-                                    } else if (snapshot.hasError) {
-                                      return Center(
-                                          child:
-                                              Text('Error: ${snapshot.error}'));
-                                    } else if (!snapshot.hasData ||
-                                        snapshot.data!.isEmpty) {
-                                      return const Center(
-                                          child: Text('No data available'));
-                                    }
+                          // Row(
+                          //   children: [
+                          //     Expanded(
+                          //       child: FutureBuilder<List<dynamic>>(
+                          //         future: fetchBerita(),
+                          //         builder: (context, snapshot) {
+                          //           if (snapshot.connectionState ==
+                          //               ConnectionState.waiting) {
+                          //             return const Center(
+                          //                 child: CircularProgressIndicator());
+                          //           } else if (snapshot.hasError) {
+                          //             return Center(
+                          //                 child:
+                          //                     Text('Error: ${snapshot.error}'));
+                          //           } else if (!snapshot.hasData ||
+                          //               snapshot.data!.isEmpty) {
+                          //             return const Center(
+                          //                 child: Text('No data available'));
+                          //           }
 
-                                    // Balik urutan daftar untuk mendapatkan yang terbaru di awal
-                                    final beritaList =
-                                        snapshot.data!.reversed.toList();
+                          //           // Balik urutan daftar untuk mendapatkan yang terbaru di awal
+                          //           final beritaList =
+                          //               snapshot.data!.reversed.toList();
 
-                                    return Container(
-                                      padding: const EdgeInsets.all(5),
-                                      height: 170,
-                                      child: ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: beritaList.length,
-                                        itemBuilder: (context, index) {
-                                          final berita = beritaList[index];
-                                          final gambarUrl =
-                                              'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+                          //           return Container(
+                          //             padding: const EdgeInsets.all(5),
+                          //             height: 170,
+                          //             child: ListView.builder(
+                          //               scrollDirection: Axis.horizontal,
+                          //               itemCount: beritaList.length,
+                          //               itemBuilder: (context, index) {
+                          //                 final berita = beritaList[index];
+                          //                 final gambarUrl =
+                          //                     'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
-                                          return Container(
-                                            margin: const EdgeInsets.symmetric(
-                                                horizontal: 8),
-                                            width: 250,
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            DetailBerita(
-                                                                berita: berita),
-                                                      ),
-                                                    );
-                                                  },
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            15), // Menentukan kelengkungan sudut
-                                                    child: Image.network(
-                                                      gambarUrl,
-                                                      fit: BoxFit.cover,
-                                                      width: 250,
-                                                      height: 150,
-                                                      errorBuilder: (context,
-                                                          error, stackTrace) {
-                                                        return const Icon(
-                                                          Icons.broken_image,
-                                                          size: 100,
-                                                        );
-                                                      },
-                                                      loadingBuilder: (context,
-                                                          child,
-                                                          loadingProgress) {
-                                                        if (loadingProgress ==
-                                                            null) {
-                                                          return child;
-                                                        }
-                                                        return Center(
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                            value: loadingProgress
-                                                                        .expectedTotalBytes !=
-                                                                    null
-                                                                ? loadingProgress
-                                                                        .cumulativeBytesLoaded /
-                                                                    (loadingProgress
-                                                                            .expectedTotalBytes ??
-                                                                        1)
-                                                                : null,
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
+                          //                 return Container(
+                          //                   margin: const EdgeInsets.symmetric(
+                          //                       horizontal: 8),
+                          //                   width: 250,
+                          //                   child: Column(
+                          //                     crossAxisAlignment:
+                          //                         CrossAxisAlignment.start,
+                          //                     children: [
+                          //                       GestureDetector(
+                          //                         onTap: () {
+                          //                           Navigator.push(
+                          //                             context,
+                          //                             MaterialPageRoute(
+                          //                               builder: (context) =>
+                          //                                   DetailBerita(
+                          //                                       berita: berita),
+                          //                             ),
+                          //                           );
+                          //                         },
+                          //                         child: ClipRRect(
+                          //                           borderRadius:
+                          //                               BorderRadius.circular(
+                          //                                   15), // Menentukan kelengkungan sudut
+                          //                           child: Image.network(
+                          //                             gambarUrl,
+                          //                             fit: BoxFit.cover,
+                          //                             width: 250,
+                          //                             height: 150,
+                          //                             errorBuilder: (context,
+                          //                                 error, stackTrace) {
+                          //                               return const Icon(
+                          //                                 Icons.broken_image,
+                          //                                 size: 100,
+                          //                               );
+                          //                             },
+                          //                             loadingBuilder: (context,
+                          //                                 child,
+                          //                                 loadingProgress) {
+                          //                               if (loadingProgress ==
+                          //                                   null) {
+                          //                                 return child;
+                          //                               }
+                          //                               return Center(
+                          //                                 child:
+                          //                                     CircularProgressIndicator(
+                          //                                   value: loadingProgress
+                          //                                               .expectedTotalBytes !=
+                          //                                           null
+                          //                                       ? loadingProgress
+                          //                                               .cumulativeBytesLoaded /
+                          //                                           (loadingProgress
+                          //                                                   .expectedTotalBytes ??
+                          //                                               1)
+                          //                                       : null,
+                          //                                 ),
+                          //                               );
+                          //                             },
+                          //                           ),
+                          //                         ),
+                          //                       ),
+                          //                     ],
+                          //                   ),
+                          //                 );
+                          //               },
+                          //             ),
+                          //           );
+                          //         },
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
                           const SizedBox(height: 20),
                           GridView.count(
                             crossAxisCount: 4,
@@ -363,17 +363,8 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                             physics: const NeverScrollableScrollPhysics(),
                             childAspectRatio: 0.8,
                             children: [
-                              iconButton(context, Icons.star_border,
-                                  'Waste &\nget Point', () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const Screensampah(),
-                                  ),
-                                );
-                              }),
                               iconButton(context, Icons.attach_money,
-                                  'Trash\nExchange', () {
+                                  'Hitung\nExchange', () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -395,7 +386,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                             ],
                           ),
                           const SizedBox(height: 25),
-                          Text('Awareness Community',
+                          Text('Latest News',
                               style: GoogleFonts.poppins(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 5),

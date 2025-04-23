@@ -19,6 +19,8 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
 
     final String apiUrl =
         'https://prohildlhcilegon.id/api/pengangkutan-sampah/proses/$idSampah';
+        // 'https://jera.kerissumenep.com/api/pengangkutan-sampah/proses/$idSampah';
+
 
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -30,6 +32,11 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
     };
 
     try {
+      // Debugging: Print request details
+      // print('Request URL: $apiUrl');
+      // print('Request Headers: $headers');
+      // print('Request Body: ${json.encode(body)}');
+
       // Send the POST request
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -40,6 +47,9 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
       if (response.statusCode == 200) {
         print('Status updated successfully.');
       } else {
+        print('Error: API URL: $apiUrl');
+        print('Error status code: ${response.statusCode}');
+        print('Error response body: ${response.body}');
         // Handle the error
         final errorMessage =
             jsonDecode(response.body)['message'] ?? 'Unknown error';

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,24 +22,36 @@ class _mapPetugasState extends State<mapPetugas> {
   LatLng? currentPosition;
   List<LatLng> routePoints = [];
   double _zoomLevel = 14;
+  final LatLng lokasiTPA =
+      const LatLng(-7.000468646396472, 113.85141955621073); // Lokasi TPA
 
   List<String> koordinatList = [];
   final MapController _mapController = MapController();
 
+  late StreamSubscription<Position> positionStream;
+
   @override
   void initState() {
     super.initState();
+    _startLocationTimer();
     _loadUserAndFetchData();
   }
 
-
+  @override
+  void dispose() {
+    _locationTimer?.cancel(); // jangan lupa matikan timer
+    super.dispose();
+  }
 
   Future<void> _loadUserAndFetchData() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('user_id') ?? 0;
 
+    final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
     setState(() {
-      currentPosition = const LatLng(-7.000468646396472, 113.85141955621073);
+      currentPosition = LatLng(position.latitude, position.longitude);
     });
 
     await _fetchKoordinatFromApi(userId);
@@ -45,6 +59,21 @@ class _mapPetugasState extends State<mapPetugas> {
     if (koordinatList.isNotEmpty) {
       await _generateRoute();
     }
+  }
+
+  double calculateDistanceInKm(LatLng start, LatLng end) {
+    const earthRadius = 6371.0; // in km
+
+    final dLat = (end.latitude - start.latitude) * (3.1415926 / 180);
+    final dLng = (end.longitude - start.longitude) * (3.1415926 / 180);
+
+    final a = (sin(dLat / 2) * sin(dLat / 2)) +
+        cos(start.latitude * (3.1415926 / 180)) *
+            cos(end.latitude * (3.1415926 / 180)) *
+            (sin(dLng / 2) * sin(dLng / 2));
+
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
   }
 
   Future<void> _fetchKoordinatFromApi(int userId) async {
@@ -92,32 +121,99 @@ class _mapPetugasState extends State<mapPetugas> {
   }
 
   Future<void> _generateRoute() async {
-    if (currentPosition == null || koordinatList.isEmpty) return;
+    if (currentPosition == null || koordinatList.isEmpty || lokasiTPA == null) {
+      debugPrint("Posisi awal, daftar koordinat, atau TPA tidak valid.");
+      return;
+    }
 
-    final destinations =
-        koordinatList.map(_extractLatLng).whereType<LatLng>().toList();
+    const double maxDistanceInKm = 10.0;
 
-    final allPoints = [currentPosition!, ...destinations];
+    // Filter lokasi sampah dalam radius
+    final destinations = koordinatList
+        .map(_extractLatLng)
+        .whereType<LatLng>()
+        .where((point) =>
+            calculateDistanceInKm(currentPosition!, point) <= maxDistanceInKm)
+        .toList();
+
+    if (destinations.isEmpty) {
+      debugPrint('Tidak ada titik sampah dalam radius $maxDistanceInKm km');
+      return;
+    }
+
+    // Susun rute: awal (petugas) → titik sampah → akhir (TPA)
+    final allPoints = [
+      currentPosition!,
+      ...destinations,
+      lokasiTPA,
+    ];
 
     final coordsStr =
         allPoints.map((p) => '${p.longitude},${p.latitude}').join(';');
 
-    final url =
-        'http://router.project-osrm.org/trip/v1/driving/$coordsStr?geometries=geojson';
+    final url = 'http://router.project-osrm.org/trip/v1/driving/$coordsStr'
+        '?geometries=geojson&roundtrip=false&source=first&destination=last';
 
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final coords = data['trips'][0]['geometry']['coordinates'] as List;
+    debugPrint('URL untuk rute: $url');
 
-      final points = coords.map((c) => LatLng(c[1], c[0])).toList();
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final trips = data['trips'];
+        if (trips != null && trips.isNotEmpty) {
+          final coords = trips[0]['geometry']['coordinates'] as List;
 
-      setState(() {
-        routePoints = points;
-      });
-    } else {
-      debugPrint('Gagal ambil rute: ${response.statusCode}');
+          final points = coords.map((c) => LatLng(c[1], c[0])).toList();
+
+          setState(() {
+            routePoints = points;
+          });
+        } else {
+          debugPrint('Tidak ada rute yang ditemukan oleh OSRM.');
+        }
+      } else {
+        debugPrint('Gagal ambil rute: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error ambil rute: $e');
     }
+  }
+
+  Timer? _locationTimer;
+
+  void _startLocationTimer() {
+    _locationTimer?.cancel(); // pastikan tidak dobel timer
+
+    _locationTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+
+        // Opsional: tambahkan filter jarak minimal untuk update (hemat redraw)
+        const double minDistanceToUpdate = 10.0; // meter
+
+        final distance = currentPosition == null
+            ? double.infinity
+            : Geolocator.distanceBetween(
+                currentPosition!.latitude,
+                currentPosition!.longitude,
+                position.latitude,
+                position.longitude,
+              );
+
+        if (distance > minDistanceToUpdate) {
+          setState(() {
+            currentPosition = LatLng(position.latitude, position.longitude);
+          });
+
+          await _generateRoute(); // hanya dijalankan jika lokasi berubah cukup jauh
+        }
+      } catch (e) {
+        debugPrint('Gagal mendapatkan lokasi: $e');
+      }
+    });
   }
 
   LatLng? _extractLatLng(String url) {
@@ -178,9 +274,23 @@ class _mapPetugasState extends State<mapPetugas> {
                         width: 40,
                         height: 40,
                         point: currentPosition!,
-                        child:
-                            const Icon(Icons.my_location, color: Colors.blue),
+                        child: const FaIcon(
+                          FontAwesomeIcons.personCircleCheck,
+                          color: Colors.blue,
+                          size: 30,
+                        ),
                       ),
+                      Marker(
+                        width: 40,
+                        height: 40,
+                        point: lokasiTPA,
+                        child: const FaIcon(
+                          FontAwesomeIcons.dumpster,
+                          color: Colors.brown,
+                          size: 30,
+                        ),
+                      ),
+
                       ...koordinatList.map((url) {
                         final latLng = _extractLatLng(url);
                         if (latLng == null) {

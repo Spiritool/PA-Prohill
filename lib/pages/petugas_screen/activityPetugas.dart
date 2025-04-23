@@ -1,7 +1,8 @@
+import 'package:dlh_project/pages/petugas_screen/mapPetugas.dart';
 import 'package:dlh_project/pages/petugas_screen/sampah.dart';
 import 'package:dlh_project/pages/petugas_screen/detail_daur_ulang.dart';
 import 'package:dlh_project/pages/petugas_screen/detail_liar.dart';
-import 'package:dlh_project/pages/petugas_screen/mapPetugas.dart';
+import 'package:dlh_project/backup/mapPetugas2.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -44,6 +45,16 @@ Future<Map<String, List<SampahData>>> fetchSampahData() async {
   }
 
   final urls = {
+    // 'riwayat': [
+    //   'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/done',
+    //   'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
+    // ],
+    // 'proses': [
+    //   'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
+    // ],
+    // 'pending': [
+    //   'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
+    // ],
     'riwayat': [
       'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/done',
       'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
