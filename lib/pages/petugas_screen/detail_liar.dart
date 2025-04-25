@@ -31,9 +31,9 @@ class DetailSampahLiarPage extends StatelessWidget {
 
     try {
       // Debugging: Print request details
-      print('Request URL: $apiUrl');
-      print('Request Headers: $headers');
-      print('Request Body: ${json.encode(body)}');
+      // print('Request URL: $apiUrl');
+      // print('Request Headers: $headers');
+      // print('Request Body: ${json.encode(body)}');
 
       // Send the POST request
       final response = await http.post(
@@ -46,9 +46,9 @@ class DetailSampahLiarPage extends StatelessWidget {
         print('Status updated successfully.');
       } else {
         // Debugging: Print URL, status code, and response body when an error occurs
-        // print('Error: API URL: $apiUrl');
-        // print('Error status code: ${response.statusCode}');
-        // print('Error response body: ${response.body}');
+        print('Error: API URL: $apiUrl');
+        print('Error status code: ${response.statusCode}');
+        print('Error response body: ${response.body}');
 
         // Check if the response is JSON before decoding
         try {
@@ -488,6 +488,7 @@ class DetailSampahLiarPage extends StatelessWidget {
       itemCount: fotoUrls.length,
       itemBuilder: (context, index) {
         final fullUrl = baseUrl + fotoUrls[index];
+        print('Full URL: $fullUrl'); 
         return Image.network(
           fullUrl,
           fit: BoxFit.cover,
