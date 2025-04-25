@@ -24,7 +24,7 @@ class _ChatPageState extends State<ChatPage> {
   final Set<String> _existingMessages = {};
   final ScrollController _scrollController = ScrollController();
 
-  final String _baseUrl = 'http://192.168.1.3:8000';
+  final String _baseUrl = 'http://192.168.69.205:8000';
   late String _userId;
   late String _receiver;
   Timer? _refreshTimer;
@@ -36,7 +36,6 @@ class _ChatPageState extends State<ChatPage> {
     _receiver = '1';
 
     _loadMessages();
-
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _loadMessages();
     });
@@ -75,6 +74,7 @@ class _ChatPageState extends State<ChatPage> {
                 _existingMessages.add(key);
               }
             }
+            _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
           });
           _scrollToBottom();
         }
@@ -90,18 +90,7 @@ class _ChatPageState extends State<ChatPage> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    final now = DateTime.now();
-
-    setState(() {
-      _messages.add(_ChatMessage(
-        sender: _userId,
-        receiver: _receiver,
-        text: text,
-        timestamp: now,
-      ));
-      _messageController.clear();
-    });
-    _scrollToBottom();
+    _messageController.clear();
 
     try {
       final response = await http.post(
@@ -116,6 +105,7 @@ class _ChatPageState extends State<ChatPage> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('Pesan berhasil dikirim');
+        await _loadMessages(); // Hanya muat dari server
       } else {
         debugPrint('Gagal mengirim pesan. Status code: ${response.statusCode}');
       }
@@ -128,8 +118,8 @@ class _ChatPageState extends State<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          _scrollController.position.minScrollExtent,
+          duration: const Duration(milliseconds: 500),
           curve: Curves.easeOut,
         );
       }
@@ -151,21 +141,13 @@ class _ChatPageState extends State<ChatPage> {
       backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Live Chat Admin'),
-            Text(
-              'User ID: ${widget.userId}',
-              style: const TextStyle(fontSize: 12, color: Colors.white70),
-            ),
-          ],
-        ),
+        title: const Text('Live Chat Admin'),
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
+              reverse: true,
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               itemCount: _messages.length,
@@ -228,9 +210,7 @@ class _ChatPageState extends State<ChatPage> {
                                   Text(
                                     _formatTimestamp(msg.timestamp),
                                     style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
-                                    ),
+                                        fontSize: 11, color: Colors.grey[600]),
                                   ),
                                 ],
                               ),

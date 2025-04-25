@@ -37,7 +37,7 @@ class _DaftarState extends State<Daftar> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://jera.kerissumenep.com/api/register'),
+        Uri.parse('https://prohildlhcilegon.id/api/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'nama': nama,

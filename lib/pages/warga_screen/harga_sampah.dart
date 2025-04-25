@@ -67,7 +67,7 @@ class _HargaSampahState extends State<HargaSampah> {
   }
 
   void showItemDialog(Map<String, dynamic> item) {
-    final index = selectedItems.indexWhere((e) => e.item['id'] == item['id']);
+    int tempQuantity = 1;
 
     showModalBottomSheet(
       context: context,
@@ -79,9 +79,6 @@ class _HargaSampahState extends State<HargaSampah> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            // Inisialisasi quantity DI DALAM builder supaya selalu fresh
-            int quantity = index != -1 ? selectedItems[index].quantity : 1;
-
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom + 20,
@@ -113,70 +110,81 @@ class _HargaSampahState extends State<HargaSampah> {
                   ),
                   const SizedBox(height: 20),
                   Center(
-                    child: StatefulBuilder(
-                      // Extra StatefulBuilder buat handle state quantity saja
-                      builder: (context, setQuantityState) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
-                            borderRadius: BorderRadius.circular(40),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(40),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                iconSize: 28,
-                                icon: const Icon(Icons.remove_circle_outline,
-                                    color: Colors.red),
-                                onPressed: () {
-                                  if (quantity > 1) {
-                                    setQuantityState(() => quantity--);
-                                  }
-                                },
-                              ),
-                              Text(
-                                '$quantity',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              IconButton(
-                                iconSize: 28,
-                                icon: const Icon(Icons.add_circle_outline,
-                                    color: Colors.green),
-                                onPressed: () {
-                                  setQuantityState(() => quantity++);
-                                },
-                              ),
-                            ],
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            iconSize: 28,
+                            icon: const Icon(Icons.remove_circle_outline,
+                                color: Colors.red),
+                            onPressed: () {
+                              if (tempQuantity > 1) {
+                                setStateDialog(() => tempQuantity--);
+                              }
+                            },
                           ),
-                        );
-                      },
+                          Text(
+                            '$tempQuantity',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            iconSize: 28,
+                            icon: const Icon(Icons.add_circle_outline,
+                                color: Colors.green),
+                            onPressed: () {
+                              setStateDialog(() => tempQuantity++);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 25),
                   ElevatedButton.icon(
                     onPressed: () {
+                      print("Data item lengkap: $item");
+
+                      print(
+                          "Tambah item: ${item['id']} - ${item['Nama_Barang']}");
+                      for (var s in selectedItems) {
+                        print(
+                            "Di keranjang: ${s.item['id']} - ${s.item['Nama_Barang']}");
+                      }
+
+                      final existingIndex = selectedItems.indexWhere(
+                        (element) => element.item['ID'] == item['ID'],
+                      );
+
                       setState(() {
-                        if (index != -1) {
-                          // Jika item sudah ada, hanya update quantity-nya
-                          selectedItems[index].quantity += quantity;
+                        if (existingIndex != -1) {
+                          selectedItems[existingIndex].quantity += tempQuantity;
                         } else {
-                          // Jika item belum ada, tambahkan item baru ke keranjang
+                          // SALINAN BARU DARI ITEM
                           selectedItems.add(
-                              SelectedItem(item: item, quantity: quantity));
+                            SelectedItem(
+                                item: Map<String, dynamic>.from(item),
+                                quantity: tempQuantity),
+                          );
                         }
                       });
+
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.shopping_cart_checkout_rounded),
@@ -212,57 +220,72 @@ class _HargaSampahState extends State<HargaSampah> {
               double.tryParse(selected.item['Harga_Beli'] ?? '0') ?? 0;
           totalHarga += harga * selected.quantity;
         }
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const Text(
+                  'Keranjang',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: selectedItems.isEmpty
+                      ? const Center(child: Text('Keranjang kosong'))
+                      : ListView.builder(
+                          itemCount: selectedItems.length,
+                          itemBuilder: (context, index) {
+                            final selected = selectedItems[index];
+                            final item = selected.item;
+                            final harga =
+                                double.tryParse(item['Harga_Beli'] ?? '0') ?? 0;
 
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Keranjang',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              selectedItems.isEmpty
-                  ? const Text('Keranjang kosong')
-                  : Column(
-                      children: selectedItems.map((selected) {
-                        final item = selected.item;
-                        final harga =
-                            double.tryParse(item['Harga_Beli'] ?? '0') ?? 0;
-                        return ListTile(
-                          title: Text(item['Nama_Barang'] ?? ''),
-                          subtitle: Text(
-                              '${selected.quantity} x Rp${formatHarga(harga.toString())}'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              setState(() {
-                                selectedItems.remove(selected);
-                              });
-                              Navigator.pop(context);
-                              showCartDialog();
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-              const Divider(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Total: ',
+                            return ListTile(
+                              title: Text(item['Nama_Barang'] ?? ''),
+                              subtitle: Text(
+                                  '${selected.quantity} x Rp${formatHarga(harga.toString())}'),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  setState(() {
+                                    selectedItems.removeAt(index);
+                                  });
+                                  Navigator.pop(context);
+                                  showCartDialog();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                const Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total: ',
                       style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text('Rp${formatHarga(totalHarga.toString())},-',
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Text(
+                      'Rp${formatHarga(totalHarga.toString())},-',
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Lanjutkan'),
-              ),
-            ],
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // ElevatedButton(
+                //   onPressed: () {
+                //     Navigator.pop(context);
+                //     // bisa lanjut ke halaman checkout atau apapun
+                //   },
+                //   child: const Text('Lanjutkan'),
+                // ),
+              ],
+            ),
           ),
         );
       },

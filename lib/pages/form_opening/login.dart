@@ -39,7 +39,7 @@ class _LoginState extends State<Login> {
     }
 
     final response = await http.post(
-      Uri.parse('https://jera.kerissumenep.com/api/login'),
+      Uri.parse('https://prohildlhcilegon.id/api/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
@@ -107,7 +107,7 @@ class _LoginState extends State<Login> {
 
     if (token != null && token.isNotEmpty) {
       final response = await http.get(
-        Uri.parse('https://jera.kerissumenep.com/api/login'),
+        Uri.parse('https://prohildlhcilegon.id/api/login'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

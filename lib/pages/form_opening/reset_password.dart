@@ -29,7 +29,7 @@ class _ResetPasswordState extends State<ResetPassword> {
     }
 
     final response = await http.post(
-      Uri.parse('https://jera.kerissumenep.com/api/password/reset'),
+      Uri.parse('https://prohildlhcilegon.id/api/password/reset'),
       body: {
         'token': widget.token,
         'password': passwordController.text,

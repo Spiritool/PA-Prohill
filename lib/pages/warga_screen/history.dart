@@ -17,10 +17,10 @@ Future<List<SampahData>> fetchSampahData() async {
   }
 
   final urls = [
-    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/$userId/proses',
-    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/$userId/done',
-    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/$userId/pending',
-    'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/$userId/failed',
+    'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/$userId/proses',
+    'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/$userId/done',
+    'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/$userId/pending',
+    'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/$userId/failed',
   ];
 
   List<SampahData> allData = [];
@@ -76,6 +76,35 @@ class _HistoryState extends State<History> {
     'Nov',
     'Des'
   ];
+  Color _getColorByStatus(String status) {
+    switch (status) {
+      case 'done':
+        return Colors.green;
+      case 'proses':
+        return Colors.yellow.shade700;
+      case 'pending':
+        return Colors.orange;
+      case 'failed':
+        return Colors.red;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  Color _getBarColor() {
+    switch (selectedStatus) {
+      case 'done':
+        return Colors.green;
+      case 'proses':
+        return Colors.yellow.shade700;
+      case 'pending':
+        return Colors.orange;
+      case 'failed':
+        return Colors.red;
+      default:
+        return Colors.blue; // untuk 'all' atau status lainnya
+    }
+  }
 
   List<SampahData> filteredDataByStatusAndDate = [];
 
@@ -85,6 +114,13 @@ class _HistoryState extends State<History> {
     futureSampahData = fetchSampahData();
     futureSampahData.then((data) {
       _calculateStatusCounts(data);
+      // Dapatkan bulan dan tahun sekarang
+      final now = DateTime.now();
+      selectedMonthIndex = now.month - 1;
+      selectedYear = now.year;
+      startDate = DateTime(selectedYear, now.month, 1);
+      endDate = DateTime(selectedYear, now.month + 1, 0);
+      selectedDateRange = 'monthly'; // set sebagai bulanan
       _applyFilters(data); // panggil juga langsung setelah fetch
     });
   }
@@ -108,7 +144,8 @@ class _HistoryState extends State<History> {
         final matchesStatus = selectedStatus == 'all' ||
             item.status.toLowerCase() == selectedStatus;
         final matchesDate = (startDate == null ||
-                itemDate.isAfter(startDate!.subtract(const Duration(days: 1)))) &&
+                itemDate
+                    .isAfter(startDate!.subtract(const Duration(days: 1)))) &&
             (endDate == null ||
                 itemDate.isBefore(endDate!.add(const Duration(days: 1))));
         return matchesStatus && matchesDate;
@@ -194,13 +231,53 @@ class _HistoryState extends State<History> {
                       margin: const EdgeInsets.only(top: 4),
                       height: 2,
                       width: 20,
-                      color: Colors.blue,
+                      color: _getBarColor(),
                     ),
                 ],
               ),
             ),
           );
         }),
+      ),
+    );
+  }
+
+  Widget _buildChartLegend() {
+    final legends = [
+      {'label': 'Done', 'color': Colors.green},
+      {'label': 'Proses', 'color': Colors.yellow.shade700},
+      {'label': 'Pending', 'color': Colors.orange},
+      {'label': 'Failed', 'color': Colors.red},
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 5),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: legends.map((legend) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: legend['color'] as Color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    legend['label'] as String,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -238,45 +315,71 @@ class _HistoryState extends State<History> {
   }
 
   Widget _buildStatusChart() {
-    Map<String, int> countPerDate = {};
+    // Map dengan key tanggal -> status -> jumlah
+    Map<String, Map<String, int>> groupedData = {};
+
     for (var item in filteredDataByStatusAndDate) {
-      final dateStr = DateFormat('dd-MM-yyyy').format(item
-          .tanggalFormatted); // atau item.tanggalFormatted kalau itu DateTime
-      countPerDate[dateStr] = (countPerDate[dateStr] ?? 0) + 1;
+      final dateStr = DateFormat('dd-MM-yyyy').format(item.tanggalFormatted);
+      final status = item.status.toLowerCase();
+
+      groupedData[dateStr] ??= {};
+      groupedData[dateStr]![status] = (groupedData[dateStr]![status] ?? 0) + 1;
     }
 
-    final sortedKeys = countPerDate.keys.toList()
+    final sortedDates = groupedData.keys.toList()
       ..sort((a, b) {
-        return DateFormat('dd-MM-yyyy')
-            .parse(a)
-            .compareTo(DateFormat('dd-MM-yyyy').parse(b));
+        return DateFormat('dd-MM-yyyy').parse(a).compareTo(
+              DateFormat('dd-MM-yyyy').parse(b),
+            );
       });
+
+    final statusOrder = ['done', 'proses', 'pending', 'failed'];
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SizedBox(
-        height: 200,
+        height: 220,
         child: BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceAround,
-            maxY: countPerDate.values.isNotEmpty
-                ? (countPerDate.values
-                        .reduce((a, b) => a > b ? a : b)
-                        .toDouble() +
-                    1)
-                : 5,
-            barGroups: List.generate(sortedKeys.length, (index) {
-              final date = sortedKeys[index];
-              final count = countPerDate[date]!;
-              return BarChartGroupData(
-                x: index,
-                barRods: [
+            maxY: groupedData.values.expand((m) => m.values).fold<double>(
+                    0, (prev, val) => val > prev ? val.toDouble() : prev) +
+                1,
+            barTouchData: BarTouchData(
+              enabled: true,
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  return BarTooltipItem(
+                    rod.toY.toInt().toString(),
+                    const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  );
+                },
+              ),
+            ),
+            barGroups: List.generate(sortedDates.length, (i) {
+              final date = sortedDates[i];
+              final statusMap = groupedData[date]!;
+
+              List<BarChartRodData> rods = [];
+              for (int j = 0; j < statusOrder.length; j++) {
+                final status = statusOrder[j];
+                final count = statusMap[status] ?? 0;
+                rods.add(
                   BarChartRodData(
                     toY: count.toDouble(),
-                    color: Colors.blue,
-                    width: 20,
-                  )
-                ],
+                    color: _getColorByStatus(status),
+                    width: 8,
+                    borderRadius: BorderRadius.circular(0),
+                  ),
+                );
+              }
+
+              return BarChartGroupData(
+                x: i,
+                barsSpace: 4,
+                barRods: rods,
+                // HAPUS showingTooltipIndicators supaya angka ga muncul otomatis
               );
             }),
             titlesData: FlTitlesData(
@@ -284,9 +387,9 @@ class _HistoryState extends State<History> {
                 sideTitles: SideTitles(
                   showTitles: true,
                   getTitlesWidget: (value, meta) {
-                    if (value.toInt() < sortedKeys.length) {
+                    if (value.toInt() < sortedDates.length) {
                       return Text(
-                        sortedKeys[value.toInt()].substring(0, 5),
+                        sortedDates[value.toInt()].substring(0, 5),
                         style: const TextStyle(fontSize: 10),
                       );
                     }
@@ -309,6 +412,50 @@ class _HistoryState extends State<History> {
     );
   }
 
+  Widget _buildYearToggle() {
+    int currentYear = DateTime.now().year;
+    List<int> years = List.generate(3, (index) => currentYear - index);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: years.map((year) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: _buildYearButton(year),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildYearButton(int year) {
+    bool isSelected = selectedYear == year;
+
+    return OutlinedButton(
+      onPressed: () {
+        setState(() {
+          selectedYear = year;
+          selectedMonthIndex = null;
+          startDate = DateTime(year, 1, 1);
+          endDate = DateTime(year, 12, 31);
+        });
+        futureSampahData.then((data) {
+          _applyFilters(data);
+        });
+      },
+      style: OutlinedButton.styleFrom(
+        backgroundColor: isSelected ? Colors.black : Colors.white,
+        foregroundColor: isSelected ? Colors.white : Colors.black,
+        side: BorderSide(
+          color: isSelected ? Colors.black : Colors.grey,
+        ),
+      ),
+      child: Text(year.toString()),
+    );
+  }
+
   Widget _buildStatusSummary() {
     return Column(
       children: [
@@ -322,22 +469,29 @@ class _HistoryState extends State<History> {
               const SizedBox(width: 10),
 
               // Filter Button (Popup Status)
-              PopupMenuButton<String>(
-                onSelected: (String status) {
-                  _filterByStatus(status);
+              PopupMenuButton<int>(
+                offset: const Offset(0, 40),
+                onSelected: (year) {
+                  _filterByMonth(selectedMonthIndex ?? 1,
+                      year); // menggunakan year yang dipilih
                 },
-                itemBuilder: (BuildContext context) => [
-                  _buildPopupMenuItem(
-                    'All',
-                    prosesCount + doneCount + pendingCount + failedCount,
-                    Colors.blue,
-                  ),
-                  _buildPopupMenuItem('Proses', prosesCount, Colors.yellow),
-                  _buildPopupMenuItem('Done', doneCount, Colors.green),
-                  _buildPopupMenuItem(
-                      'Pending', pendingCount, Colors.orange.shade300),
-                  _buildPopupMenuItem('Failed', failedCount, Colors.red),
-                ],
+                itemBuilder: (BuildContext context) {
+                  return [
+                    // Menampilkan tahun-tahun yang tersedia untuk dipilih
+                    for (var year in List.generate(
+                        3, (index) => DateTime.now().year - index))
+                      PopupMenuItem<int>(
+                        value: year,
+                        child: Row(
+                          children: [
+                            Text(year.toString(),
+                                style: const TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                  ];
+                },
                 child: OutlinedButton.icon(
                   onPressed: null,
                   icon: const Icon(Icons.filter_list,
@@ -399,6 +553,7 @@ class _HistoryState extends State<History> {
         child: Column(
           children: [
             _buildStatusChart(),
+            _buildChartLegend(),
             _buildStatusSummary(),
             FutureBuilder<List<SampahData>>(
               future: futureSampahData,
@@ -476,6 +631,7 @@ class _HistoryState extends State<History> {
                       return _buildOuterCard(
                         index: index + 1,
                         name: data.nama,
+                        FotoSampah: data.fotoSampah,
                         phone: data.noHp,
                         status: data.status,
                         namaUpt: data.namaUpt,
@@ -501,6 +657,7 @@ class _HistoryState extends State<History> {
   Widget _buildOuterCard({
     required int index,
     required String name,
+    required String FotoSampah,
     required String phone,
     required String status,
     required String namaUpt,
@@ -528,6 +685,7 @@ class _HistoryState extends State<History> {
               _buildInnerCard(
                 name: name,
                 phone: phone,
+                fotoSampah: FotoSampah,
                 status: status,
                 namaUpt: namaUpt,
                 location: location,
@@ -547,6 +705,7 @@ class _HistoryState extends State<History> {
   Widget _buildInnerCard({
     required String name,
     required String phone,
+    required String fotoSampah,
     required String status,
     required String namaUpt,
     required String location,
@@ -634,6 +793,22 @@ class _HistoryState extends State<History> {
                 color: Colors.black,
               ),
             ),
+            const SizedBox(height: 8),
+            if (fotoSampah.isNotEmpty)
+              Image.network(
+                'https://prohildlhcilegon.id/storage/foto-sampah/$fotoSampah',
+                errorBuilder: (context, error, stackTrace) {
+                  return const Text('Gambar tidak dapat ditampilkan');
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+              )
+            else
+              const Text('Tidak ada foto tersedia.'),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _openMap(mapUrl),

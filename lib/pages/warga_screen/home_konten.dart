@@ -1,5 +1,4 @@
 import 'package:dlh_project/pages/form_opening/login.dart';
-import 'package:dlh_project/pages/warga_screen/ScreenSampah.dart';
 import 'package:dlh_project/pages/warga_screen/detail_berita.dart';
 import 'package:dlh_project/pages/warga_screen/harga_sampah.dart';
 import 'package:dlh_project/pages/warga_screen/chat.dart';
@@ -363,12 +362,28 @@ class _HomeKontenState extends State<HomeKonten> {
                             physics: const NeverScrollableScrollPhysics(),
                             childAspectRatio: 0.8,
                             children: [
-                              iconButton(context, Icons.star_border,
-                                  'Waste &\nget Point', () {
+                              iconButton(
+                                  context, Icons.recycling, 'Recyclable\nWaste',
+                                  () {
+                                if (userName == 'Guest') {
+                                  _showLoginRequiredDialog(
+                                      context); // Show login dialog if the user is a guest
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SampahTerpilah(),
+                                    ),
+                                  ); // Navigate to SampahTerpilah if the user is not a guest
+                                }
+                              }),
+                              iconButton(context, Icons.delete_forever_outlined,
+                                  'Wild\nTrash', () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const Screensampah(),
+                                    builder: (context) => const SampahLiar(),
                                   ),
                                 );
                               }),
@@ -381,17 +396,17 @@ class _HomeKontenState extends State<HomeKonten> {
                                   ),
                                 );
                               }),
-                              iconButton(context, Icons.emoji_events_outlined,
-                                  'Join Contest\n& Win', () {}),
-                              iconButton(context, Icons.feedback_outlined,
-                                  'Feedback', () {}),
-                              iconButton(context, Icons.play_circle_outline,
-                                  'Tutorial', () {}),
-                              iconButton(
-                                  context,
-                                  Icons.videogame_asset_outlined,
-                                  'Play &\nReward!',
-                                  () {}),
+                              // iconButton(context, Icons.emoji_events_outlined,
+                              //     'Join Contest\n& Win', () {}),
+                              // iconButton(context, Icons.feedback_outlined,
+                              //     'Feedback', () {}),
+                              // iconButton(context, Icons.play_circle_outline,
+                              //     'Tutorial', () {}),
+                              // iconButton(
+                              //     context,
+                              //     Icons.videogame_asset_outlined,
+                              //     'Play &\nReward!',
+                              //     () {}),
                             ],
                           ),
                           const SizedBox(height: 25),

@@ -229,8 +229,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-            'https://prohildlhcilegon.id/api/pengangkutan-sampah/store'),
+        Uri.parse('https://prohildlhcilegon.id/api/pengangkutan-sampah/store'),
       );
 
       request.fields['id_kecamatan'] = _pilihKecamatan!;
@@ -282,7 +281,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: false, // Menghilangkan tombol back default
         title: const Text(
           'Sampah Daur Ulang',
           textAlign: TextAlign.center,
@@ -290,6 +289,13 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
             fontWeight: FontWeight.w700,
             color: Colors.black,
           ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () {
+            // Aksi saat tombol back ditekan
+            Navigator.pop(context); // Untuk kembali ke halaman sebelumnya
+          },
         ),
       ),
       body: Padding(

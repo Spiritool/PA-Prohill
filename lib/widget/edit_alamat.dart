@@ -72,7 +72,7 @@ class _EditAlamatScreenState extends State<EditAlamatScreen> {
   }
 
   void _fetchKecamatanData() async {
-    const String url = "https://jera.kerissumenep.com/api/kecamatan";
+    const String url = "https://prohildlhcilegon.id/api/kecamatan";
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {

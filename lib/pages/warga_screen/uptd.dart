@@ -10,7 +10,7 @@ class Uptd extends StatefulWidget {
 }
 
 class _UptdState extends State<Uptd> {
-  final String baseUrl = "https://jera.kerissumenep.com/api/kecamatan";
+  final String baseUrl = "https://prohildlhcilegon.id/api/kecamatan";
   late Future<List<Map<String, dynamic>>> _kecamatanData;
 
   @override
@@ -77,8 +77,8 @@ class _UptdState extends State<Uptd> {
               shape: BoxShape.circle, // Agar gambar dalam lingkaran
               // Warna background jika ingin efek outline
             ),
-            padding:
-                const EdgeInsets.all(4), // Tambahkan padding agar gambar tidak mentok
+            padding: const EdgeInsets.all(
+                4), // Tambahkan padding agar gambar tidak mentok
             child: ClipOval(
               child: Image.asset(
                 'assets/images/logo.png', // Ganti dengan path gambar kamu
@@ -92,52 +92,52 @@ class _UptdState extends State<Uptd> {
   }
 
   Widget _buildCard(String title, List<String> items) {
-  return Container(
-    decoration: BoxDecoration(
-      color: const Color(0xFF76C7C0), // Warna latar belakang biru muda
-      borderRadius: BorderRadius.circular(10),
-    ),
-    padding: const EdgeInsets.all(10),
-    margin: const EdgeInsets.symmetric(vertical: 5),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF76C7C0), // Warna latar belakang biru muda
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          height: 1,
-          color: Colors.black, // Garis pemisah hitam
-          width: double.infinity,
-        ),
-        const SizedBox(height: 10),
-        Column(
-          children: items.map((item) {
-            return Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(vertical: 5),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFB2DFDB), // Warna latar belakang item
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Text(
-                item,
-                style: const TextStyle(fontSize: 16),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    ),
-  );
-}
-
+          const SizedBox(height: 10),
+          Container(
+            height: 1,
+            color: Colors.black, // Garis pemisah hitam
+            width: double.infinity,
+          ),
+          const SizedBox(height: 10),
+          Column(
+            children: items.map((item) {
+              return Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB2DFDB), // Warna latar belakang item
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Text(
+                  item,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildListView(List<Map<String, dynamic>> kecamatanList) {
     Map<String, List<String>> groupedKecamatan = {};

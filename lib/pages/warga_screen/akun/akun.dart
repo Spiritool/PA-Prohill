@@ -16,8 +16,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 class AlamatService {
-  final String baseUrl =
-      "https://prohildlhcilegon.id/api/alamat/get-by-user/";
+  final String baseUrl = "https://prohildlhcilegon.id/api/alamat/get-by-user/";
 
   Future<List<dynamic>> fetchAlamatByUser(int userId) async {
     try {
@@ -148,6 +147,8 @@ class _AkunState extends State<Akun> {
                 _buildContactInfo(),
                 const SizedBox(height: 12),
                 _buildPasswordResetField(),
+                const SizedBox(height: 12),
+                _buildDeleteAccountField(),
               ],
             ),
           ),
@@ -357,6 +358,36 @@ class _AkunState extends State<Akun> {
             Expanded(
               child: Text(
                 'Password',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.black45),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeleteAccountField() {
+    return GestureDetector(
+      onTap: () {
+        launchUrl(
+            Uri.parse("https://prohildlhcilegon.id/request_delete_users"));
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.person_remove, color: Colors.black54),
+            SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'Hapus Akun',
                 style: TextStyle(fontSize: 16),
               ),
             ),

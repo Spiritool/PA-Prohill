@@ -1,5 +1,4 @@
 import 'package:dlh_project/pages/form_opening/login.dart';
-import 'package:dlh_project/pages/warga_screen/ScreenSampah.dart';
 import 'package:dlh_project/pages/warga_screen/detail_berita.dart';
 import 'package:dlh_project/pages/warga_screen/harga_sampah.dart';
 import 'package:dlh_project/pages/warga_screen/chat.dart';
@@ -18,7 +17,8 @@ import 'package:http/http.dart' as http;
 class HomeKontenPetugas extends StatefulWidget {
   final int userId;
 
-  const HomeKontenPetugas({super.key, required this.userId, required String userName});
+  const HomeKontenPetugas(
+      {super.key, required this.userId, required String userName});
 
   @override
   State<HomeKontenPetugas> createState() => _HomeKontenPetugasState();
@@ -368,7 +368,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const Screensampah(),
+                                    builder: (context) => SampahTerpilah(),
                                   ),
                                 );
                               }),

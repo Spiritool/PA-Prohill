@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class AlamatService {
   final String baseUrl =
-      "https://jera.kerissumenep.com/api/alamat/get-by-user/";
+      "https://prohildlhcilegon.id/api/alamat/get-by-user/";
 
   Future<List<dynamic>> fetchAlamatByUser(int userId) async {
     try {

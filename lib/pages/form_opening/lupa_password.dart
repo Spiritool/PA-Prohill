@@ -16,7 +16,7 @@ class _LupaPasswordState extends State<LupaPassword> {
 
   Future<void> resetPassword() async {
     final response = await http.post(
-      Uri.parse('https://jera.kerissumenep.com/api/password/forgot'),
+      Uri.parse('https://prohildlhcilegon.id/api/password/forgot'),
       body: {
         'email': emailController.text,
       },

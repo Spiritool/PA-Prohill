@@ -250,7 +250,7 @@ class _SampahLiarState extends State<SampahLiar> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: false, // Menonaktifkan tombol back default
         title: const Text(
           'Sampah Liar',
           textAlign: TextAlign.center,
@@ -258,6 +258,12 @@ class _SampahLiarState extends State<SampahLiar> {
             fontWeight: FontWeight.w700,
             color: Colors.black,
           ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left), // Ikon back
+          onPressed: () {
+            Navigator.pop(context); // Aksi untuk kembali ke halaman sebelumnya
+          },
         ),
       ),
       body: Padding(

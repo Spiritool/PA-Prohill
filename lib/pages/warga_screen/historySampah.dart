@@ -4,10 +4,11 @@ class SampahData {
   final String nama;
   final String noHp;
   final String status;
+  final String fotoSampah;
   final String deskripsi;
   final Alamat alamat;
   final DateTime tanggal;
-   final DateTime tanggalFormatted; // ⬅️ tambah ini
+  final DateTime tanggalFormatted; // ⬅️ tambah ini
 
   SampahData({
     required this.id,
@@ -15,6 +16,7 @@ class SampahData {
     required this.nama,
     required this.noHp,
     required this.status,
+    required this.fotoSampah,
     required this.deskripsi,
     required this.alamat,
     required this.tanggal,
@@ -30,11 +32,12 @@ class SampahData {
       nama: json['warga']?['nama'] ?? 'Unknown',
       noHp: json['warga']?['no_hp'] ?? 'No Phone Number',
       status: json['status'] ?? 'Unknown Status',
+      fotoSampah: json['foto_sampah'],
       deskripsi: json['deskripsi'] ?? 'No Description',
       alamat: Alamat.fromJson(alamatJson),
-      tanggal: DateTime.parse(json['created_at']), 
-      tanggalFormatted: DateTime.parse(json['created_at']), // ⬅️ pastikan format ISO (yyyy-MM-ddTHH:mm:ss)
-      
+      tanggal: DateTime.parse(json['created_at']),
+      tanggalFormatted: DateTime.parse(
+          json['created_at']), // ⬅️ pastikan format ISO (yyyy-MM-ddTHH:mm:ss)
     );
   }
 }
