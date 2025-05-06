@@ -224,11 +224,95 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                                       ),
                                     ),
                                   ]),
-                              const CircleAvatar(
-                                backgroundImage: NetworkImage(
-                                    'https://randomuser.me/api/portraits/men/1.jpg'),
-                                radius: 24,
-                              ),
+                              Material(
+                                color: Colors
+                                    .transparent, // Biar gak kelihatan, cuma buat detect gesture
+                                child: InkWell(
+                                  customBorder:
+                                      CircleBorder(), // Biar pas kena radius avatar
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return Dialog(
+                                          backgroundColor: Colors.transparent,
+                                          insetPadding: EdgeInsets.all(10),
+                                          child: Align(
+                                            alignment: Alignment.topRight,
+                                            child: Container(
+                                              width: 160,
+                                              padding: EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black26,
+                                                    blurRadius: 10,
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'Total Point',
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 4),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                              Icons
+                                                                  .monetization_on,
+                                                              color: Colors
+                                                                  .orange),
+                                                          SizedBox(width: 4),
+                                                          Text(
+                                                            '1',
+                                                            style: GoogleFonts
+                                                                .poppins(
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Icon(Icons.arrow_forward_ios,
+                                                      size: 16),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: CircleAvatar(
+                                    backgroundImage: NetworkImage(
+                                      'https://randomuser.me/api/portraits/men/1.jpg',
+                                    ),
+                                    radius: 24,
+                                  ),
+                                ),
+                              )
                             ],
                           ),
                         ],

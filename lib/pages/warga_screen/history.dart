@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -61,6 +62,8 @@ class _HistoryState extends State<History> {
   bool showSampahData = true;
   int? selectedMonthIndex;
   int selectedYear = DateTime.now().year;
+  double? ratingPetugas;
+  String? catatanPetugas;
 
   List<String> monthNames = [
     'Jan',
@@ -122,6 +125,25 @@ class _HistoryState extends State<History> {
       endDate = DateTime(selectedYear, now.month + 1, 0);
       selectedDateRange = 'monthly'; // set sebagai bulanan
       _applyFilters(data); // panggil juga langsung setelah fetch
+      _loadRating();
+    });
+  }
+
+  Future<double?> getRating() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs
+        .getDouble('rating'); // Mengambil rating yang disimpan sebelumnya
+  }
+
+  Future<double?> loadRating() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('rating'); // Mengambil rating
+  }
+
+  Future<void> _loadRating() async {
+    final rating = await getRating();
+    setState(() {
+      ratingPetugas = rating;
     });
   }
 
@@ -642,6 +664,8 @@ class _HistoryState extends State<History> {
                         idSampah: data.id,
                         statusColor: statusColor,
                         tanggalFormatted: formattedDate,
+                        ratingPetugas: data.ratingPetugas,
+                        catatanPetugas: data.catatanPetugas,
                       );
                     },
                   );
@@ -667,6 +691,8 @@ class _HistoryState extends State<History> {
     required int idSampah,
     required Color statusColor,
     required String tanggalFormatted,
+    required double? ratingPetugas, // ⬅️ Tambahkan ini\
+    required String? catatanPetugas, // ⬅️ Tambahkan ini
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -694,6 +720,8 @@ class _HistoryState extends State<History> {
                 idSampah: idSampah,
                 statusColor: statusColor,
                 tanggalFormatted: tanggalFormatted,
+                ratingPetugas: ratingPetugas, // ⬅️ Kirim ke dalam
+                catatanPetugas: catatanPetugas,
               ),
             ],
           ),
@@ -714,6 +742,8 @@ class _HistoryState extends State<History> {
     required int idSampah,
     required Color statusColor,
     required String tanggalFormatted,
+    required double? ratingPetugas, // ⬅️ Tambahkan ini
+    required String? catatanPetugas,
   }) {
     return Card(
       shape: RoundedRectangleBorder(
@@ -728,28 +758,19 @@ class _HistoryState extends State<History> {
             Text('Tanggal: $tanggalFormatted'),
             Text(
               'Nama      : $name',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.black),
             ),
             const SizedBox(height: 8),
             Text(
               'No. Hp    : $phone',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.black),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 const Text(
                   'Status     : ',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.black),
                 ),
                 Container(
                   padding:
@@ -760,10 +781,7 @@ class _HistoryState extends State<History> {
                   ),
                   child: Text(
                     status == 'failed' ? 'Dibatalkan' : status,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.black),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -772,28 +790,22 @@ class _HistoryState extends State<History> {
             const SizedBox(height: 8),
             Text(
               'UPT         : $namaUpt',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.black),
             ),
             const SizedBox(height: 8),
             Text(
               'Alamat    : $location',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.black),
             ),
             const SizedBox(height: 8),
             Text(
               'Deskripsi : $description',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.black),
             ),
             const SizedBox(height: 8),
+
+            // ⬇️ Tambahkan bagian rating
+
             if (fotoSampah.isNotEmpty)
               Image.network(
                 'https://prohildlhcilegon.id/storage/foto-sampah/$fotoSampah',
@@ -802,24 +814,145 @@ class _HistoryState extends State<History> {
                 },
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 },
               )
             else
               const Text('Tidak ada foto tersedia.'),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _openMap(mapUrl),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.green,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment
+                  .spaceBetween, // Membagi space antara kiri dan kanan
+              children: [
+                // Elevated Button Lihat Lokasi Kiri
+                ElevatedButton(
+                  onPressed: () => _openMap(mapUrl),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Lihat Lokasi '),
                 ),
-              ),
-              child: const Text('Lihat Lokasi '),
+                const SizedBox(height: 8),
+                // Kolom untuk tombol rating dan rating
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Tombol rating hanya muncul jika status 'done' dan rating masih null
+                    if (status == 'done' && ratingPetugas == null)
+                      ElevatedButton(
+                        onPressed: () async {
+                          final result = await showDialog<double>(
+                            context: context,
+                            builder: (context) {
+                              double rating = 0; // Nilai rating default
+                              final TextEditingController catatanController =
+                                  TextEditingController();
+
+                              String getDeskripsi(double rating) {
+                                if (rating >= 4.5) return 'Sangat memuaskan.';
+                                if (rating >= 3.5) return 'Cukup baik.';
+                                if (rating > 0) return 'Perlu peningkatan.';
+                                return 'Belum ada penilaian.';
+                              }
+
+                              return StatefulBuilder(
+                                builder: (context, setState) {
+                                  return AlertDialog(
+                                    title: const Text('Rating Petugas'),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        RatingBar.builder(
+                                          initialRating: rating,
+                                          minRating: 1,
+                                          direction: Axis.horizontal,
+                                          allowHalfRating: true,
+                                          itemCount: 5,
+                                          itemPadding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 4.0),
+                                          itemBuilder: (context, _) =>
+                                              const Icon(Icons.star,
+                                                  color: Colors.amber),
+                                          onRatingUpdate: (newRating) {
+                                            setState(() {
+                                              rating = newRating;
+                                            });
+                                          },
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          getDeskripsi(rating),
+                                          style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        const Text('Catatan:',
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600)),
+                                        const SizedBox(height: 4),
+                                        TextField(
+                                          controller: catatanController,
+                                          maxLines: 3,
+                                          decoration: const InputDecoration(
+                                              hintText:
+                                                  'Tulis catatan di sini...',
+                                              border: OutlineInputBorder()),
+                                        ),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          print('Rating: $rating');
+                                          print(
+                                              'Catatan: ${catatanController.text}');
+                                          setState(() {
+                                            ratingPetugas =
+                                                rating; // Update rating setelah disimpan
+                                          });
+                                          Navigator.pop(
+                                              context, rating); // Tutup dialog
+                                        },
+                                        child: const Text('Simpan'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(
+                                            context), // Tutup dialog tanpa menyimpan
+                                        child: const Text('Batal'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          );
+
+                          // Pastikan rating diberikan setelah dialog ditutup
+                          if (result != null) {
+                            setState(() {
+                              ratingPetugas =
+                                  result; // Simpan rating setelah dialog ditutup
+                            });
+                          }
+                        },
+                        child: const Text('Rating Petugas'),
+                      ),
+
+                    // Menampilkan rating setelah diberikan
+                    if (status == 'done' && ratingPetugas != null)
+                      Text('Rating: $ratingPetugas ⭐️'),
+                  ],
+                ),
+              ],
             ),
             const SizedBox(height: 8),
           ],

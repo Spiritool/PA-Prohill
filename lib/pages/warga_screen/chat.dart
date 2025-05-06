@@ -24,7 +24,7 @@ class _ChatPageState extends State<ChatPage> {
   final Set<String> _existingMessages = {};
   final ScrollController _scrollController = ScrollController();
 
-  final String _baseUrl = 'http://192.168.69.205:8000';
+  final String _baseUrl = 'http://192.168.229.205:8000';
   late String _userId;
   late String _receiver;
   Timer? _refreshTimer;

@@ -9,6 +9,8 @@ class SampahData {
   final Alamat alamat;
   final DateTime tanggal;
   final DateTime tanggalFormatted; // ⬅️ tambah ini
+  final double? ratingPetugas;
+  final String? catatanPetugas;
 
   SampahData({
     required this.id,
@@ -21,6 +23,8 @@ class SampahData {
     required this.alamat,
     required this.tanggal,
     required this.tanggalFormatted, // ⬅️ jangan lupa tambahkan juga di constructor
+    required this.ratingPetugas,
+    required this.catatanPetugas,
   });
 
   factory SampahData.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,10 @@ class SampahData {
       tanggal: DateTime.parse(json['created_at']),
       tanggalFormatted: DateTime.parse(
           json['created_at']), // ⬅️ pastikan format ISO (yyyy-MM-ddTHH:mm:ss)
+      ratingPetugas: json['rating_petugas'] != null
+          ? double.tryParse(json['rating_petugas'].toString())
+          : null, // ⬅️ parsing aman
+      catatanPetugas: json['catatan_petugas'],
     );
   }
 }

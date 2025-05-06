@@ -3,6 +3,8 @@ import 'package:dlh_project/pages/warga_screen/detail_berita.dart';
 import 'package:dlh_project/pages/warga_screen/harga_sampah.dart';
 import 'package:dlh_project/pages/warga_screen/chat.dart';
 import 'package:dlh_project/pages/warga_screen/qna.dart';
+import 'package:dlh_project/pages/warga_screen/rangking.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:dlh_project/pages/warga_screen/Berita.dart';
 import 'package:dlh_project/pages/warga_screen/sampah_liar.dart';
@@ -13,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class HomeKonten extends StatefulWidget {
   final int userId;
@@ -24,6 +27,7 @@ class HomeKonten extends StatefulWidget {
 }
 
 class _HomeKontenState extends State<HomeKonten> {
+  String? fcmToken = '';
   String? userName;
   String? _logoUrl;
   final List<String> _imageUrls = [];
@@ -396,10 +400,45 @@ class _HomeKontenState extends State<HomeKonten> {
                                   ),
                                 );
                               }),
-                              // iconButton(context, Icons.emoji_events_outlined,
-                              //     'Join Contest\n& Win', () {}),
-                              // iconButton(context, Icons.feedback_outlined,
-                              //     'Feedback', () {}),
+                              iconButton(context, Icons.emoji_events_outlined,
+                                  'Join Contest\n& Win', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const LeaderboardPage(),
+                                  ),
+                                );
+                              }),
+                              iconButton(
+                                context,
+                                Icons.feedback_outlined,
+                                'Feedback',
+                                () async {
+                                  final token = await FirebaseMessaging.instance
+                                      .getToken();
+                                  setState(() {
+                                    fcmToken = token ?? '-';
+                                  });
+
+                                  // Tampilkan token atau lakukan aksi lain
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: Text('FCM Token'),
+                                      content: SelectableText(fcmToken!),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: Text('Tutup'),
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                },
+                              )
+
                               // iconButton(context, Icons.play_circle_outline,
                               //     'Tutorial', () {}),
                               // iconButton(

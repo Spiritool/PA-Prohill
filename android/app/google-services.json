@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1088495781038",
+    "project_id": "prohill-pa",
+    "storage_bucket": "prohill-pa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1088495781038:android:872c060a201f0069a3d93f",
+        "android_client_info": {
+          "package_name": "com.example.coba1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKxs5M2X9qyiuhRPZN4B8aayagiZ42PJY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
