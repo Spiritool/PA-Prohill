@@ -4,6 +4,8 @@ import 'dart:developer';
 import 'package:dlh_project/config/local_notif.dart';
 import 'package:dlh_project/main.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:dlh_project/pages/splash_screen/splash_screen.dart';
+import 'package:flutter/material.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -15,9 +17,18 @@ void _handleMessage(RemoteMessage message) {
   Map data = message.data;
 
   if (data.containsKey('navigate_to')) {
-    navigatorKey.currentState?.pushNamed(data['navigate_to']);
+    String route = data['navigate_to'];
+
+    if (route == '/SplashScreen') {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (context) => const SplashScreen()),
+      );
+    } else {
+      navigatorKey.currentState?.pushNamed(route);
+    }
   }
 }
+
 
 void _showCustomNotif(RemoteMessage message) {
   if (message.data.containsKey('notif_title')) {

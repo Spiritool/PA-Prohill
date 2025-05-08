@@ -456,17 +456,19 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                                   ),
                                 );
                               }),
-                              iconButton(context, Icons.emoji_events_outlined,
-                                  'Join Contest\n& Win', () {}),
-                              iconButton(context, Icons.feedback_outlined,
-                                  'Feedback', () {}),
+                              // iconButton(context, Icons.emoji_events_outlined,
+                              //     'Join Contest\n& Win', () {}),
+                              iconButton(context, Icons.numbers,
+                                  'Peringkat', () {}),
+                              iconButton(context, Icons.numbers,
+                                  'Point Petugas', () {}),
                               iconButton(context, Icons.play_circle_outline,
-                                  'Tutorial', () {}),
-                              iconButton(
-                                  context,
-                                  Icons.videogame_asset_outlined,
-                                  'Play &\nReward!',
-                                  () {}),
+                                  'SOP Petugas', () {}),
+                              // iconButton(
+                              //     context,
+                              //     Icons.videogame_asset_outlined,
+                              //     'Play &\nReward!',
+                              //     () {}),
                             ],
                           ),
                           const SizedBox(height: 25),
@@ -590,42 +592,42 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
               right: 20,
               child: FloatingActionButton(
                 onPressed: () {
-                  if (userName != 'Guest') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatPage(
-                          userId: widget
-                              .userId, // Ganti dengan userId yang ada di HomeKonten
-                          userName: userName ??
-                              'Guest', // Ganti dengan userName yang ada atau default ke 'Guest'
-                        ),
-                      ),
-                    );
-                  } else {
-                    // Tindakan alternatif jika user adalah Guest (misalnya menampilkan dialog atau halaman lain)
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Not Authorized'),
-                          content:
-                              Text('You must be logged in to access the chat.'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: Text('OK'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  }
+                  // if (userName != 'Guest') {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder: (context) => ChatPage(
+                  //         userId: widget
+                  //             .userId, // Ganti dengan userId yang ada di HomeKonten
+                  //         userName: userName ??
+                  //             'Guest', // Ganti dengan userName yang ada atau default ke 'Guest'
+                  //       ),
+                  //     ),
+                  //   );
+                  // } else {
+                  //   // Tindakan alternatif jika user adalah Guest (misalnya menampilkan dialog atau halaman lain)
+                  //   showDialog(
+                  //     context: context,
+                  //     builder: (BuildContext context) {
+                  //       return AlertDialog(
+                  //         title: Text('Not Authorized'),
+                  //         content:
+                  //             Text('You must be logged in to access the chat.'),
+                  //         actions: <Widget>[
+                  //           TextButton(
+                  //             onPressed: () {
+                  //               Navigator.pop(context);
+                  //             },
+                  //             child: Text('OK'),
+                  //           ),
+                  //         ],
+                  //       );
+                  //     },
+                  //   );
+                  // }
                 },
-                backgroundColor: Colors.green, // Warna tombol
-                child: const Icon(Icons.support_agent, color: Colors.white),
+                // backgroundColor: Colors.green, // Warna tombol
+                // child: const Icon(Icons.support_agent, color: Colors.white),
               ),
             ),
           ],

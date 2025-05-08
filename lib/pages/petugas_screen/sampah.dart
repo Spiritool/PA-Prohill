@@ -60,6 +60,8 @@ class Alamat {
   }
 }
 
+
+
 class SampahLiarData {
   final int id;
   final int? idUserPetugas; // Nullable

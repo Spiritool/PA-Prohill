@@ -230,26 +230,6 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
                     },
                   ),
                 ),
-                const SizedBox(width: 10),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    // Aksi Filter
-                  },
-                  icon: const Icon(Icons.filter_list,
-                      color: Colors.black, size: 18),
-                  label: const Text(
-                    "Filter",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    side: const BorderSide(color: Colors.grey),
-                  ),
-                ),
               ],
             ),
           ),

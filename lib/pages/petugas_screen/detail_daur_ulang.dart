@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dlh_project/pages/petugas_screen/mapPetugasSingle.dart';
 
 class DetailSampahDaurUlangPage extends StatelessWidget {
   final SampahData sampah;
@@ -240,8 +241,17 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
-                      onPressed: () =>
-                          _launchMaps(sampah.alamat.kordinat ?? ""),
+                      onPressed: () {
+                    // Kirim data ke halaman MapSingle
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MapSingle(
+                          sampah: sampah, isDaurUlang: true, // Mengirim objek sampah lengkap
+                        ),
+                      ),
+                    );
+                  },
                       icon: Image.asset(
                         'assets/detail/map_detail.png',
                         width: 32,

@@ -1,16 +1,22 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 class SampahData {
   final int id;
   final String namaUpt;
   final String nama;
   final String noHp;
-  final String status;
+  String status;  // Status bisa berubah
   final String fotoSampah;
   final String deskripsi;
   final Alamat alamat;
   final DateTime tanggal;
-  final DateTime tanggalFormatted; // ⬅️ tambah ini
+  final DateTime tanggalFormatted;
   final double? ratingPetugas;
   final String? catatanPetugas;
+
+  String? previousStatus;  // Properti untuk menyimpan status sebelumnya
 
   SampahData({
     required this.id,
@@ -22,7 +28,7 @@ class SampahData {
     required this.deskripsi,
     required this.alamat,
     required this.tanggal,
-    required this.tanggalFormatted, // ⬅️ jangan lupa tambahkan juga di constructor
+    required this.tanggalFormatted, 
     required this.ratingPetugas,
     required this.catatanPetugas,
   });
@@ -40,13 +46,62 @@ class SampahData {
       deskripsi: json['deskripsi'] ?? 'No Description',
       alamat: Alamat.fromJson(alamatJson),
       tanggal: DateTime.parse(json['created_at']),
-      tanggalFormatted: DateTime.parse(
-          json['created_at']), // ⬅️ pastikan format ISO (yyyy-MM-ddTHH:mm:ss)
+      tanggalFormatted: DateTime.parse(json['created_at']),
       ratingPetugas: json['rating_petugas'] != null
           ? double.tryParse(json['rating_petugas'].toString())
-          : null, // ⬅️ parsing aman
+          : null,
       catatanPetugas: json['catatan_petugas'],
     );
+  }
+
+  // Memeriksa jika status berubah dan mengirimkan notifikasi
+  void checkStatusChange() {
+    if (previousStatus != status) {
+      previousStatus = status;
+      _sendStatusChangeNotification(status);
+    }
+  }
+
+  // Mengirimkan notifikasi perubahan status menggunakan FCM
+  void _sendStatusChangeNotification(String newStatus) async {
+    String title = 'Status Laporan Sampah';
+    String body = 'Status laporan sampah Anda telah berubah menjadi $newStatus';
+    
+    // Mengirimkan notifikasi FCM ke perangkat target
+    await sendPushNotification(title, body);
+  }
+
+  // Fungsi untuk mengirim notifikasi FCM
+  Future<void> sendPushNotification(String title, String body) async {
+    final String serverKey = 'YOUR_SERVER_KEY';  // Ganti dengan server key Anda
+    final String fcmUrl = 'https://fcm.googleapis.com/fcm/send';
+
+    // Pastikan Anda sudah mendapatkan token FCM perangkat yang sesuai
+    String? deviceToken = await FirebaseMessaging.instance.getToken();
+    
+    if (deviceToken != null) {
+      final response = await http.post(
+        Uri.parse(fcmUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$serverKey',
+        },
+        body: json.encode({
+          "to": deviceToken, // Kirimkan ke deviceToken perangkat yang diinginkan
+          "notification": {
+            "title": title,
+            "body": body,
+          },
+          "priority": "high",
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Notification sent!');
+      } else {
+        print('Failed to send notification. Response: ${response.body}');
+      }
+    }
   }
 }
 

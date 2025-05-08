@@ -25,10 +25,13 @@ class _mapPetugasState extends State<mapPetugas> {
   final LatLng lokasiTPA =
       const LatLng(-7.000468646396472, 113.85141955621073); // Lokasi TPA
 
-  List<String> koordinatList = [];
+  List<Map<String, dynamic>> koordinatList = [];
+
   final MapController _mapController = MapController();
 
   late StreamSubscription<Position> positionStream;
+
+  List<int> _estimatedTime = [];
 
   @override
   void initState() {
@@ -61,19 +64,21 @@ class _mapPetugasState extends State<mapPetugas> {
     }
   }
 
-  double calculateDistanceInKm(LatLng start, LatLng end) {
-    const earthRadius = 6371.0; // in km
-
-    final dLat = (end.latitude - start.latitude) * (3.1415926 / 180);
-    final dLng = (end.longitude - start.longitude) * (3.1415926 / 180);
+  double calculateDistanceInKm(LatLng point1, LatLng point2) {
+    const earthRadius = 6371.0; // Radius bumi dalam km
+    final dLat =
+        (point2.latitude - point1.latitude) * (3.141592653589793 / 180);
+    final dLng =
+        (point2.longitude - point1.longitude) * (3.141592653589793 / 180);
 
     final a = (sin(dLat / 2) * sin(dLat / 2)) +
-        cos(start.latitude * (3.1415926 / 180)) *
-            cos(end.latitude * (3.1415926 / 180)) *
+        cos(point1.latitude * (3.141592653589793 / 180)) *
+            cos(point2.latitude * (3.141592653589793 / 180)) *
             (sin(dLng / 2) * sin(dLng / 2));
-
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return earthRadius * c;
+
+    final distance = earthRadius * c; // Hasil dalam km
+    return distance;
   }
 
   Future<void> _fetchKoordinatFromApi(int userId) async {
@@ -84,7 +89,7 @@ class _mapPetugasState extends State<mapPetugas> {
       'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
     ];
 
-    List<String> result = [];
+    List<Map<String, dynamic>> result = [];
 
     for (final url in urls) {
       try {
@@ -93,13 +98,23 @@ class _mapPetugasState extends State<mapPetugas> {
           final decoded = jsonDecode(response.body);
           final dataList = decoded['data'];
 
+          String jenisSampah = '';
+          if (url.contains('sampah-liar')) {
+            jenisSampah = 'Sampah Liar';
+          } else if (url.contains('pengangkutan-sampah')) {
+            jenisSampah = 'Sampah Daur Ulang';
+          }
+
           if (dataList is List) {
             for (final item in dataList) {
               final dynamic kordinatValue =
                   item['kordinat'] ?? item['alamat']?['kordinat'];
 
               if (kordinatValue is String && kordinatValue.contains('query=')) {
-                result.add(kordinatValue);
+                result.add({
+                  'kordinat': kordinatValue,
+                  'jenis_sampah': jenisSampah,
+                });
               }
             }
           } else {
@@ -128,9 +143,25 @@ class _mapPetugasState extends State<mapPetugas> {
 
     const double maxDistanceInKm = 10.0;
 
+    print('Posisi sekarang: $currentPosition');
+    print('Total titik sampah di koordinatList: ${koordinatList.length}');
+
+    for (var item in koordinatList) {
+      final point = _extractLatLngFromMap(item);
+      print('Koordinat URL: ${item['kordinat']}');
+      print('Hasil parsing: $point');
+
+      if (point != null) {
+        final jarak = calculateDistanceInKm(currentPosition!, point);
+        print('➡️ Jarak ke titik: ${jarak.toStringAsFixed(2)} km');
+      } else {
+        print('❌ Gagal extract koordinat!');
+      }
+    }
+
     // Filter lokasi sampah dalam radius
     final destinations = koordinatList
-        .map(_extractLatLng)
+        .map(_extractLatLngFromMap)
         .whereType<LatLng>()
         .where((point) =>
             calculateDistanceInKm(currentPosition!, point) <= maxDistanceInKm)
@@ -164,10 +195,37 @@ class _mapPetugasState extends State<mapPetugas> {
         if (trips != null && trips.isNotEmpty) {
           final coords = trips[0]['geometry']['coordinates'] as List;
 
+          // Mengonversi koordinat rute menjadi LatLng
           final points = coords.map((c) => LatLng(c[1], c[0])).toList();
 
+          // Isi routePoints dengan hasil koordinat rute
           setState(() {
-            routePoints = points;
+            routePoints = points; // Ini yang mengisi routePoints
+          });
+
+          List<int> estimatedTimes = [];
+          for (int i = 0; i < points.length - 1; i++) {
+            // Hitung waktu untuk segmen ini
+            final distance = calculateDistanceInKm(points[i], points[i + 1]);
+            final duration =
+                (distance / 50) * 60; // Anggap kecepatan rata-rata 50 km/jam
+            final estimatedTime = duration.toInt();
+
+// Cek nilai estimatedTime
+            if (estimatedTime <= 0) {
+              estimatedTimes.add(1); // Minimal 1 menit
+            } else {
+              estimatedTimes.add(
+                  estimatedTime); // Menambahkan nilai estimatedTime ke dalam list
+            }
+          }
+
+          print("Route Points: $routePoints");
+          print("Estimated Times: $estimatedTimes");
+
+          setState(() {
+            _estimatedTime =
+                estimatedTimes; // Menyimpan estimasi waktu per segmen
           });
         } else {
           debugPrint('Tidak ada rute yang ditemukan oleh OSRM.');
@@ -184,6 +242,11 @@ class _mapPetugasState extends State<mapPetugas> {
 
   void _startLocationTimer() {
     _locationTimer?.cancel(); // pastikan tidak dobel timer
+
+    if (!mounted) return;
+    setState(() {
+      // perubahan state
+    });
 
     _locationTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
       try {
@@ -214,6 +277,12 @@ class _mapPetugasState extends State<mapPetugas> {
         debugPrint('Gagal mendapatkan lokasi: $e');
       }
     });
+  }
+
+  LatLng? _extractLatLngFromMap(Map<String, dynamic> item) {
+    final url = item['kordinat'];
+    if (url is! String || !url.contains('query=')) return null;
+    return _extractLatLng(url);
   }
 
   LatLng? _extractLatLng(String url) {
@@ -255,8 +324,7 @@ class _mapPetugasState extends State<mapPetugas> {
               maxZoom: 19,
               onPositionChanged: (position, hasGesture) {
                 setState(() {
-                  _zoomLevel =
-                      position.zoom ?? 14.0; // Fallback to 14.0 if zoom is null
+                  _zoomLevel = position.zoom ?? 14.0;
                 });
               },
             ),
@@ -264,118 +332,133 @@ class _mapPetugasState extends State<mapPetugas> {
               TileLayer(
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
               ),
-              if (_zoomLevel < 16) // Show clusters when zoom is low
-                MarkerClusterLayerWidget(
-                  options: MarkerClusterLayerOptions(
-                    maxClusterRadius: 120,
-                    size: const Size(40, 40),
-                    markers: [
-                      Marker(
-                        width: 40,
-                        height: 40,
-                        point: currentPosition!,
-                        child: const FaIcon(
-                          FontAwesomeIcons.personCircleCheck,
-                          color: Colors.blue,
-                          size: 30,
-                        ),
-                      ),
-                      Marker(
-                        width: 40,
-                        height: 40,
-                        point: lokasiTPA,
-                        child: const FaIcon(
-                          FontAwesomeIcons.dumpster,
-                          color: Colors.brown,
-                          size: 30,
-                        ),
-                      ),
-
-                      ...koordinatList.map((url) {
-                        final latLng = _extractLatLng(url);
-                        if (latLng == null) {
-                          return null; // Skip if latLng is null
-                        }
-                        return Marker(
-                          width: 40,
-                          height: 40,
-                          point: latLng,
-                          child: GestureDetector(
-                            onTap: () {
-                              _showDetail(latLng);
-                            },
-                            child: const Icon(Icons.location_on,
-                                color: Colors.red),
+              // Gunakan ternary operator untuk if-else MarkerLayer
+              _zoomLevel < 16
+                  ? MarkerClusterLayerWidget(
+                      options: MarkerClusterLayerOptions(
+                        maxClusterRadius: 120,
+                        size: const Size(40, 40),
+                        markers: [
+                          Marker(
+                            width: 40,
+                            height: 40,
+                            point: lokasiTPA,
+                            child: const FaIcon(
+                              FontAwesomeIcons.dumpster,
+                              color: Colors.brown,
+                              size: 30,
+                            ),
                           ),
-                        );
-                      }).whereType<
-                          Marker>(), // Ensure we only get valid markers
-                    ],
-                    onClusterTap: (cluster) {
-                      // Ambil semua koordinat marker dalam cluster
-                      List<LatLng> coordinates =
-                          cluster.markers.map((m) => m.point).toList();
+                          ...koordinatList.map((item) {
+                            final url = item['kordinat'];
+                            if (url is! String) return null;
 
-                      // Hitung rata-rata lat dan lng untuk mendapatkan center
-                      final avgLat = coordinates
-                              .map((c) => c.latitude)
-                              .reduce((a, b) => a + b) /
-                          coordinates.length;
-                      final avgLng = coordinates
-                              .map((c) => c.longitude)
-                              .reduce((a, b) => a + b) /
-                          coordinates.length;
+                            final latLng = _extractLatLng(url);
+                            if (latLng == null) return null;
 
-                      final clusterCenter = LatLng(avgLat, avgLng);
-
-                      const double targetZoom = 16.0;
-
-                      // Pindah ke center cluster dengan zoom yang diinginkan
-                      _mapController.move(clusterCenter, targetZoom);
-
-                      setState(() {
-                        _zoomLevel = targetZoom;
-                      });
-                    },
-                    builder: (context, markers) {
-                      return Container(
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: Colors.orange,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text('${markers.length}',
-                            style: const TextStyle(color: Colors.white)),
-                      );
-                    },
-                  ),
-                )
-              else // Show individual markers when zoom is high
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      width: 40,
-                      height: 40,
-                      point: currentPosition!,
-                      child: const Icon(Icons.my_location, color: Colors.blue),
-                    ),
-                    ...koordinatList
-                        .map((url) => _extractLatLng(url))
-                        .where((latLng) => latLng != null)
-                        .map((latLng) => Marker(
+                            return Marker(
                               width: 40,
                               height: 40,
-                              point: latLng!,
+                              point: latLng,
                               child: GestureDetector(
-                                onTap: () {
-                                  _showDetail(latLng);
-                                },
+                                onTap: () => _showDetail(latLng),
                                 child: const Icon(Icons.location_on,
                                     color: Colors.red),
                               ),
-                            )),
-                  ],
-                ),
+                            );
+                          }).whereType<Marker>(),
+                        ],
+                        onClusterTap: (cluster) {
+                          List<LatLng> coordinates =
+                              cluster.markers.map((m) => m.point).toList();
+
+                          final avgLat = coordinates
+                                  .map((c) => c.latitude)
+                                  .reduce((a, b) => a + b) /
+                              coordinates.length;
+                          final avgLng = coordinates
+                                  .map((c) => c.longitude)
+                                  .reduce((a, b) => a + b) /
+                              coordinates.length;
+
+                          final clusterCenter = LatLng(avgLat, avgLng);
+                          const double targetZoom = 16.0;
+
+                          _mapController.move(clusterCenter, targetZoom);
+                          setState(() {
+                            _zoomLevel = targetZoom;
+                          });
+                        },
+                        builder: (context, markers) {
+                          return Container(
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: Colors.orange,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '${markers.length}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  : MarkerLayer(
+                      markers: [
+                        // Marker untuk posisi petugas (currentPosition)
+                        Marker(
+                          width: 40,
+                          height: 40,
+                          point: currentPosition!,
+                          child:
+                              const Icon(Icons.my_location, color: Colors.blue),
+                        ),
+
+                        // Menambahkan markers untuk setiap koordinat yang berhasil diekstrak
+                        ...koordinatList
+                            .asMap()
+                            .map((index, data) {
+                              final latLng = _extractLatLngFromMap(data);
+                              if (latLng == null) return MapEntry(index, null);
+
+                              // Jika ini adalah marker pertama, beri warna biru
+                              final color =
+                                  index == 0 ? Colors.blue : Colors.red;
+
+                              return MapEntry(
+                                index,
+                                Marker(
+                                  width: 40,
+                                  height: 40,
+                                  point: latLng,
+                                  child: GestureDetector(
+                                    onTap: () => _showDetail(latLng),
+                                    child:
+                                        Icon(Icons.location_on, color: color),
+                                  ),
+                                ),
+                              );
+                            })
+                            .values
+                            .whereType<Marker>(),
+
+                        // Marker untuk lokasi TPA (lokasiTPA)
+                        Marker(
+                          width: 40,
+                          height: 40,
+                          point: lokasiTPA,
+                          child: const FaIcon(
+                            FontAwesomeIcons.dumpster,
+                            color: Colors.brown,
+                            size: 30,
+                          ),
+                        ),
+                      ],
+                    ),
+
+              // Tambahkan marker posisi petugas secara permanen
+
               if (routePoints.isNotEmpty)
                 PolylineLayer(
                   polylines: [
@@ -386,10 +469,37 @@ class _mapPetugasState extends State<mapPetugas> {
                     ),
                   ],
                 ),
-              // Layer dari GeoJSON
-              // MarkerLayer(markers: geoJsonParser.markers),
-              // PolylineLayer(polylines: geoJsonParser.polylines),
-              // PolygonLayer(polygons: geoJsonParser.polygons),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    width: 40,
+                    height: 40,
+                    point: currentPosition!,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: ClipOval(
+                        child: Image.network(
+                          'https://cdn-icons-png.flaticon.com/512/847/847969.png', // ganti link PNG kalau perlu
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
             ],
           ),
           Positioned(
@@ -425,9 +535,21 @@ class _mapPetugasState extends State<mapPetugas> {
   }
 
   void _showDetail(LatLng location) {
+    // Cari data yang cocok dari koordinatList
+    final matchedData = koordinatList.firstWhere(
+      (item) {
+        final point = _extractLatLngFromMap(item);
+        return point?.latitude == location.latitude &&
+            point?.longitude == location.longitude;
+      },
+      orElse: () => {},
+    );
+
+    final jenisSampah = matchedData['jenis_sampah'] ?? 'Tidak diketahui';
+
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Agar modal bisa disesuaikan ukurannya
+      isScrollControlled: true,
       builder: (context) {
         return Padding(
           padding: const EdgeInsets.all(16.0),
@@ -435,7 +557,6 @@ class _mapPetugasState extends State<mapPetugas> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header Detail
               Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
@@ -453,40 +574,26 @@ class _mapPetugasState extends State<mapPetugas> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Konten Detail
               Row(
                 children: [
                   const Icon(Icons.location_on, color: Colors.red, size: 30),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Latitude: ${location.latitude}, Longitude: ${location.longitude}',
+                      'Jenis Sampah: $jenisSampah',
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Tombol Aksi
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      // Open in Google Maps
-                      final url =
-                          'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}';
-                      launch(url);
-                    },
-                    child: const Text('Cek Lokasi'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Chat on WhatsApp
                       const whatsappUrl =
-                          'https://wa.me/+6281234567890'; // Replace with actual phone number
+                          'https://wa.me/+6281234567890'; // Ganti dengan nomor WA asli
                       launch(whatsappUrl);
                     },
                     child: const Text('Chat via WhatsApp'),

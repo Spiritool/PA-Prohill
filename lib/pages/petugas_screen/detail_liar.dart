@@ -6,6 +6,7 @@ import 'sampah.dart'; // Import model SampahLiarData
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'inputFotoSampah.dart';
+import 'package:dlh_project/pages/petugas_screen/mapPetugasSingle.dart';
 
 class DetailSampahLiarPage extends StatelessWidget {
   final SampahLiarData sampah;
@@ -205,22 +206,41 @@ class DetailSampahLiarPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                // Tanggal
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Icon(Icons.map, size: 32),
-                    SizedBox(width: 8),
+                    Image.asset(
+                      'assets/detail/tanggal_detail.png',
+                      width: 32,
+                      height: 32,
+                    ),
+                    const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Lokasi",
+                        const Text("Tanggal",
                             style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text("test" ?? "-"),
+                        Text(DateFormat('dd-MM-yyyy').format(sampah.tanggal)),
                       ],
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+
                 ElevatedButton.icon(
-                  onPressed: () => _launchMaps(sampah.kordinat ?? ""),
+                  onPressed: () {
+                    // Kirim data ke halaman MapSingle
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MapSingle(
+                          sampah: sampah,
+                          isDaurUlang: false, // Mengirim objek sampah lengkap
+                        ),
+                      ),
+                    );
+                  },
                   icon: Image.asset(
                     'assets/detail/map_detail.png',
                     width: 32,
@@ -252,24 +272,6 @@ class DetailSampahLiarPage extends StatelessWidget {
                         const Text("Status",
                             style: TextStyle(fontWeight: FontWeight.bold)),
                         Text(sampah.status ?? "-"),
-                      ],
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/detail/tanggal_detail.png',
-                      width: 32,
-                      height: 32,
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Tanggal",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(DateFormat('dd-MM-yyyy').format(sampah.tanggal)),
                       ],
                     ),
                   ],
@@ -310,167 +312,200 @@ class DetailSampahLiarPage extends StatelessWidget {
             const SizedBox(height: 8),
             _buildBuktiFoto([sampah.fotoSampah]),
             const SizedBox(height: 24),
+            if ((sampah.status?.toLowerCase() ?? "") == "done") ...[
+              Row(
+                children: [
+                  Image.asset(
+                    'assets/detail/foto_detail.png',
+                    width: 32,
+                    height: 32,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    "Foto Bukti",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildBuktiFoto([sampah.fotoPengangkutan ?? ""]),
+              // pastikan variabel ini ada ya
+              const SizedBox(height: 24),
+            ],
           ],
         ),
       ),
 
       // Tombol Batalkan dan Proses/Konfirmasi
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            // Tombol Batalkan
-            Expanded(
-              child: ElevatedButton(
-                onPressed: (sampah.status == "done")
-                    ? null
-                    : () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Konfirmasi"),
-                            content: const Text(
-                                "Apakah kamu yakin ingin membatalkan laporan ini?"),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text("Batal"),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text("Ya"),
-                              ),
-                            ],
-                          ),
-                        );
+      bottomNavigationBar: sampah.status == "done"
+          ? null
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  // Tombol Batalkan
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: (sampah.status == "done")
+                          ? null
+                          : () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text("Konfirmasi"),
+                                  content: const Text(
+                                      "Apakah kamu yakin ingin membatalkan laporan ini?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text("Batal"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text("Ya"),
+                                    ),
+                                  ],
+                                ),
+                              );
 
-                        if (confirm != true) return;
+                              if (confirm != true) return;
 
-                        final prefs = await SharedPreferences.getInstance();
-                        final idUserPetugas = prefs.getInt('user_id') ?? 0;
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              final idUserPetugas =
+                                  prefs.getInt('user_id') ?? 0;
 
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) =>
-                              const Center(child: CircularProgressIndicator()),
-                        );
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => const Center(
+                                    child: CircularProgressIndicator()),
+                              );
 
-                        await updateStatusFailedSampahLiar(
-                            sampah.id, idUserPetugas);
+                              await updateStatusFailedSampahLiar(
+                                  sampah.id, idUserPetugas);
 
-                        Navigator.pop(context); // Close loading
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Laporan berhasil dibatalkan')),
-                        );
-                        Navigator.pop(context, true); // Back to previous
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFE4E1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                              Navigator.pop(context); // Close loading
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Laporan berhasil dibatalkan')),
+                              );
+                              Navigator.pop(context, true); // Back to previous
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFE4E1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text("Batalkan",
+                          style: TextStyle(fontSize: 16, color: Colors.black)),
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text("Batalkan",
-                    style: TextStyle(fontSize: 16, color: Colors.black)),
-              ),
-            ),
-            const SizedBox(width: 16),
+                  const SizedBox(width: 16),
 
-            // Tombol Proses/Konfirmasi
-            Expanded(
-              child: ElevatedButton(
-                onPressed: (sampah.status == "selesai")
-                    ? null
-                    : () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Konfirmasi"),
-                            content: Text(
-                              (sampah.status == "pending")
-                                  ? "Apakah kamu yakin ingin memproses laporan ini?"
-                                  : "Apakah kamu yakin ingin mengonfirmasi laporan ini sebagai selesai?",
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text("Batal"),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text("Ya"),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (confirm != true) return;
-
-                        final prefs = await SharedPreferences.getInstance();
-                        final idUserPetugas = prefs.getInt('user_id') ?? 0;
-
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) =>
-                              const Center(child: CircularProgressIndicator()),
-                        );
-
-                        if (sampah.status == "pending") {
-                          await updateStatusSampahLiar(
-                              sampah.id, idUserPetugas, 'proses');
-                          Navigator.pop(context); // close loading
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Status berubah menjadi Proses')),
-                          );
-                          Navigator.pop(context, true);
-                        } else if (sampah.status == "proses") {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  InputFotoSampah(idSampah: sampah.id),
-                            ),
-                          );
-                          if (result != null && result) {
-                            await updateStatusSampahLiar(
-                                sampah.id, idUserPetugas, 'selesai');
-                            Navigator.pop(context); // close loading
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                  // Tombol Proses/Konfirmasi
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: (sampah.status == "selesai")
+                          ? null
+                          : () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text("Konfirmasi"),
                                   content: Text(
-                                      'Status berhasil diperbarui menjadi Selesai')),
-                            );
-                            Navigator.pop(context, true);
-                          } else {
-                            Navigator.pop(context); // cancel upload
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD8F5E0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                                    (sampah.status == "pending")
+                                        ? "Apakah kamu yakin ingin memproses laporan ini?"
+                                        : "Apakah kamu yakin ingin mengonfirmasi laporan ini sebagai selesai?",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text("Batal"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text("Ya"),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm != true) return;
+
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              final idUserPetugas =
+                                  prefs.getInt('user_id') ?? 0;
+
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => const Center(
+                                    child: CircularProgressIndicator()),
+                              );
+
+                              if (sampah.status == "pending") {
+                                await updateStatusSampahLiar(
+                                    sampah.id, idUserPetugas, 'proses');
+                                Navigator.pop(context); // close loading
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Status berubah menjadi Proses')),
+                                );
+                                Navigator.pop(context, true);
+                              } else if (sampah.status == "proses") {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        InputFotoSampah(idSampah: sampah.id),
+                                  ),
+                                );
+                                if (result != null && result) {
+                                  await updateStatusSampahLiar(
+                                      sampah.id, idUserPetugas, 'selesai');
+                                  Navigator.pop(context); // close loading
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Status berhasil diperbarui menjadi Selesai')),
+                                  );
+                                  Navigator.pop(context, true);
+                                } else {
+                                  Navigator.pop(context); // cancel upload
+                                }
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD8F5E0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        (sampah.status == "pending")
+                            ? "Proses"
+                            : (sampah.status == "proses")
+                                ? "Konfirmasi"
+                                : "Selesai",
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
+                      ),
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Text(
-                  (sampah.status == "pending")
-                      ? "Proses"
-                      : (sampah.status == "proses")
-                          ? "Konfirmasi"
-                          : "Selesai",
-                  style: const TextStyle(fontSize: 16, color: Colors.black),
-                ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -488,7 +523,7 @@ class DetailSampahLiarPage extends StatelessWidget {
       itemCount: fotoUrls.length,
       itemBuilder: (context, index) {
         final fullUrl = baseUrl + fotoUrls[index];
-        print('Full URL: $fullUrl'); 
+        print('Full URL: $fullUrl');
         return Image.network(
           fullUrl,
           fit: BoxFit.cover,
