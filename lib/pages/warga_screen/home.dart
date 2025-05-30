@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> {
         child: BottomNavigationBar(
           items: _buildBottomNavigationItems(),
           currentIndex: _selectedIndex,
-          selectedItemColor: const Color(0xFF78A55A),
+          selectedItemColor: Color(0xFFFF6600),
           unselectedItemColor: const Color(0xFF909090),
           onTap: _onItemTapped,
           showUnselectedLabels: true,
@@ -125,9 +125,7 @@ class _HomePageState extends State<HomePage> {
             Icon(
               isSelected ? filledIcon : outlineIcon,
               size: 28,
-              color: isSelected
-                  ? const Color(0xFF78A55A)
-                  : const Color(0xFF909090),
+              color: isSelected ? Color(0xFFFF6600) : const Color(0xFF909090),
             ),
             const SizedBox(height: 4),
             if (isSelected)
@@ -135,7 +133,7 @@ class _HomePageState extends State<HomePage> {
                 width: 24,
                 height: 3,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF78A55A),
+                  color: Color(0xFFFF6600),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

@@ -152,107 +152,103 @@ class _HomeKontenState extends State<HomeKonten> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Stack(
           children: [
-            // ===== Background Orange =====
-            Container(
-              height: 220,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF6600),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-            ),
-            Container(
-              height: 220,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF6600),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
+            // Konten utama, termasuk background orange dan isi konten
+            Positioned.fill(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Text(
-                      'Home',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                  Container(
+                    height: 220,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 20),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF6600),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(30),
+                        bottomRight: Radius.circular(30),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text.rich(
-                    TextSpan(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextSpan(
-                          text: 'Hi, ',
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                        Center(
+                          child: Text(
+                            'Home',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                        TextSpan(
-                          text: userName ?? 'Guest',
+                        const SizedBox(height: 12),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Hi, ',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              TextSpan(
+                                text: userName ?? 'Guest',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          DateFormat('MMMM dd, yyyy').format(DateTime.now()),
                           style: GoogleFonts.poppins(
                             color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    DateFormat('MMMM dd, yyyy').format(DateTime.now()),
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
                 ],
               ),
             ),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    await Future.delayed(const Duration(seconds: 1));
-                  },
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 130),
-                        Container(
-                          margin: const EdgeInsets.only(top: 10),
+
+            Positioned(
+              child: Column(
+                children: [
+                  const SizedBox(
+                      height: 130), // untuk jarak dari header ke bawah
+                  Expanded(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(30)),
+                      ),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Padding(
                           padding: const EdgeInsets.all(20),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius:
-                                BorderRadius.vertical(top: Radius.circular(30)),
-                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('My Services',
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold)),
+                              // My Services Title
+                              Text(
+                                'My Services',
+                                style: GoogleFonts.poppins(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
                               const SizedBox(height: 15),
+
+                              // Horizontal ListView untuk berita (pakai FutureBuilder)
                               Row(
                                 children: [
                                   Expanded(
@@ -274,7 +270,6 @@ class _HomeKontenState extends State<HomeKonten> {
                                               child: Text('No data available'));
                                         }
 
-                                        // Balik urutan daftar untuk mendapatkan yang terbaru di awal
                                         final beritaList =
                                             snapshot.data!.reversed.toList();
 
@@ -312,8 +307,8 @@ class _HomeKontenState extends State<HomeKonten> {
                                                       },
                                                       child: ClipRRect(
                                                         borderRadius:
-                                                            BorderRadius.circular(
-                                                                15), // Menentukan kelengkungan sudut
+                                                            BorderRadius
+                                                                .circular(15),
                                                         child: Image.network(
                                                           gambarUrl,
                                                           fit: BoxFit.cover,
@@ -363,7 +358,10 @@ class _HomeKontenState extends State<HomeKonten> {
                                   ),
                                 ],
                               ),
+
                               const SizedBox(height: 20),
+
+                              // GridView ikon layanan
                               GridView.count(
                                 crossAxisCount: 4,
                                 shrinkWrap: true,
@@ -373,8 +371,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                   iconButton(context, Icons.recycling,
                                       'Sampah\nTerpilah', () {
                                     if (userName == 'Guest') {
-                                      _showLoginRequiredDialog(
-                                          context); // Show login dialog if the user is a guest
+                                      _showLoginRequiredDialog(context);
                                     } else {
                                       Navigator.push(
                                         context,
@@ -382,7 +379,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                           builder: (context) =>
                                               const SampahTerpilah(),
                                         ),
-                                      ); // Navigate to SampahTerpilah if the user is not a guest
+                                      );
                                     }
                                   }),
                                   iconButton(
@@ -419,54 +416,57 @@ class _HomeKontenState extends State<HomeKonten> {
                                       ),
                                     );
                                   }),
-                                  iconButton(
-                                    context,
-                                    Icons.feedback_outlined,
-                                    'Feedback',
-                                    () async {
-                                      final token = await FirebaseMessaging
-                                          .instance
-                                          .getToken();
-                                      setState(() {
-                                        fcmToken = token ?? '-';
-                                      });
+                                  iconButton(context, Icons.feedback_outlined,
+                                      'Feedback', () async {
+                                    final token = await FirebaseMessaging
+                                        .instance
+                                        .getToken();
+                                    setState(() {
+                                      fcmToken = token ?? '-';
+                                    });
 
-                                      // Tampilkan token atau lakukan aksi lain
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: Text('FCM Token'),
-                                          content: SelectableText(fcmToken!),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
-                                              child: Text('Tutup'),
-                                            )
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  // iconButton(context, Icons.play_circle_outline,
-                                  //     'Tutorial', () {}),
-                                  iconButton(context, Icons.card_giftcard,
-                                      'Point\nReward!', () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => PointScreen(),
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('FCM Token'),
+                                        content: SelectableText(fcmToken!),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Tutup'),
+                                          )
+                                        ],
                                       ),
                                     );
                                   }),
+                                  iconButton(context, Icons.card_giftcard,
+                                      'Point\nReward!', () {
+                                    if (userName == 'Guest') {
+                                      _showLoginRequiredDialog(context);
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const PointScreen(),
+                                        ),
+                                      );
+                                    }
+                                  }),
                                 ],
                               ),
+
                               const SizedBox(height: 25),
+
+                              // Awareness Community Title
                               Text('Awareness Community',
                                   style: GoogleFonts.poppins(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 5),
+
+                              // ListView horizontal Awareness Community
                               SizedBox(
                                 height: 170,
                                 child: FutureBuilder<List<dynamic>>(
@@ -515,7 +515,6 @@ class _HomeKontenState extends State<HomeKonten> {
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                // Gambar
                                                 ClipRRect(
                                                   borderRadius:
                                                       BorderRadius.circular(10),
@@ -555,12 +554,10 @@ class _HomeKontenState extends State<HomeKonten> {
                                                   ),
                                                 ),
                                                 const SizedBox(height: 6),
-                                                // Judul
                                                 Text(
                                                   judul,
                                                   style: const TextStyle(
-                                                    fontSize:
-                                                        11, // Ukuran kecil tapi tetap kebaca di mobile
+                                                    fontSize: 11,
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                                   maxLines: 2,
@@ -579,33 +576,39 @@ class _HomeKontenState extends State<HomeKonten> {
                               const SizedBox(height: 5),
                             ],
                           ),
-                        )
-                      ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
-            // ========== Avatar + Popup ==========
+
+            // ======= Avatar + Popup =======
             Positioned(
               top: 40,
               right: 20,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // === Avatar + tombol X ===
                   const SizedBox(height: 10),
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      GestureDetector(
-                        onTap: _togglePopup,
-                        child: const CircleAvatar(
-                          radius: 30,
-                          backgroundImage: NetworkImage(
-                              'https://randomuser.me/api/portraits/men/1.jpg'),
-                        ),
-                      ),
+                      (userName != 'Guest')
+                          ? GestureDetector(
+                              onTap: _togglePopup,
+                              child: const CircleAvatar(
+                                radius: 30,
+                                backgroundImage: NetworkImage(
+                                    'https://randomuser.me/api/portraits/men/1.jpg'),
+                              ),
+                            )
+                          : const CircleAvatar(
+                              radius: 30,
+                              backgroundImage: NetworkImage(
+                                  'https://randomuser.me/api/portraits/men/1.jpg'),
+                            ),
                       if (_showPopup)
                         Positioned(
                           child: GestureDetector(
@@ -626,27 +629,23 @@ class _HomeKontenState extends State<HomeKonten> {
                 ],
               ),
             ),
-            // === Popup di atas avatar ===
+
+            // Popup di atas avatar
             if (_showPopup)
               Stack(
                 children: [
-                  // Latar belakang gelap transparan
                   Positioned.fill(
                     child: GestureDetector(
                       onTap: () {
-                        // Bisa tambahkan aksi tap untuk tutup popup, misal:
                         setState(() {
                           _showPopup = false;
                         });
                       },
                       child: Container(
-                        color: Colors.black.withOpacity(
-                            0.5), // warna hitam dengan transparansi 50%
+                        color: Colors.black.withOpacity(0.5),
                       ),
                     ),
                   ),
-
-                  // Popup-nya
                   Positioned(
                     top: 130,
                     right: 30,
@@ -696,14 +695,12 @@ class _HomeKontenState extends State<HomeKonten> {
                                   child: GestureDetector(
                                     onTap: () {
                                       if (userName == 'Guest') {
-                                        _showLoginRequiredDialog(
-                                            context); // Tampilkan dialog jika user Guest
+                                        _showLoginRequiredDialog(context);
                                       } else {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) =>
-                                                PointScreen(), // Ganti dengan halaman yang kamu mau
+                                            builder: (context) => PointScreen(),
                                           ),
                                         );
                                       }
@@ -720,47 +717,61 @@ class _HomeKontenState extends State<HomeKonten> {
                   ),
                 ],
               ),
+
+            // Overlay gelap saat popup aktif (kalau popup lain juga ada)
+            // (Kalau popup avatar sudah ada overlay ini, bisa dihapus untuk menghindari dobel)
+
+            // FAB kanan bawah dengan overlay saat popup aktif
             Positioned(
               bottom: 20,
               right: 20,
-              child: FloatingActionButton(
-                onPressed: () {
-                  if (userName != 'Guest') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatPage(
-                          userId: widget
-                              .userId, // Ganti dengan userId yang ada di HomeKonten
-                          userName: userName ??
-                              'Guest', // Ganti dengan userName yang ada atau default ke 'Guest'
-                        ),
-                      ),
-                    );
-                  } else {
-                    // Tindakan alternatif jika user adalah Guest (misalnya menampilkan dialog atau halaman lain)
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Not Authorized'),
-                          content:
-                              Text('You must be logged in to access the chat.'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: Text('OK'),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  FloatingActionButton(
+                    onPressed: () {
+                      if (userName != 'Guest') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatPage(
+                              userId: widget.userId,
+                              userName: userName ?? 'Guest',
                             ),
-                          ],
+                          ),
                         );
-                      },
-                    );
-                  }
-                },
-                backgroundColor: Colors.green, // Warna tombol
-                child: const Icon(Icons.support_agent, color: Colors.white),
+                      } else {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Not Authorized'),
+                              content: Text(
+                                  'You must be logged in to access the chat.'),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text('OK'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      }
+                    },
+                    backgroundColor: Color(0xFFFF6600),
+                    child: const Icon(Icons.support_agent, color: Colors.white),
+                  ),
+                  if (_showPopup)
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -768,51 +779,87 @@ class _HomeKontenState extends State<HomeKonten> {
       ),
     );
   }
-}
 
-void _showLoginRequiredDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text("Login Diperlukan"),
-        content: const Text(
-            'Anda harus login terlebih dahulu untuk mengakses halaman ini.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Arahkan ke halaman login jika diperlukan
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const Login()),
-              );
-            },
-            child: const Text('Login'),
+  void _showLoginRequiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Batal'),
+          backgroundColor: Colors.white,
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+          actionsPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          title: Row(
+            children: [
+              Icon(Icons.lock_outline, color: Colors.orange, size: 28),
+              const SizedBox(width: 8),
+              const Text(
+                "Login Diperlukan",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-        ],
-      );
-    },
-  );
-}
+          content: const Text(
+            'Anda harus login terlebih dahulu untuk mengakses halaman ini.',
+            style: TextStyle(color: Colors.black87, fontSize: 15),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Login()),
+                );
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: const Text('Login'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[700],
+                backgroundColor: Colors.grey[200],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: const Text('Batal'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-Future<List<dynamic>> fetchBerita() async {
-  final response =
-      await http.get(Uri.parse('https://prohildlhcilegon.id/api/berita'));
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    if (data['success']) {
-      return data['data'];
+  Future<List<dynamic>> fetchBerita() async {
+    final response =
+        await http.get(Uri.parse('https://prohildlhcilegon.id/api/berita'));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success']) {
+        return data['data'];
+      } else {
+        throw Exception('Gagal untuk memuat berita');
+      }
     } else {
-      throw Exception('Gagal untuk memuat berita');
+      throw Exception('Gagal koneksi ke API');
     }
-  } else {
-    throw Exception('Gagal koneksi ke API');
   }
 }
