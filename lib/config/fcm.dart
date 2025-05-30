@@ -4,6 +4,8 @@ import 'dart:developer';
 import 'package:dlh_project/config/local_notif.dart';
 import 'package:dlh_project/main.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -30,25 +32,51 @@ void _showCustomNotif(RemoteMessage message) {
   }
 }
 
+Future<void> saveTokenToServer(String token) async {
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getInt('user_id'); // harus disimpan saat login
+
+  if (userId == null) {
+    log('❌ Gagal kirim token: userId tidak ditemukan');
+    return;
+  }
+
+  final response = await http.post(
+    Uri.parse(
+        'http://192.168.1.21:8000/api/user/update-fcm-token'), // GANTI URL SERVER
+    headers: {
+      'Content-Type': 'application/json',
+      // 'Authorization': 'Bearer YOUR_TOKEN_JIKA_PAKAI_AUTH',
+    },
+    body: jsonEncode({
+      'user_id': userId,
+      'fcm_token': token,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    log('✅ Token berhasil dikirim ke server');
+  } else {
+    log('❌ Gagal kirim token ke server: ${response.body}');
+  }
+}
+
 class FCM {
   static Future<void> init() async {
     await FirebaseMessaging.instance.setAutoInitEnabled(true);
 
     final settings = await FirebaseMessaging.instance.requestPermission();
-
     log('User granted permission: ${settings.authorizationStatus}');
 
-    // ✅ Ambil FCM Token
     String? token = await FirebaseMessaging.instance.getToken();
     if (token != null) {
       log("🔥 FCM Registration Token: $token");
-      // Di sini kamu juga bisa kirim token ini ke server kamu jika perlu
+      await saveTokenToServer(token);
     }
 
-    // ✅ Listen perubahan token
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       log("🔁 Token diperbarui: $newToken");
-      // Update token di server jika perlu
+      await saveTokenToServer(newToken);
     });
 
     _foregroundHandler();
@@ -59,7 +87,6 @@ class FCM {
   static _foregroundHandler() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       log('foreground');
-
       _showCustomNotif(message);
     });
   }
@@ -72,7 +99,7 @@ class FCM {
     RemoteMessage? initialMessage =
         await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
-      //handle message
+      // handle
     }
   }
 
