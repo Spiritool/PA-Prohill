@@ -109,6 +109,8 @@ class _HistoryState extends State<History> {
     }
   }
 
+  Set<int> expandedCards = {}; // menyimpan index card yang sedang terbuka
+
   List<SampahData> filteredDataByStatusAndDate = [];
 
   @override
@@ -459,9 +461,9 @@ class _HistoryState extends State<History> {
       onPressed: () {
         setState(() {
           selectedYear = year;
-          selectedMonthIndex = null;
-          startDate = DateTime(year, 1, 1);
-          endDate = DateTime(year, 12, 31);
+          selectedMonthIndex = 11; // Set ke Desember langsung
+          startDate = DateTime(year, 12, 1);
+          endDate = DateTime(year, 12 + 1, 0); // Akhir bulan Desember
         });
         futureSampahData.then((data) {
           _applyFilters(data);
@@ -494,8 +496,26 @@ class _HistoryState extends State<History> {
               PopupMenuButton<int>(
                 offset: const Offset(0, 40),
                 onSelected: (year) {
-                  _filterByMonth(selectedMonthIndex ?? 1,
-                      year); // menggunakan year yang dipilih
+                  setState(() {
+                    selectedYear = year;
+                    if (year != DateTime.now().year) {
+                      // Tahun beda dari sekarang, otomatis pilih Desember
+                      selectedMonthIndex = 11;
+                    } else {
+                      // Tahun sekarang, biarkan bulan tetap seperti sebelumnya (atau set ke bulan sekarang)
+                      // Contoh set ke bulan sekarang:
+                      selectedMonthIndex = DateTime.now().month - 1;
+                    }
+
+                    startDate =
+                        DateTime(selectedYear!, selectedMonthIndex! + 1, 1);
+                    endDate =
+                        DateTime(selectedYear!, selectedMonthIndex! + 2, 0);
+                  });
+
+                  futureSampahData.then((data) {
+                    _applyFilters(data);
+                  });
                 },
                 itemBuilder: (BuildContext context) {
                   return [
@@ -562,118 +582,160 @@ class _HistoryState extends State<History> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        backgroundColor: Color(0xFFFF6600),
+        centerTitle: true,
         title: const Text(
           'Riwayat Sampah',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildStatusChart(),
-            _buildChartLegend(),
-            _buildStatusSummary(),
-            FutureBuilder<List<SampahData>>(
-              future: futureSampahData,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Text(
-                        'Tidak ada data Riwayat.',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  );
-                } else {
-                  final rawData = snapshot.data!;
-                  final filteredData = rawData.where((data) {
-                    final matchesStatus = selectedStatus == 'all' ||
-                        data.status.toLowerCase() == selectedStatus;
-
-                    final matchesMonth = selectedMonthIndex == null ||
-                        (data.tanggal.month == selectedMonthIndex! + 1 &&
-                            data.tanggal.year == selectedYear);
-
-                    return matchesStatus && matchesMonth;
-                  }).toList();
-
-                  if (filteredData.isEmpty) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(20.0),
-                        child: Text(
-                          'Tidak ada data Riwayat untuk bulan ini.',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filteredData.length,
-                    itemBuilder: (context, index) {
-                      SampahData data = filteredData[index];
-                      Color statusColor;
-                      String formattedDate =
-                          DateFormat('dd-MM-yyyy').format(data.tanggal);
-
-                      switch (data.status.toLowerCase()) {
-                        case 'proses':
-                          statusColor = Colors.yellow;
-                          break;
-                        case 'done':
-                          statusColor = Colors.green;
-                          break;
-                        case 'pending':
-                          statusColor = Colors.orange.shade300;
-                          break;
-                        case 'failed':
-                          statusColor = Colors.red;
-                          break;
-                        default:
-                          statusColor = Colors.grey;
-                      }
-
-                      return _buildOuterCard(
-                        index: index + 1,
-                        name: data.nama,
-                        FotoSampah: data.fotoSampah,
-                        phone: data.noHp,
-                        status: data.status,
-                        namaUpt: data.namaUpt,
-                        location:
-                            '${data.alamat.kelurahan}, ${data.alamat.kecamatan}, ${data.alamat.deskripsi}',
-                        description: data.deskripsi,
-                        mapUrl: data.alamat.kordinat,
-                        idSampah: data.id,
-                        statusColor: statusColor,
-                        tanggalFormatted: formattedDate,
-                        ratingPetugas: data.ratingPetugas,
-                        catatanPetugas: data.catatanPetugas,
-                      );
-                    },
-                  );
-                }
-              },
+      body: Column(
+        children: [
+          // Bagian atas: abu-abu dengan fixed tinggi
+          Container(
+            color: Color(0xFFF2F2F2), // abu-abu muda
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              children: [
+                _buildStatusChart(),
+                _buildChartLegend(),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // Bagian bawah: putih, penuh sisa layar
+          Expanded(
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                children: [
+                  // Ini fixed, tidak scroll
+                  _buildStatusSummary(),
+
+                  // Spacer kecil jika perlu
+                  SizedBox(height: 8),
+
+                  // Bagian daftar yang scroll
+                  Expanded(
+                    child: FutureBuilder<List<SampahData>>(
+                      future: futureSampahData,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (snapshot.hasError) {
+                          return Text('Error: ${snapshot.error}');
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: Text(
+                                'Tidak ada data Riwayat.',
+                                style: TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          );
+                        } else {
+                          final rawData = snapshot.data!;
+                          final filteredData = rawData.where((data) {
+                            final matchesStatus = selectedStatus == 'all' ||
+                                data.status.toLowerCase() == selectedStatus;
+
+                            final matchesMonth = selectedMonthIndex == null ||
+                                (data.tanggal.month ==
+                                        selectedMonthIndex! + 1 &&
+                                    data.tanggal.year == selectedYear);
+
+                            return matchesStatus && matchesMonth;
+                          }).toList();
+
+                          if (filteredData.isEmpty) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: Text(
+                                  'Tidak ada data Riwayat untuk bulan ini.',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            padding: EdgeInsets.zero,
+                            itemCount: filteredData.length,
+                            itemBuilder: (context, index) {
+                              SampahData data = filteredData[index];
+                              Color statusColor;
+                              String formattedDate =
+                                  DateFormat('dd-MM-yyyy').format(data.tanggal);
+
+                              switch (data.status.toLowerCase()) {
+                                case 'proses':
+                                  statusColor = Colors.yellow;
+                                  break;
+                                case 'done':
+                                  statusColor = Colors.green;
+                                  break;
+                                case 'pending':
+                                  statusColor = Colors.orange.shade300;
+                                  break;
+                                case 'failed':
+                                  statusColor = Colors.red;
+                                  break;
+                                default:
+                                  statusColor = Colors.grey;
+                              }
+
+                              final isExpanded = expandedCards.contains(index);
+
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (isExpanded) {
+                                      expandedCards.remove(index);
+                                    } else {
+                                      expandedCards.add(index);
+                                    }
+                                  });
+                                },
+                                child: _buildOuterCard(
+                                  index: index + 1,
+                                  name: data.nama,
+                                  FotoSampah: data.fotoSampah,
+                                  phone: data.noHp,
+                                  status: data.status,
+                                  namaUpt: data.namaUpt,
+                                  location:
+                                      '${data.alamat.kelurahan}, ${data.alamat.kecamatan}, ${data.alamat.deskripsi}',
+                                  description: data.deskripsi,
+                                  mapUrl: data.alamat.kordinat,
+                                  idSampah: data.id,
+                                  statusColor: statusColor,
+                                  tanggalFormatted: formattedDate,
+                                  ratingPetugas: data.ratingPetugas,
+                                  catatanPetugas: data.catatanPetugas,
+                                  isExpanded: isExpanded,
+                                ),
+                              );
+                            },
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -691,41 +753,27 @@ class _HistoryState extends State<History> {
     required int idSampah,
     required Color statusColor,
     required String tanggalFormatted,
-    required double? ratingPetugas, // ⬅️ Tambahkan ini\
-    required String? catatanPetugas, // ⬅️ Tambahkan ini
+    required double? ratingPetugas,
+    required String? catatanPetugas,
+    required bool isExpanded, // tambah parameter ini
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-      child: Card(
-        color: Colors.blue,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        elevation: 8,
-        margin: const EdgeInsets.symmetric(vertical: 5),
-        child: Padding(
-          padding: const EdgeInsets.all(5),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInnerCard(
-                name: name,
-                phone: phone,
-                fotoSampah: FotoSampah,
-                status: status,
-                namaUpt: namaUpt,
-                location: location,
-                description: description,
-                mapUrl: mapUrl,
-                idSampah: idSampah,
-                statusColor: statusColor,
-                tanggalFormatted: tanggalFormatted,
-                ratingPetugas: ratingPetugas, // ⬅️ Kirim ke dalam
-                catatanPetugas: catatanPetugas,
-              ),
-            ],
-          ),
-        ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: _buildInnerCard(
+        name: name,
+        phone: phone,
+        fotoSampah: FotoSampah,
+        status: status,
+        namaUpt: namaUpt,
+        location: location,
+        description: description,
+        mapUrl: mapUrl,
+        idSampah: idSampah,
+        statusColor: statusColor,
+        tanggalFormatted: tanggalFormatted,
+        ratingPetugas: ratingPetugas,
+        catatanPetugas: catatanPetugas,
+        isExpanded: isExpanded, // teruskan ke inner card juga
       ),
     );
   }
@@ -742,36 +790,102 @@ class _HistoryState extends State<History> {
     required int idSampah,
     required Color statusColor,
     required String tanggalFormatted,
-    required double? ratingPetugas, // ⬅️ Tambahkan ini
+    required double? ratingPetugas,
     required String? catatanPetugas,
+    required bool isExpanded,
   }) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          )
+        ],
       ),
-      elevation: 5,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Tanggal: $tanggalFormatted'),
-            Text(
-              'Nama      : $name',
-              style: const TextStyle(fontSize: 16, color: Colors.black),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No. Hp    : $phone',
-              style: const TextStyle(fontSize: 16, color: Colors.black),
-            ),
-            const SizedBox(height: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Baris atas: Deskripsi + Point + Expand Icon
+          Row(
+            children: [
+              // Kiri: informasi
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⭐ Waste & get Point',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      tanggalFormatted,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Coin dan expand icon
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF4F4F4),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/icons/money 4.png',
+                          width: 20,
+                          height: 20,
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          '1', // <- nanti bisa diganti dinamis kalau mau
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Icon(
+                  //   isExpanded
+                  //       ? Icons.keyboard_arrow_up
+                  //       : Icons.keyboard_arrow_down,
+                  //   color: Colors.grey,
+                  // ),
+                ],
+              )
+            ],
+          ),
+
+          // Detail isi ketika expanded
+          if (isExpanded) ...[
+            const SizedBox(height: 16),
+            Text('Nama      : $name'),
+            Text('No. HP    : $phone'),
             Row(
               children: [
-                const Text(
-                  'Status     : ',
-                  style: TextStyle(fontSize: 16, color: Colors.black),
-                ),
+                const Text('Status     : '),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -781,50 +895,34 @@ class _HistoryState extends State<History> {
                   ),
                   child: Text(
                     status == 'failed' ? 'Dibatalkan' : status,
-                    style: const TextStyle(fontSize: 16, color: Colors.black),
+                    style: const TextStyle(color: Colors.black),
                   ),
                 ),
-                const SizedBox(width: 10),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'UPT         : $namaUpt',
-              style: const TextStyle(fontSize: 16, color: Colors.black),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Alamat    : $location',
-              style: const TextStyle(fontSize: 16, color: Colors.black),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Deskripsi : $description',
-              style: const TextStyle(fontSize: 16, color: Colors.black),
-            ),
-            const SizedBox(height: 8),
-
-            // ⬇️ Tambahkan bagian rating
-
+            Text('UPT         : $namaUpt'),
+            Text('Alamat    : $location'),
+            if (catatanPetugas != null) Text('Catatan   : $catatanPetugas'),
+            const SizedBox(height: 12),
             if (fotoSampah.isNotEmpty)
-              Image.network(
-                'https://prohildlhcilegon.id/storage/foto-sampah/$fotoSampah',
-                errorBuilder: (context, error, stackTrace) {
-                  return const Text('Gambar tidak dapat ditampilkan');
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  'https://prohildlhcilegon.id/storage/foto-sampah/$fotoSampah',
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Text('Gambar tidak dapat ditampilkan'),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                ),
               )
             else
               const Text('Tidak ada foto tersedia.'),
             const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment
-                  .spaceBetween, // Membagi space antara kiri dan kanan
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Elevated Button Lihat Lokasi Kiri
                 ElevatedButton(
                   onPressed: () => _openMap(mapUrl),
                   style: ElevatedButton.styleFrom(
@@ -834,129 +932,26 @@ class _HistoryState extends State<History> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Lihat Lokasi '),
+                  child: const Text('Lihat Lokasi'),
                 ),
-                const SizedBox(height: 8),
-                // Kolom untuk tombol rating dan rating
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tombol rating hanya muncul jika status 'done' dan rating masih null
                     if (status == 'done' && ratingPetugas == null)
                       ElevatedButton(
-                        onPressed: () async {
-                          final result = await showDialog<double>(
-                            context: context,
-                            builder: (context) {
-                              double rating = 0; // Nilai rating default
-                              final TextEditingController catatanController =
-                                  TextEditingController();
-
-                              String getDeskripsi(double rating) {
-                                if (rating >= 4.5) return 'Sangat memuaskan.';
-                                if (rating >= 3.5) return 'Cukup baik.';
-                                if (rating > 0) return 'Perlu peningkatan.';
-                                return 'Belum ada penilaian.';
-                              }
-
-                              return StatefulBuilder(
-                                builder: (context, setState) {
-                                  return AlertDialog(
-                                    title: const Text('Rating Petugas'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        RatingBar.builder(
-                                          initialRating: rating,
-                                          minRating: 1,
-                                          direction: Axis.horizontal,
-                                          allowHalfRating: true,
-                                          itemCount: 5,
-                                          itemPadding:
-                                              const EdgeInsets.symmetric(
-                                                  horizontal: 4.0),
-                                          itemBuilder: (context, _) =>
-                                              const Icon(Icons.star,
-                                                  color: Colors.amber),
-                                          onRatingUpdate: (newRating) {
-                                            setState(() {
-                                              rating = newRating;
-                                            });
-                                          },
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          getDeskripsi(rating),
-                                          style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        const Text('Catatan:',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600)),
-                                        const SizedBox(height: 4),
-                                        TextField(
-                                          controller: catatanController,
-                                          maxLines: 3,
-                                          decoration: const InputDecoration(
-                                              hintText:
-                                                  'Tulis catatan di sini...',
-                                              border: OutlineInputBorder()),
-                                        ),
-                                      ],
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          print('Rating: $rating');
-                                          print(
-                                              'Catatan: ${catatanController.text}');
-                                          setState(() {
-                                            ratingPetugas =
-                                                rating; // Update rating setelah disimpan
-                                          });
-                                          Navigator.pop(
-                                              context, rating); // Tutup dialog
-                                        },
-                                        child: const Text('Simpan'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(
-                                            context), // Tutup dialog tanpa menyimpan
-                                        child: const Text('Batal'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                          );
-
-                          // Pastikan rating diberikan setelah dialog ditutup
-                          if (result != null) {
-                            setState(() {
-                              ratingPetugas =
-                                  result; // Simpan rating setelah dialog ditutup
-                            });
-                          }
+                        onPressed: () {
+                          // Tampilkan dialog rating
                         },
                         child: const Text('Rating Petugas'),
                       ),
-
-                    // Menampilkan rating setelah diberikan
                     if (status == 'done' && ratingPetugas != null)
                       Text('Rating: $ratingPetugas ⭐️'),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
           ],
-        ),
+        ],
       ),
     );
   }
