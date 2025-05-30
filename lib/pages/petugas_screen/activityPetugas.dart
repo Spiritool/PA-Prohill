@@ -2,13 +2,11 @@ import 'package:dlh_project/pages/petugas_screen/mapPetugas.dart';
 import 'package:dlh_project/pages/petugas_screen/sampah.dart';
 import 'package:dlh_project/pages/petugas_screen/detail_daur_ulang.dart';
 import 'package:dlh_project/pages/petugas_screen/detail_liar.dart';
-import 'package:dlh_project/backup/mapPetugas2.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
 class ActivityPetugasPage extends StatefulWidget {
@@ -17,6 +15,8 @@ class ActivityPetugasPage extends StatefulWidget {
   @override
   _ActivityPetugasPageState createState() => _ActivityPetugasPageState();
 }
+
+String _status = 'ready'; // Default value
 
 Future<http.Response> fetchWithRetry(String url, {int retries = 3}) async {
   for (int attempt = 1; attempt <= retries; attempt++) {
@@ -46,24 +46,24 @@ Future<Map<String, List<SampahData>>> fetchSampahData() async {
 
   final urls = {
     // 'riwayat': [
-    //   'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/done',
-    //   'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
+    //   'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/done',
+    //   'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
     // ],
     // 'proses': [
-    //   'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
+    //   'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
     // ],
     // 'pending': [
-    //   'https://jera.kerissumenep.com/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
+    //   'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
     // ],
     'riwayat': [
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/done',
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
+      'http://192.168.1.21:8000/api/pengangkutan-sampah/history/by-petugas/$userId/done',
+      'http://192.168.1.21:8000/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
     ],
     'proses': [
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
+      'http://192.168.1.21:8000/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
     ],
     'pending': [
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
+      'http://192.168.1.21:8000/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
     ],
   };
 
@@ -113,14 +113,14 @@ Future<Map<String, List<SampahLiarData>>> fetchSampahLiarData() async {
 
   final urls = {
     'riwayat': [
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/done',
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/failed'
+      'http://192.168.1.21:8000/api/pengangkutan-sampah-liar/history/by-petugas/$userId/done',
+      'http://192.168.1.21:8000/api/pengangkutan-sampah-liar/history/by-petugas/$userId/failed'
     ],
     'proses': [
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses'
+      'http://192.168.1.21:8000/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses'
     ],
     'pending': [
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending'
+      'http://192.168.1.21:8000/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending'
     ],
   };
 
@@ -170,6 +170,7 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
         _selectedTab = _tabController.index;
       });
     });
+    _loadUserStatus();
 
     // Inisialisasi Future Data
     futureSampahData = fetchSampahData();
@@ -282,7 +283,6 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
 
   Widget _buildListSampah(int selectedTab) {
     return FutureBuilder<Map<String, List<dynamic>>>(
-      // Pilih Future berdasarkan tombol yang ditekan
       future: showSampahData
           ? futureSampahData as Future<Map<String, List<dynamic>>>
           : futureSampahLiarData as Future<Map<String, List<dynamic>>>,
@@ -297,6 +297,8 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
 
         // Tentukan kategori berdasarkan tab
         List<dynamic> sampahList;
+        String jenisSampah = showSampahData ? "Daur Ulang" : "Liar";
+
         if (selectedTab == 0) {
           sampahList = snapshot.data!['riwayat'] ?? [];
         } else if (selectedTab == 1) {
@@ -305,21 +307,32 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
           sampahList = snapshot.data!['pending'] ?? [];
         }
 
+        // ✅ Tampilkan pesan jika data kosong
+        if (sampahList.isEmpty) {
+          String tabName = selectedTab == 0
+              ? "Riwayat"
+              : selectedTab == 1
+                  ? "Dalam Proses"
+                  : "Pending";
+          return Center(
+            child: Text(
+              "Tidak ada data sampah $jenisSampah untuk tab $tabName.",
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          );
+        }
+
+        // ✅ Jika ada data, tampilkan daftar
         return ListView.builder(
           padding: const EdgeInsets.all(10),
           itemCount: sampahList.length,
           itemBuilder: (context, index) {
             final item = sampahList[index];
-
-            // Jika Sampah Daur Ulang
             if (showSampahData) {
-              final sampahItem = item as SampahData;
-              return _buildSampahCard(sampahItem, selectedTab);
-            }
-            // Jika Sampah Liar
-            else {
-              final sampahLiarItem = item as SampahLiarData;
-              return _buildSampahCard(sampahLiarItem, selectedTab);
+              return _buildSampahCard(item as SampahData, selectedTab);
+            } else {
+              return _buildSampahCard(item as SampahLiarData, selectedTab);
             }
           },
         );
@@ -401,6 +414,36 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _loadUserStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    _status = prefs.getString('status') ?? 'tidak ready';
+
+    if (_status == 'tidak ready') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showAktifkanAkunDialog();
+      });
+    }
+  }
+
+  void _showAktifkanAkunDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Akun Tidak Aktif'),
+          content: const Text(
+              'Akun Anda dalam status *tidak ready*. Silakan aktifkan di halaman akun agar bisa menerima laporan.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

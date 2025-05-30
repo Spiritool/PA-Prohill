@@ -167,8 +167,31 @@ class _mapPetugasState extends State<mapPetugas> {
             calculateDistanceInKm(currentPosition!, point) <= maxDistanceInKm)
         .toList();
 
-    if (destinations.isEmpty) {
+    if (koordinatList.isEmpty) {
       debugPrint('Tidak ada titik sampah dalam radius $maxDistanceInKm km');
+
+      // Buat rute langsung ke TPA dari posisi petugas
+      final url =
+          'http://router.project-osrm.org/route/v1/driving/${currentPosition!.longitude},${currentPosition!.latitude};${lokasiTPA.longitude},${lokasiTPA.latitude}?overview=full&geometries=geojson';
+
+      try {
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final coords = data['routes'][0]['geometry']['coordinates'] as List;
+
+          setState(() {
+            routePoints = coords.map((c) => LatLng(c[1], c[0])).toList();
+          });
+
+          print('✅ Rute langsung ke TPA dibuat.');
+        } else {
+          debugPrint(
+              'Gagal ambil rute langsung ke TPA: ${response.statusCode}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error ambil rute langsung ke TPA: $e');
+      }
       return;
     }
 

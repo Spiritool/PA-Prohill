@@ -18,10 +18,10 @@ Future<List<SampahData>> fetchSampahData() async {
   }
 
   final urls = [
-    'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/$userId/proses',
-    'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/$userId/done',
-    'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/$userId/pending',
-    'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/$userId/failed',
+    'http://192.168.1.21:8000/api/pengangkutan-sampah/history/$userId/proses',
+    'http://192.168.1.21:8000/api/pengangkutan-sampah/history/$userId/done',
+    'http://192.168.1.21:8000/api/pengangkutan-sampah/history/$userId/pending',
+    'http://192.168.1.21:8000/api/pengangkutan-sampah/history/$userId/failed',
   ];
 
   List<SampahData> allData = [];
@@ -908,7 +908,7 @@ class _HistoryState extends State<History> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  'https://prohildlhcilegon.id/storage/foto-sampah/$fotoSampah',
+                  'https://http://192.168.1.21:8000/storage/foto-sampah/$fotoSampah',
                   errorBuilder: (context, error, stackTrace) =>
                       const Text('Gambar tidak dapat ditampilkan'),
                   loadingBuilder: (context, child, loadingProgress) {

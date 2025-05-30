@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
+
 
 class MapSingle extends StatefulWidget {
   final dynamic sampah;
@@ -26,12 +28,44 @@ class _MapSingleState extends State<MapSingle> {
   List<LatLng> routePoints = [];
   bool isLoading = true;
   String errorMessage = '';
+  StreamSubscription<Position>? _positionStream;
 
   @override
   void initState() {
     super.initState();
     _initializeMap();
   }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
+
+void startLiveTracking() {
+  _positionStream = Geolocator.getPositionStream(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 10,
+    ),
+  ).listen((Position position) async {
+    final newPetugasPosition = LatLng(position.latitude, position.longitude);
+
+    // Tunggu 10 detik sebelum update
+    await Future.delayed(const Duration(seconds: 10));
+
+    if (sampahPosition != null) {
+      final newRoute = await generateRoute(newPetugasPosition, sampahPosition!);
+
+      setState(() {
+        petugasPosition = newPetugasPosition;
+        routePoints = newRoute;
+      });
+    }
+  });
+}
+
+
 
   LatLng? _parseCoordinate(String url) {
     try {
@@ -50,27 +84,31 @@ class _MapSingleState extends State<MapSingle> {
     return null;
   }
 
-  Future<void> _initializeMap() async {
-    try {
-      // 1. Dapatkan lokasi petugas (GPS)
-      await _getCurrentLocation();
+Future<void> _initializeMap() async {
+  try {
+    await _getCurrentLocation(); // posisi awal petugas
+    _extractSampahPosition();    // posisi sampah
 
-      // 2. Ekstrak koordinat dari objek sampah
-      _extractSampahPosition();
+    if (petugasPosition != null && sampahPosition != null) {
+      final initialRoute = await generateRoute(petugasPosition!, sampahPosition!);
 
-      // 3. Generate rute jika kedua posisi tersedia
-      if (petugasPosition != null && sampahPosition != null) {
-        await generateRoute(petugasPosition!, sampahPosition!);
-      }
-
-      setState(() => isLoading = false);
-    } catch (e) {
       setState(() {
+        routePoints = initialRoute;
         isLoading = false;
-        errorMessage = 'Error: ${e.toString()}';
       });
+
+      startLiveTracking(); // mulai update posisi + rute setiap 10 detik
+    } else {
+      setState(() => isLoading = false);
     }
+  } catch (e) {
+    setState(() {
+      isLoading = false;
+      errorMessage = 'Error: ${e.toString()}';
+    });
   }
+}
+
 
   void _extractSampahPosition() {
     try {
@@ -103,27 +141,25 @@ class _MapSingleState extends State<MapSingle> {
     }
   }
 
-  Future<void> generateRoute(LatLng start, LatLng end) async {
-    try {
-      final url =
-          'http://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson';
+Future<List<LatLng>> generateRoute(LatLng start, LatLng end) async {
+  try {
+    final url =
+        'http://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson';
 
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final coords = data['routes'][0]['geometry']['coordinates'] as List;
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final coords = data['routes'][0]['geometry']['coordinates'] as List;
 
-        setState(() {
-          routePoints =
-              coords.map((point) => LatLng(point[1], point[0])).toList();
-        });
-      } else {
-        throw Exception('HTTP Error: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Routing error: $e');
+      return coords.map((point) => LatLng(point[1], point[0])).toList();
+    } else {
+      throw Exception('HTTP Error: ${response.statusCode}');
     }
+  } catch (e) {
+    print('Routing error: $e');
+    return [];
   }
+}
 
   @override
   Widget build(BuildContext context) {

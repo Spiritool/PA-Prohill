@@ -19,14 +19,14 @@ class _AkunPetugasState extends State<AkunPetugas> {
   String userEmail = 'user@example.com';
   String userPhone = '081234567890';
   String userStatus = 'ready';
+  String _status = 'ready'; // Default valuey
   final List<String> _addresses = ['Rumah', 'Kantor', 'Kos'];
   bool _isLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-    _loadUserStatus();
+    _loadUserData().then((_) => _loadUserStatus());
   }
 
   Future<void> _loadUserData() async {
@@ -63,7 +63,7 @@ class _AkunPetugasState extends State<AkunPetugas> {
     );
   }
 
-  String _status = 'ready'; // Default value
+  
 
   Widget _buildLoggedInContent() {
     return Column(
@@ -664,10 +664,33 @@ Widget _buildPasswordResetField() {
   }
 
   Future<void> _loadUserStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _status =
-          prefs.getString('user_status') ?? 'ready'; // ✅ Ambil status terbaru
+  final prefs = await SharedPreferences.getInstance();
+  _status = prefs.getString('status') ?? 'tidak ready';
+
+  if (_status == 'tidak ready') {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showAktifkanAkunDialog();
     });
   }
+}
+
+void _showAktifkanAkunDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Akun Tidak Aktif'),
+        content: const Text('Akun Anda dalam status *tidak ready*. Silakan aktifkan di halaman akun agar bisa menerima laporan.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
 }

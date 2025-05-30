@@ -1,13 +1,10 @@
 import 'package:dlh_project/pages/form_opening/login.dart';
+import 'package:dlh_project/pages/petugas_screen/sop_petugas.dart';
 import 'package:dlh_project/pages/warga_screen/detail_berita.dart';
 import 'package:dlh_project/pages/warga_screen/harga_sampah.dart';
-import 'package:dlh_project/pages/warga_screen/chat.dart';
-import 'package:dlh_project/pages/warga_screen/qna.dart';
+import 'package:dlh_project/pages/warga_screen/rangking.dart';
+import 'package:dlh_project/pages/petugas_screen/leaderboard_petugas.dart';
 import 'package:flutter/material.dart';
-import 'package:dlh_project/pages/warga_screen/Berita.dart';
-import 'package:dlh_project/pages/warga_screen/sampah_liar.dart';
-import 'package:dlh_project/pages/warga_screen/sampah_terpilah.dart';
-import 'package:dlh_project/constant/color.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -459,11 +456,25 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                               // iconButton(context, Icons.emoji_events_outlined,
                               //     'Join Contest\n& Win', () {}),
                               iconButton(context, Icons.numbers,
-                                  'Peringkat', () {}),
+                                  'Peringkat', () {
+                                    Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LeaderboardPagePetugas(),
+                                  ),
+                                );
+                                  }),
                               iconButton(context, Icons.numbers,
-                                  'Point Petugas', () {}),
+                                  'Point Petugas', () {} ),
                               iconButton(context, Icons.play_circle_outline,
-                                  'SOP Petugas', () {}),
+                                  'SOP Petugas', () {
+                                    Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SopPetugasPage(),
+                                  ),
+                                );
+                                  }),
                               // iconButton(
                               //     context,
                               //     Icons.videogame_asset_outlined,
