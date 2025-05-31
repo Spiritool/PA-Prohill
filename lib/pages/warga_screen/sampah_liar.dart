@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:dlh_project/constant/color.dart';
 import 'package:dlh_project/pages/warga_screen/home.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -54,25 +55,56 @@ class _SampahLiarState extends State<SampahLiar> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Pilih Sumber Foto'),
-          actions: [
-            TextButton(
-              child: const Text('Kamera'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _getImage(ImageSource.camera);
-              },
-            ),
-            TextButton(
-              child: const Text('Galeri'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _getImage(ImageSource.gallery);
-              },
-            ),
-          ],
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Pilih Sumber Foto',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildImageSourceOption(
+                  icon: Icons.camera_alt,
+                  label: 'Kamera',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _getImage(ImageSource.camera);
+                  }),
+              _buildImageSourceOption(
+                  icon: Icons.photo_library,
+                  label: 'Galeri',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _getImage(ImageSource.gallery);
+                  }),
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildImageSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: black.withOpacity(0.1),
+            child: Icon(icon, size: 28, color: black),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: TextStyle(color: black)),
+        ],
+      ),
     );
   }
 

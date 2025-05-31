@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:dlh_project/pages/form_opening/login.dart';
+import 'editprofil.dart';
 
 class GeneralInfo extends StatefulWidget {
   const GeneralInfo({super.key});
@@ -17,8 +18,8 @@ class _GeneralInfoState extends State<GeneralInfo> {
   String userPhone = '081234567890';
   bool isLoggedIn = false;
 
-  final Color primaryColor = const Color(0xFF006E7F);
-  final Color bgColor = const Color(0xFFF9F9F9);
+  final Color primaryColor = const Color(0xFF0D47A1); // biru tua
+  final Color bgColor = const Color(0xFFF0F4FF); // biru muda sangat soft
 
   @override
   void initState() {
@@ -35,140 +36,70 @@ class _GeneralInfoState extends State<GeneralInfo> {
     });
   }
 
-  void _showEditDialog() {
-    final nameController = TextEditingController(text: userName);
-    final phoneController = TextEditingController(text: userPhone);
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Edit Profil'),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'No. HP (Awali dengan 62)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-            ],
-          ),
+  void _showEditDialog() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(
+          initialName: userName,
+          initialPhone: userPhone,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                _saveChanges(nameController.text, phoneController.text),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
+
+    if (result != null && result is Map<String, String>) {
+      setState(() {
+        userName = result['name'] ?? userName;
+        userPhone = result['phone'] ?? userPhone;
+        isLoggedIn = true;
+      });
+    }
   }
 
-  Future<void> _saveChanges(String name, String phone) async {
-    if (name.length < 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nama harus minimal 8 karakter')),
-      );
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id') ?? 0;
-    final token = prefs.getString('token');
-
-    final response = await http.put(
-      Uri.parse(
-          "https://prohildlhcilegon.id/api/user/update/$userId?_method=PUT"),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'nama': name, 'no_hp': phone}),
+  Widget _buildProfilePhoto() {
+    return CircleAvatar(
+      radius: 60,
+      backgroundColor: primaryColor.withOpacity(0.2),
+      child: const Icon(Icons.person, size: 60, color: Colors.grey),
     );
-
-    if (response.statusCode == 200) {
-      await prefs.setString('user_name', name);
-      await prefs.setString('user_phone', phone);
-
-      setState(() {
-        userName = name;
-        userPhone = phone;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profil berhasil diperbarui')),
-      );
-    } else {
-      final error = jsonDecode(response.body)['message'] ?? 'Terjadi kesalahan';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal: $error')),
-      );
-    }
-
-    Navigator.pop(context);
   }
 
   Widget _buildInfoTile(String label, String value, IconData icon) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: primaryColor.withOpacity(0.1),
-            child: Icon(icon, color: primaryColor),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 14)),
-                const SizedBox(height: 4),
-                Text(value, style: const TextStyle(fontSize: 15)),
-              ],
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: primaryColor.withOpacity(0.15),
+              child: Icon(icon, color: primaryColor),
             ),
-          ),
-        ],
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.grey[700],
+                      )),
+                  const SizedBox(height: 4),
+                  Text(value,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      )),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -207,6 +138,8 @@ class _GeneralInfoState extends State<GeneralInfo> {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
+          _buildProfilePhoto(),
+          const SizedBox(height: 24),
           _buildInfoTile('Nama', userName, Icons.person),
           _buildInfoTile('No. HP', userPhone, Icons.phone),
           const Spacer(),
@@ -214,15 +147,16 @@ class _GeneralInfoState extends State<GeneralInfo> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _showEditDialog,
-              icon: const Icon(Icons.edit),
-              label: const Text('Edit Profil'),
+              icon: const Icon(Icons.edit, size: 20),
+              label: const Text('Edit Profil', style: TextStyle(fontSize: 18)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 4,
               ),
             ),
           ),
@@ -236,7 +170,8 @@ class _GeneralInfoState extends State<GeneralInfo> {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text('Edit Profil', style: TextStyle(color: Colors.black)),
+        title:
+            const Text('General Info', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 1,
         leading: IconButton(

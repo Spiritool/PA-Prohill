@@ -741,22 +741,7 @@ class _HomeKontenState extends State<HomeKonten> {
                           ),
                         );
                       } else {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Not Authorized'),
-                              content: Text(
-                                  'You must be logged in to access the chat.'),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Text('OK'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
+                        _showLoginRequiredDialog(context);
                       }
                     },
                     backgroundColor: Color(0xFFFF6600),

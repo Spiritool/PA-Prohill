@@ -1,0 +1,334 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+
+class EditProfilePage extends StatefulWidget {
+  final String initialName;
+  final String initialPhone;
+
+  const EditProfilePage({
+    super.key,
+    required this.initialName,
+    required this.initialPhone,
+  });
+
+  @override
+  State<EditProfilePage> createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State<EditProfilePage> {
+  late TextEditingController nameController;
+  late TextEditingController phoneController;
+  bool _isLoading = false;
+
+  final Color primaryColor = const Color(0xFF006E7F);
+
+  final ImagePicker _picker = ImagePicker();
+  XFile? _profileImage;
+  bool _photoSelected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.initialName);
+    phoneController = TextEditingController(text: widget.initialPhone);
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _getImage(ImageSource source) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final pickedImage =
+          await _picker.pickImage(source: source, imageQuality: 80);
+      if (pickedImage != null) {
+        setState(() {
+          _profileImage = pickedImage;
+          _photoSelected = true;
+        });
+      }
+    } finally {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _showImageSourceSelection() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Pilih Sumber Foto',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildImageSourceOption(
+                  icon: Icons.camera_alt,
+                  label: 'Kamera',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _getImage(ImageSource.camera);
+                  }),
+              _buildImageSourceOption(
+                  icon: Icons.photo_library,
+                  label: 'Galeri',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _getImage(ImageSource.gallery);
+                  }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildImageSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: primaryColor.withOpacity(0.1),
+            child: Icon(icon, size: 28, color: primaryColor),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: TextStyle(color: primaryColor)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveChanges() async {
+    final name = nameController.text.trim();
+    final phone = phoneController.text.trim();
+
+    if (name.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama harus minimal 8 karakter')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
+    final token = prefs.getString('token');
+
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse("https://prohildlhcilegon.id/api/user/update/$userId"),
+      );
+      request.headers['Authorization'] = 'Bearer $token';
+
+      request.fields['nama'] = name;
+      request.fields['no_hp'] = phone;
+      request.fields['_method'] = 'PUT';
+
+      if (_profileImage != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'photo',
+          _profileImage!.path,
+        ));
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        await prefs.setString('user_name', name);
+        await prefs.setString('user_phone', phone);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profil berhasil diperbarui')),
+          );
+          Navigator.pop(context, {'name': name, 'phone': phone});
+        }
+      } else {
+        final error =
+            jsonDecode(response.body)['message'] ?? 'Terjadi kesalahan';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal: $error')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menghubungi server: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _customTextField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: label.toLowerCase().contains("hp")
+                ? TextInputType.phone
+                : TextInputType.text,
+            decoration: InputDecoration(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              hintText: label,
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfilePhoto() {
+    return Center(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleAvatar(
+            radius: 60,
+            backgroundColor: primaryColor.withOpacity(0.1),
+            backgroundImage: _profileImage != null
+                ? FileImage(File(_profileImage!.path))
+                : null,
+            child: _profileImage == null
+                ? Icon(Icons.person, size: 60, color: primaryColor)
+                : null,
+          ),
+          Positioned(
+            bottom: 0,
+            right: -4,
+            child: GestureDetector(
+              onTap: _showImageSourceSelection,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26.withOpacity(0.4),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                ),
+                padding: const EdgeInsets.all(8),
+                child: const Icon(
+                  Icons.camera_alt,
+                  size: 20,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Profil', style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+        elevation: 1,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      backgroundColor: const Color(0xFFF9F9F9),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProfilePhoto(),
+            const SizedBox(height: 32),
+            _customTextField(controller: nameController, label: 'Nama Lengkap'),
+            const SizedBox(height: 20),
+            _customTextField(controller: phoneController, label: 'No. HP'),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _saveChanges,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      )
+                    : const Text('Simpan',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
