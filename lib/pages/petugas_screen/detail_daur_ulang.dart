@@ -19,9 +19,8 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
     final String? token = prefs.getString('token');
 
     final String apiUrl =
-        'https://prohildlhcilegon.id/api/pengangkutan-sampah/proses/$idSampah';
-        // 'https://jera.kerissumenep.com/api/pengangkutan-sampah/proses/$idSampah';
-
+        // 'https://prohildlhcilegon.id/api/pengangkutan-sampah/proses/$idSampah';
+        'http://192.168.1.21:8000/api/pengangkutan-sampah/proses/$idSampah';
 
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -34,9 +33,9 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
 
     try {
       // Debugging: Print request details
-      // print('Request URL: $apiUrl');
-      // print('Request Headers: $headers');
-      // print('Request Body: ${json.encode(body)}');
+      print('Request URL: $apiUrl');
+      print('Request Headers: $headers');
+      print('Request Body: ${json.encode(body)}');
 
       // Send the POST request
       final response = await http.post(

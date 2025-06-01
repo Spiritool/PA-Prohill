@@ -41,7 +41,7 @@ class _PenimbanganState extends State<Penimbangan> {
       // Submit penimbangan data
       final penimbanganResponse = await http.post(
         Uri.parse(
-            'https://prohildlhcilegon.id/api/pengangkutan-sampah/penimbangan-sampah/${widget.idSampah}'),
+            'http://192.168.1.21:8000/api/pengangkutan-sampah/penimbangan-sampah/${widget.idSampah}'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -58,7 +58,7 @@ class _PenimbanganState extends State<Penimbangan> {
         // Update status to 'done'
         final statusUpdateResponse = await http.post(
           Uri.parse(
-              'https://prohildlhcilegon.id/api/pengangkutan-sampah/done/${widget.idSampah}'),
+              'http://192.168.1.21:8000/api/pengangkutan-sampah/done/${widget.idSampah}'),
           headers: {
             'Content-Type': 'application/json',
           },
