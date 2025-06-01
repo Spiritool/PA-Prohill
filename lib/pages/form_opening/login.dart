@@ -11,6 +11,7 @@ import 'package:dlh_project/pages/form_opening/lupa_password.dart';
 import 'package:dlh_project/pages/form_opening/daftar.dart';
 import 'package:flutter/services.dart';
 import 'package:dlh_project/config/fcm.dart';
+import 'dart:developer';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -65,6 +66,8 @@ class _LoginState extends State<Login> {
       await prefs.setString('user_profile_photo', user['foto_profile'] ?? '');
 
       await FCM.init();
+
+      log('${user['foto_profile']}');
 
       if (user['role'] == 'warga') {
         ScaffoldMessenger.of(context).showSnackBar(

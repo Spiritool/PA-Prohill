@@ -6,6 +6,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:dlh_project/pages/form_opening/login.dart';
 import 'editprofil.dart';
+import 'dart:developer';
+
 
 class GeneralInfo extends StatefulWidget {
   const GeneralInfo({super.key});
@@ -34,7 +36,7 @@ class _GeneralInfoState extends State<GeneralInfo> {
     setState(() {
       userName = prefs.getString('user_name') ?? 'Guest';
       userPhone = prefs.getString('user_phone') ?? '081234567890';
-      userPhoto = prefs.getString('user_photo'); // ambil path foto
+      userPhoto = prefs.getString('user_profile_photo'); // ambil path foto
       isLoggedIn = userName != 'Guest';
     });
   }
@@ -62,6 +64,7 @@ class _GeneralInfoState extends State<GeneralInfo> {
   }
 
   Widget _buildProfilePhoto() {
+    log('Link foto: $userPhoto');
     if (userPhoto != null && userPhoto!.isNotEmpty) {
       if (userPhoto!.startsWith('http')) {
         // Foto dari URL

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'dart:developer';
 
 class EditProfilePage extends StatefulWidget {
   final String initialName;
@@ -166,6 +167,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
       }
     } else {
+      log('❌ Upload gagal. Status code: ${response.statusCode}');
+      log('❌ Response body: $resBody');
       throw Exception('Gagal upload foto. Status: ${response.statusCode}');
     }
   }
