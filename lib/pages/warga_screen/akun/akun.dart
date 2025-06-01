@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dlh_project/pages/warga_screen/akun/contact_info.dart';
 import 'package:dlh_project/pages/warga_screen/akun/general_info.dart';
 import 'package:dlh_project/pages/warga_screen/qna.dart';
@@ -54,6 +55,7 @@ class _AkunState extends State<Akun> {
   String userPhone = '081234567890';
   List<dynamic> _alamatData = [];
   bool _isLoggedIn = false;
+  String? userPhoto; // Tambahkan ini di bagian atas _AkunState
 
   @override
   void initState() {
@@ -68,6 +70,7 @@ class _AkunState extends State<Akun> {
       userName = prefs.getString('user_name') ?? 'Guest';
       userEmail = prefs.getString('user_email') ?? 'user@example.com';
       userPhone = prefs.getString('user_phone') ?? '081234567890';
+      userPhoto = prefs.getString('user_photo') ?? ''; // Ambil userPhoto
       _isLoggedIn = userName != 'Guest';
     });
   }
@@ -211,9 +214,19 @@ class _AkunState extends State<Akun> {
         children: [
           Stack(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 32,
-                backgroundImage: AssetImage('assets/natasha.jpg'),
+                backgroundColor: Colors.white,
+                backgroundImage: (userPhoto != null &&
+                        userPhoto!.isNotEmpty &&
+                        userPhoto!.startsWith('http'))
+                    ? NetworkImage(userPhoto!)
+                    : null,
+                child: (userPhoto == null ||
+                        userPhoto!.isEmpty ||
+                        !userPhoto!.startsWith('http'))
+                    ? const Icon(Icons.person, size: 32, color: Colors.grey)
+                    : null,
               ),
               Positioned(
                 bottom: 0,
@@ -238,7 +251,7 @@ class _AkunState extends State<Akun> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                userName, // Menampilkan nama pengguna
+                userName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -247,15 +260,15 @@ class _AkunState extends State<Akun> {
               ),
               const SizedBox(height: 4),
               Text(
-                '${userEmail ?? '-'}',
+                userEmail,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                 ),
               ),
               Text(
-                '$userPhone',
-                style: TextStyle(
+                userPhone,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                 ),

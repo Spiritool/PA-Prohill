@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 
 class EditProfilePage extends StatefulWidget {
@@ -25,17 +24,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController phoneController;
   bool _isLoading = false;
 
-  final Color primaryColor = const Color(0xFF006E7F);
-
   final ImagePicker _picker = ImagePicker();
-  XFile? _profileImage;
+  XFile? _image;
   bool _photoSelected = false;
+
+  String? fotoUrl;
+
+  final Color primaryColor = const Color(0xFF006E7F);
 
   @override
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.initialName);
     phoneController = TextEditingController(text: widget.initialPhone);
+
+    SharedPreferences.getInstance().then((prefs) {
+      setState(() {
+        fotoUrl = prefs.getString('user_photo');
+      });
+    });
   }
 
   @override
@@ -46,82 +53,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _getImage(ImageSource source) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
+    final pickedImage = await _picker.pickImage(source: source);
+    if (pickedImage != null) {
+      final fileExtension = pickedImage.path.split('.').last.toLowerCase();
 
-    try {
-      final pickedImage =
-          await _picker.pickImage(source: source, imageQuality: 80);
-      if (pickedImage != null) {
+      if (['jpg', 'jpeg', 'png'].contains(fileExtension)) {
         setState(() {
-          _profileImage = pickedImage;
+          _image = pickedImage;
           _photoSelected = true;
         });
-      }
-    } finally {
-      Navigator.of(context).pop();
-    }
-  }
-
-  void _showImageSourceSelection() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text(
-            'Pilih Sumber Foto',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            textAlign: TextAlign.center,
-          ),
-          content: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildImageSourceOption(
-                  icon: Icons.camera_alt,
-                  label: 'Kamera',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _getImage(ImageSource.camera);
-                  }),
-              _buildImageSourceOption(
-                  icon: Icons.photo_library,
-                  label: 'Galeri',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _getImage(ImageSource.gallery);
-                  }),
-            ],
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Format tidak didukung. Hanya JPG, JPEG, atau PNG.'),
           ),
         );
-      },
-    );
-  }
-
-  Widget _buildImageSourceOption({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: primaryColor.withOpacity(0.1),
-            child: Icon(icon, size: 28, color: primaryColor),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(color: primaryColor)),
-        ],
-      ),
-    );
+      }
+    }
   }
 
   Future<void> _saveChanges() async {
@@ -135,62 +83,90 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
+
+    try {
+      await _updateUserData();
+      if (_photoSelected) {
+        await _uploadProfilePhoto();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profil berhasil diperbarui')),
+        );
+        Navigator.pop(context, {'name': name, 'phone': phone});
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
+    final token = prefs.getString('token');
+
+    final name = nameController.text.trim();
+    final phone = phoneController.text.trim();
+
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse("http://192.168.1.21:8000/api/user/update/$userId"),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['nama'] = name;
+    request.fields['no_hp'] = phone;
+    request.fields['_method'] = 'PUT';
+
+    final response = await request.send();
+    if (response.statusCode == 200) {
+      await prefs.setString('user_name', name);
+      await prefs.setString('user_phone', phone);
+    } else {
+      throw Exception('Gagal update data. Status: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _uploadProfilePhoto() async {
+    if (_image == null) return;
 
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('user_id') ?? 0;
     final token = prefs.getString('token');
 
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse("https://prohildlhcilegon.id/api/user/update/$userId"),
-      );
-      request.headers['Authorization'] = 'Bearer $token';
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse("http://192.168.1.21:8000/api/user/$userId/foto-profile"),
+    );
+    request.fields['_method'] = 'PUT'; // Simulasi PUT dengan POST
 
-      request.fields['nama'] = name;
-      request.fields['no_hp'] = phone;
-      request.fields['_method'] = 'PUT';
+    request.files.add(await http.MultipartFile.fromPath(
+      'foto_profile',
+      _image!.path,
+    ));
 
-      if (_profileImage != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'photo',
-          _profileImage!.path,
-        ));
-      }
+    final response = await request.send();
+    final resBody = await response.stream.bytesToString();
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(resBody);
+      final fotoUrlFromServer = data['foto_profile'];
 
-      if (response.statusCode == 200) {
-        await prefs.setString('user_name', name);
-        await prefs.setString('user_phone', phone);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profil berhasil diperbarui')),
-          );
-          Navigator.pop(context, {'name': name, 'phone': phone});
-        }
-      } else {
-        final error =
-            jsonDecode(response.body)['message'] ?? 'Terjadi kesalahan';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: $error')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghubungi server: $e')),
-      );
-    } finally {
-      if (mounted) {
+      if (fotoUrlFromServer is String) {
+        await prefs.setString('user_photo', fotoUrlFromServer);
         setState(() {
-          _isLoading = false;
+          fotoUrl = fotoUrlFromServer;
+          _photoSelected = false;
+          _image = null;
         });
       }
+    } else {
+      throw Exception('Gagal upload foto. Status: ${response.statusCode}');
     }
   }
 
@@ -201,10 +177,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-        ),
+        Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -236,47 +210,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildProfilePhoto() {
+    ImageProvider? imageProvider;
+    if (_image != null) {
+      imageProvider = FileImage(File(_image!.path));
+    } else if (fotoUrl != null && fotoUrl!.isNotEmpty) {
+      imageProvider = NetworkImage(fotoUrl!);
+    }
+
     return Center(
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          CircleAvatar(
-            radius: 60,
-            backgroundColor: primaryColor.withOpacity(0.1),
-            backgroundImage: _profileImage != null
-                ? FileImage(File(_profileImage!.path))
-                : null,
-            child: _profileImage == null
-                ? Icon(Icons.person, size: 60, color: primaryColor)
-                : null,
-          ),
-          Positioned(
-            bottom: 0,
-            right: -4,
-            child: GestureDetector(
-              onTap: _showImageSourceSelection,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: primaryColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26.withOpacity(0.4),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ],
-                ),
-                padding: const EdgeInsets.all(8),
-                child: const Icon(
-                  Icons.camera_alt,
-                  size: 20,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
+      child: GestureDetector(
+        onTap: () => _getImage(ImageSource.gallery),
+        child: CircleAvatar(
+          radius: 60,
+          backgroundColor: primaryColor.withOpacity(0.1),
+          backgroundImage: imageProvider,
+          child: imageProvider == null
+              ? Icon(Icons.person, size: 60, color: primaryColor)
+              : null,
+        ),
       ),
     );
   }

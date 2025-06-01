@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,10 +17,11 @@ class GeneralInfo extends StatefulWidget {
 class _GeneralInfoState extends State<GeneralInfo> {
   String userName = 'Guest';
   String userPhone = '081234567890';
+  String? userPhoto; // tambahkan path foto
   bool isLoggedIn = false;
 
-  final Color primaryColor = const Color(0xFF0D47A1); // biru tua
-  final Color bgColor = const Color(0xFFF0F4FF); // biru muda sangat soft
+  final Color primaryColor = const Color(0xFF0D47A1);
+  final Color bgColor = const Color(0xFFF0F4FF);
 
   @override
   void initState() {
@@ -32,6 +34,7 @@ class _GeneralInfoState extends State<GeneralInfo> {
     setState(() {
       userName = prefs.getString('user_name') ?? 'Guest';
       userPhone = prefs.getString('user_phone') ?? '081234567890';
+      userPhoto = prefs.getString('user_photo'); // ambil path foto
       isLoggedIn = userName != 'Guest';
     });
   }
@@ -48,20 +51,39 @@ class _GeneralInfoState extends State<GeneralInfo> {
     );
 
     if (result != null && result is Map<String, String>) {
+      final prefs = await SharedPreferences.getInstance();
       setState(() {
         userName = result['name'] ?? userName;
         userPhone = result['phone'] ?? userPhone;
+        userPhoto = prefs.getString('user_photo'); // refresh foto juga
         isLoggedIn = true;
       });
     }
   }
 
   Widget _buildProfilePhoto() {
-    return CircleAvatar(
-      radius: 60,
-      backgroundColor: primaryColor.withOpacity(0.2),
-      child: const Icon(Icons.person, size: 60, color: Colors.grey),
-    );
+    if (userPhoto != null && userPhoto!.isNotEmpty) {
+      if (userPhoto!.startsWith('http')) {
+        // Foto dari URL
+        return CircleAvatar(
+          radius: 60,
+          backgroundImage: NetworkImage(userPhoto!),
+        );
+      } else {
+        // Foto dari file lokal
+        return CircleAvatar(
+          radius: 60,
+          backgroundImage: FileImage(File(userPhoto!)),
+        );
+      }
+    } else {
+      // Default icon
+      return CircleAvatar(
+        radius: 60,
+        backgroundColor: primaryColor.withOpacity(0.2),
+        child: const Icon(Icons.person, size: 60, color: Colors.grey),
+      );
+    }
   }
 
   Widget _buildInfoTile(String label, String value, IconData icon) {
