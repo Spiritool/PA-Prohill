@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'dart:developer';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class EditProfilePage extends StatefulWidget {
   final String initialName;
@@ -30,7 +31,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _photoSelected = false;
 
   String? fotoUrl;
-
   final Color primaryColor = const Color(0xFF006E7F);
 
   @override
@@ -38,11 +38,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.initState();
     nameController = TextEditingController(text: widget.initialName);
     phoneController = TextEditingController(text: widget.initialPhone);
+    _loadFotoUrl();
+  }
 
-    SharedPreferences.getInstance().then((prefs) {
-      setState(() {
-        fotoUrl = prefs.getString('user_photo');
-      });
+  void _loadFotoUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      fotoUrl = prefs.getString('user_profile_photo');
     });
   }
 
@@ -57,7 +59,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final pickedImage = await _picker.pickImage(source: source);
     if (pickedImage != null) {
       final fileExtension = pickedImage.path.split('.').last.toLowerCase();
-
       if (['jpg', 'jpeg', 'png'].contains(fileExtension)) {
         setState(() {
           _image = pickedImage;
@@ -144,8 +145,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       'POST',
       Uri.parse("http://192.168.1.21:8000/api/user/$userId/foto-profile"),
     );
-    request.fields['_method'] = 'PUT'; // Simulasi PUT dengan POST
-
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['_method'] = 'PUT';
     request.files.add(await http.MultipartFile.fromPath(
       'foto_profile',
       _image!.path,
@@ -156,10 +157,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(resBody);
-      final fotoUrlFromServer = data['foto_profile'];
+      final fotoUrlFromServer = data['data']['foto_profile'];
+      log('[log] link foto baru: $fotoUrlFromServer');
 
       if (fotoUrlFromServer is String) {
-        await prefs.setString('user_photo', fotoUrlFromServer);
+        await prefs.setString('user_profile_photo', fotoUrlFromServer);
         setState(() {
           fotoUrl = fotoUrlFromServer;
           _photoSelected = false;
@@ -167,10 +169,59 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
       }
     } else {
-      log('❌ Upload gagal. Status code: ${response.statusCode}');
-      log('❌ Response body: $resBody');
       throw Exception('Gagal upload foto. Status: ${response.statusCode}');
     }
+  }
+
+  Widget _buildProfilePhoto() {
+    ImageProvider? imageProvider;
+    if (_image != null) {
+      imageProvider = FileImage(File(_image!.path));
+    } else if (fotoUrl != null && fotoUrl!.isNotEmpty) {
+      imageProvider = NetworkImage(fotoUrl!);
+    }
+
+    return Center(
+      child: GestureDetector(
+        onTap: () => _getImage(ImageSource.gallery),
+        child: Stack(
+          children: [
+            ClipOval(
+              child: Container(
+                width: 250,
+                height: 250,
+                color: primaryColor.withOpacity(0.1),
+                child: imageProvider != null
+                    ? Image(
+                        image: imageProvider,
+                        fit: BoxFit.cover,
+                        width: 250,
+                        height: 250,
+                      )
+                    : Icon(Icons.person, size: 120, color: primaryColor),
+              ),
+            ),
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: const Icon(
+                  Icons.camera_alt,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _customTextField({
@@ -209,29 +260,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildProfilePhoto() {
-    ImageProvider? imageProvider;
-    if (_image != null) {
-      imageProvider = FileImage(File(_image!.path));
-    } else if (fotoUrl != null && fotoUrl!.isNotEmpty) {
-      imageProvider = NetworkImage(fotoUrl!);
-    }
-
-    return Center(
-      child: GestureDetector(
-        onTap: () => _getImage(ImageSource.gallery),
-        child: CircleAvatar(
-          radius: 60,
-          backgroundColor: primaryColor.withOpacity(0.1),
-          backgroundImage: imageProvider,
-          child: imageProvider == null
-              ? Icon(Icons.person, size: 60, color: primaryColor)
-              : null,
-        ),
-      ),
     );
   }
 

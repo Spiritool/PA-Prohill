@@ -14,6 +14,7 @@ import 'package:dlh_project/constant/color.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -31,6 +32,7 @@ class _HomeKontenState extends State<HomeKonten> {
   String? fcmToken = '';
   String? userName;
   String? _logoUrl;
+  String? userPhoto;
   final List<String> _imageUrls = [];
   bool _showPopup = false;
   void _togglePopup() {
@@ -50,7 +52,23 @@ class _HomeKontenState extends State<HomeKonten> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       userName = prefs.getString('user_name') ?? 'Guest';
+      userPhoto = prefs.getString('user_profile_photo'); // Ambil foto
     });
+  }
+
+  ImageProvider<Object> _getProfileImage() {
+    try {
+      if (userPhoto != null && userPhoto!.isNotEmpty) {
+        if (userPhoto!.startsWith('http')) {
+          return NetworkImage(userPhoto!);
+        } else {
+          return FileImage(File(userPhoto!));
+        }
+      }
+    } catch (_) {
+      // fallback default
+    }
+    return const NetworkImage('https://randomuser.me/api/portraits/men/1.jpg');
   }
 
   Future<List<String>> fetchSettings() async {
@@ -598,10 +616,9 @@ class _HomeKontenState extends State<HomeKonten> {
                       (userName != 'Guest')
                           ? GestureDetector(
                               onTap: _togglePopup,
-                              child: const CircleAvatar(
+                              child: CircleAvatar(
                                 radius: 30,
-                                backgroundImage: NetworkImage(
-                                    'https://randomuser.me/api/portraits/men/1.jpg'),
+                                backgroundImage: _getProfileImage(),
                               ),
                             )
                           : const CircleAvatar(

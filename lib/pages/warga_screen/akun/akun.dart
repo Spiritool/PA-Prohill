@@ -70,7 +70,7 @@ class _AkunState extends State<Akun> {
       userName = prefs.getString('user_name') ?? 'Guest';
       userEmail = prefs.getString('user_email') ?? 'user@example.com';
       userPhone = prefs.getString('user_phone') ?? '081234567890';
-      userPhoto = prefs.getString('user_photo') ?? ''; // Ambil userPhoto
+      userPhoto = prefs.getString('user_profile_photo'); // Ambil userPhoto
       _isLoggedIn = userName != 'Guest';
     });
   }
@@ -282,13 +282,16 @@ class _AkunState extends State<Akun> {
 
   Widget _GeneralInfo() {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => const GeneralInfo(),
           ),
         );
+        // Setelah kembali dari GeneralInfo, refresh data user supaya foto dan data lainnya update
+        await _loadUserData();
+        setState(() {});
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

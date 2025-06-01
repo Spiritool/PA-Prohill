@@ -8,7 +8,6 @@ import 'package:dlh_project/pages/form_opening/login.dart';
 import 'editprofil.dart';
 import 'dart:developer';
 
-
 class GeneralInfo extends StatefulWidget {
   const GeneralInfo({super.key});
 
@@ -57,36 +56,40 @@ class _GeneralInfoState extends State<GeneralInfo> {
       setState(() {
         userName = result['name'] ?? userName;
         userPhone = result['phone'] ?? userPhone;
-        userPhoto = prefs.getString('user_photo'); // refresh foto juga
+        userPhoto = prefs
+            .getString('user_profile_photo'); // ✅ benar // refresh foto juga
         isLoggedIn = true;
       });
     }
   }
 
   Widget _buildProfilePhoto() {
-    log('Link foto: $userPhoto');
+    ImageProvider? imageProvider;
+
     if (userPhoto != null && userPhoto!.isNotEmpty) {
       if (userPhoto!.startsWith('http')) {
-        // Foto dari URL
-        return CircleAvatar(
-          radius: 60,
-          backgroundImage: NetworkImage(userPhoto!),
-        );
+        imageProvider = NetworkImage(userPhoto!);
       } else {
-        // Foto dari file lokal
-        return CircleAvatar(
-          radius: 60,
-          backgroundImage: FileImage(File(userPhoto!)),
-        );
+        imageProvider = FileImage(File(userPhoto!));
       }
-    } else {
-      // Default icon
-      return CircleAvatar(
-        radius: 60,
-        backgroundColor: primaryColor.withOpacity(0.2),
-        child: const Icon(Icons.person, size: 60, color: Colors.grey),
-      );
     }
+
+    return ClipOval(
+      child: Container(
+        width: 250, // dari 120 jadi 250
+        height: 250, // dari 120 jadi 250
+        color: primaryColor.withOpacity(0.1),
+        child: imageProvider != null
+            ? Image(
+                image: imageProvider,
+                fit: BoxFit.cover,
+                width: 250, // sesuaikan juga agar penuh
+                height: 250,
+              )
+            : Icon(Icons.person,
+                size: 120, color: primaryColor), // ikon diperbesar
+      ),
+    );
   }
 
   Widget _buildInfoTile(String label, String value, IconData icon) {
