@@ -54,7 +54,7 @@ Future<void> saveTokenToServer(String token) async {
 
   final response = await http.post(
     Uri.parse(
-        'http://192.168.1.21:8000/api/user/update-fcm-token'), // GANTI URL SERVER
+        'http://10.251.130.12:8000/api/user/update-fcm-token'), // GANTI URL SERVER
     headers: {
       'Content-Type': 'application/json',
       // 'Authorization': 'Bearer YOUR_TOKEN_JIKA_PAKAI_AUTH',
