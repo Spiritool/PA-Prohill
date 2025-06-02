@@ -33,7 +33,8 @@ class LocalNotif {
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
-    final androidSettings = AndroidInitializationSettings('@drawable/lc_logo');
+    final androidSettings =
+        AndroidInitializationSettings('@drawable/lc_sampah');
     final iosSettings = DarwinInitializationSettings();
 
     final initializationSettings = InitializationSettings(
@@ -68,7 +69,14 @@ class LocalNotif {
 
   static NotificationDetails _defaultNotifDetails() {
     return NotificationDetails(
-      android: AndroidNotificationDetails('channelId', 'channelName'),
+      android: AndroidNotificationDetails(
+        'channelId',
+        'JEMPOLIN',
+        channelDescription: 'Notifikasi untuk pengguna aplikasi saya',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@drawable/lc_sampah',
+      ),
       iOS: DarwinNotificationDetails(),
     );
   }
