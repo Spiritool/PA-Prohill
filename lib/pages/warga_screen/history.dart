@@ -18,10 +18,10 @@ Future<List<SampahData>> fetchSampahData() async {
   }
 
   final urls = [
-    'http://192.168.1.21:8000/api/pengangkutan-sampah/history/$userId/proses',
-    'http://192.168.1.21:8000/api/pengangkutan-sampah/history/$userId/done',
-    'http://192.168.1.21:8000/api/pengangkutan-sampah/history/$userId/pending',
-    'http://192.168.1.21:8000/api/pengangkutan-sampah/history/$userId/failed',
+    'http://192.168.223.205:8000/api/pengangkutan-sampah/history/$userId/proses',
+    'http://192.168.223.205:8000/api/pengangkutan-sampah/history/$userId/done',
+    'http://192.168.223.205:8000/api/pengangkutan-sampah/history/$userId/pending',
+    'http://192.168.223.205:8000/api/pengangkutan-sampah/history/$userId/failed',
   ];
 
   List<SampahData> allData = [];
@@ -129,6 +129,119 @@ class _HistoryState extends State<History> {
       _applyFilters(data); // panggil juga langsung setelah fetch
       _loadRating();
     });
+  }
+
+  void _showRatingDialog() {
+    double selectedRating = 3.0;
+    final TextEditingController commentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Beri Rating Petugas',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Seberapa puas Anda dengan layanan petugas?',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: RatingBar.builder(
+                  initialRating: 3,
+                  minRating: 1,
+                  direction: Axis.horizontal,
+                  allowHalfRating: false,
+                  itemCount: 5,
+                  itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  itemBuilder: (context, _) => const Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                  ),
+                  onRatingUpdate: (rating) {
+                    selectedRating = rating;
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Komentar (opsional)',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: commentController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Tuliskan komentar Anda...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.all(10),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.send),
+              label: const Text('Kirim'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                await _submitRating(
+                    selectedRating, commentController.text.trim());
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _submitRating(double rating, String? comment) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+
+    final response = await http.post(
+      Uri.parse('https://192.168.223.205:8000/rating/store'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': userId,
+        'rating': rating,
+        'comment': comment ?? "",
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      await prefs.setDouble('rating', rating);
+      setState(() {
+        ratingPetugas = rating;
+        catatanPetugas = comment;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rating berhasil dikirim!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal mengirim rating')),
+      );
+    }
   }
 
   Future<double?> getRating() async {
@@ -908,7 +1021,7 @@ class _HistoryState extends State<History> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  'https://http://192.168.1.21:8000/storage/foto-sampah/$fotoSampah',
+                  'http://192.168.223.205:8000/storage/foto-sampah/$fotoSampah',
                   errorBuilder: (context, error, stackTrace) =>
                       const Text('Gambar tidak dapat ditampilkan'),
                   loadingBuilder: (context, child, loadingProgress) {
@@ -934,20 +1047,21 @@ class _HistoryState extends State<History> {
                   ),
                   child: const Text('Lihat Lokasi'),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (status == 'done' && ratingPetugas == null)
-                      ElevatedButton(
-                        onPressed: () {
-                          // Tampilkan dialog rating
-                        },
-                        child: const Text('Rating Petugas'),
-                      ),
-                    if (status == 'done' && ratingPetugas != null)
+                if (status == 'done' && ratingPetugas != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text('Rating: $ratingPetugas ⭐️'),
-                  ],
-                ),
+                      if (catatanPetugas != null && catatanPetugas!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Komentar: $catatanPetugas',
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                        ),
+                    ],
+                  ),
               ],
             ),
           ],

@@ -41,8 +41,8 @@ class _LoginState extends State<Login> {
     }
 
     final response = await http.post(
-      // Uri.parse('https://prohildlhcilegon.id/api/login'),
-      Uri.parse('http://10.251.130.12:8000/api/login'),
+      Uri.parse('https://prohildlhcilegon.id/api/login'),
+      // Uri.parse('http://192.168.223.205:8000:8000/api/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
@@ -65,7 +65,7 @@ class _LoginState extends State<Login> {
       prefs.setString('status', user['status'] ?? 'ready');
       await prefs.setString('user_profile_photo', user['foto_profile'] ?? '');
 
-      await FCM.init();
+      // await FCM.init();
 
       log('${user['foto_profile']}');
 
@@ -114,7 +114,7 @@ class _LoginState extends State<Login> {
 
     if (token != null && token.isNotEmpty) {
       final response = await http.get(
-        Uri.parse('http://192.168.1.21:8000/api/login'),
+        Uri.parse('https://192.168.223.205:8000/api/login'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

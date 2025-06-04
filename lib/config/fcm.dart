@@ -31,7 +31,6 @@ void _handleMessage(RemoteMessage message) {
   }
 }
 
-
 void _showCustomNotif(RemoteMessage message) {
   if (message.data.containsKey('notif_title')) {
     LocalNotif.showNotif(
@@ -54,7 +53,7 @@ Future<void> saveTokenToServer(String token) async {
 
   final response = await http.post(
     Uri.parse(
-        'http://10.251.130.12:8000/api/user/update-fcm-token'), // GANTI URL SERVER
+        'http://192.168.223.205:8000/api/user/update-fcm-token'), // GANTI URL SERVER
     headers: {
       'Content-Type': 'application/json',
       // 'Authorization': 'Bearer YOUR_TOKEN_JIKA_PAKAI_AUTH',

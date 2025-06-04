@@ -118,7 +118,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse("http://192.168.1.21:8000/api/user/update/$userId"),
+      Uri.parse("http://192.168.223.205:8000/api/user/update/$userId"),
     );
     request.headers['Authorization'] = 'Bearer $token';
     request.fields['nama'] = name;
@@ -143,7 +143,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse("http://192.168.1.21:8000/api/user/$userId/foto-profile"),
+      Uri.parse("http://192.168.223.205:8000/api/user/$userId/foto-profile"),
     );
     request.headers['Authorization'] = 'Bearer $token';
     request.fields['_method'] = 'PUT';

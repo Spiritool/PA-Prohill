@@ -429,8 +429,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) =>
-                                            const LeaderboardPage(),
+                                        builder: (context) => LeaderboardPage(),
                                       ),
                                     );
                                   }),

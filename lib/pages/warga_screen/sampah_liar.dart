@@ -281,235 +281,488 @@ class _SampahLiarState extends State<SampahLiar> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Menonaktifkan tombol back default
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         title: const Text(
-          'Sampah Liar',
-          textAlign: TextAlign.center,
+          'Pelaporan Sampah Liar',
           style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
+            fontWeight: FontWeight.w800,
+            fontSize: 20,
+            color: Color(0xFF1E293B),
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.chevron_left), // Ikon back
-          onPressed: () {
-            Navigator.pop(context); // Aksi untuk kembali ke halaman sebelumnya
-          },
+        centerTitle: true,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new,
+                color: Color(0xFF64748B), size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.red.shade600,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Sampah Liar',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              // Header Card dengan Gradient
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFEF4444),
+                      Color(0xFFDC2626),
+                      Color(0xFFB91C1C),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 20),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Image.asset(
-                          'assets/images/trash.png',
-                          height: 100,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEF4444).withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.report_gmailerrorred_rounded,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Laporkan Sampah Liar',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        "Bantu jaga lingkungan dengan melaporkan sampah liar di sekitar Anda",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 30),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Form Card
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B82F6).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.assignment_rounded,
+                            color: Color(0xFF3B82F6),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Form Pelaporan',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Dropdown Kecamatan
+                    _buildFormField(
+                      label: 'Pilih Kecamatan',
+                      icon: Icons.location_city_rounded,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedKecamatanId,
+                        hint: const Text('Pilih Kecamatan',
+                            style: TextStyle(color: Color(0xFF94A3B8))),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedKecamatanId = newValue;
+                          });
+                        },
+                        items: _kecamatanList.map<DropdownMenuItem<String>>(
+                          (Map<String, dynamic> item) {
+                            return DropdownMenuItem<String>(
+                              value: item['id'].toString(),
+                              child: Text(item['nama_kecamatan'].toString()),
+                            );
+                          },
+                        ).toList(),
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF3B82F6), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Phone Number Field
+                    _buildFormField(
+                      label: 'Nomor Handphone',
+                      icon: Icons.phone_rounded,
+                      child: TextField(
+                        controller: _phoneNumberController,
+                        decoration: _getInputDecoration('Contoh: 628123456789'),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Email Field
+                    _buildFormField(
+                      label: 'Alamat Email',
+                      icon: Icons.email_rounded,
+                      child: TextField(
+                        controller: _emailController,
+                        decoration:
+                            _getInputDecoration('Contoh: nama@email.com'),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Location Field
+                    _buildFormField(
+                      label: 'Lokasi Kejadian',
+                      icon: Icons.place_rounded,
+                      child: TextField(
+                        controller: _locationController,
+                        decoration: _getInputDecoration(
+                          _locationFetched
+                              ? 'Lokasi berhasil didapatkan'
+                              : 'Tekan tombol untuk mendapatkan lokasi',
+                        ).copyWith(
+                          suffixIcon: Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: _locationFetched
+                                  ? Colors.green
+                                  : const Color(0xFF3B82F6),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: _isLocationLoading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                      ),
+                                    ),
+                                  )
+                                : IconButton(
+                                    icon: Icon(
+                                      _locationFetched
+                                          ? Icons.check_circle
+                                          : Icons.my_location,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    onPressed: _getCurrentLocation,
+                                  ),
+                          ),
+                        ),
+                        readOnly: true,
+                      ),
+                    ),
+
+                    if (_locationFetched) ...[
+                      const SizedBox(height: 12),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _openMap,
+                          icon: const Icon(Icons.map_rounded, size: 18),
+                          label: const Text('Lihat di Peta'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF3B82F6),
+                            backgroundColor:
+                                const Color(0xFF3B82F6).withOpacity(0.1),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+
+                    // Photo Field
+                    _buildFormField(
+                      label: 'Foto Sampah',
+                      icon: Icons.camera_alt_rounded,
+                      child: GestureDetector(
+                        onTap: _showImageSourceSelection,
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            borderRadius: BorderRadius.circular(12),
+                            color: const Color(0xFFF8FAFC),
+                          ),
+                          child: Row(
                             children: [
-                              Text(
-                                "Sampah liar adalah sampah yang dibuang sembarangan, seperti di jalanan, area umum, dan tempat-tempat lainnya yang tidak diizinkan.",
-                                style: TextStyle(
-                                  fontSize: 16,
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: _photoSelected
+                                      ? Colors.green
+                                      : const Color(0xFF3B82F6),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  _photoSelected
+                                      ? Icons.check_circle
+                                      : Icons.add_a_photo,
                                   color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _photoSelected
+                                      ? 'Foto berhasil diambil'
+                                      : 'Tap untuk mengambil foto',
+                                  style: TextStyle(
+                                    color: _photoSelected
+                                        ? Colors.green
+                                        : const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+
+                    if (_photoSelected && _image != null) ...[
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          File(_image!.path),
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+
+                    // Description Field
+                    _buildFormField(
+                      label: 'Deskripsi Tambahan',
+                      icon: Icons.description_rounded,
+                      child: TextField(
+                        controller: _deskripsiController,
+                        decoration: _getInputDecoration(
+                            'Jelaskan kondisi sampah secara detail...'),
+                        maxLines: 4,
+                        textAlignVertical: TextAlignVertical.top,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.all(10.0),
-                    child: Column(
-                      children: [
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Data Laporan',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        DropdownButtonFormField<String>(
-                          value: _selectedKecamatanId,
-                          hint: const Text('Pilih Kecamatan'),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedKecamatanId = newValue;
-                            });
-                          },
-                          items: _kecamatanList.map<DropdownMenuItem<String>>(
-                            (Map<String, dynamic> item) {
-                              return DropdownMenuItem<String>(
-                                value: item['id'].toString(),
-                                child: Text(item['nama_kecamatan'].toString()),
-                              );
-                            },
-                          ).toList(),
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _phoneNumberController,
-                          decoration: const InputDecoration(
-                            labelText: 'No. HP ( Awali 62 )',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.text,
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _locationController,
-                          decoration: InputDecoration(
-                            labelText: 'Lokasi',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: _isLocationLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(),
-                                  )
-                                : IconButton(
-                                    icon: _locationFetched
-                                        ? const Icon(Icons.check_circle,
-                                            color: Colors.green)
-                                        : const Icon(Icons.location_on),
-                                    onPressed: _getCurrentLocation,
-                                  ),
-                            hintText: _locationFetched
-                                ? 'Sudah mendapatkan lokasi Anda'
-                                : 'Belum mendapatkan lokasi',
-                            hintStyle: TextStyle(
-                              color:
-                                  _locationFetched ? Colors.green : Colors.red,
-                            ),
-                          ),
-                          readOnly: true,
-                        ),
-                        const SizedBox(height: 10),
-                        if (_locationFetched)
-                          TextButton(
-                            onPressed: _openMap,
-                            child: const Text('Lihat Lokasi'),
-                          ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          decoration: InputDecoration(
-                            labelText: 'Foto Sampah',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              icon: _photoSelected
-                                  ? const Icon(Icons.check_circle,
-                                      color: Colors.green)
-                                  : const Icon(Icons.camera_alt),
-                              onPressed: _showImageSourceSelection,
-                            ),
-                            hintText: _photoSelected
-                                ? 'Sudah mendapatkan foto'
-                                : 'Belum mendapatkan foto',
-                            hintStyle: TextStyle(
-                              color: _photoSelected ? Colors.green : Colors.red,
-                            ),
-                          ),
-                          readOnly: true,
-                        ),
-                        const SizedBox(height: 10),
-                        if (_photoSelected && _image != null)
-                          Image.file(
-                            File(_image!.path),
-                            height: 200,
-                            fit: BoxFit.cover,
-                          ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _deskripsiController,
-                          decoration: const InputDecoration(
-                            labelText: 'Deskripsi',
-                            border: OutlineInputBorder(),
-                          ),
-                          maxLines: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            BottomAppBar(
-              color: Colors.transparent,
-              child: SizedBox(
+
+              const SizedBox(height: 32),
+
+              // Submit Button
+              Container(
                 width: double.infinity,
-                child: ElevatedButton(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 57, 87, 254),
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  child: const Text(
-                    'Laporkan!',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  icon: const Icon(Icons.send_rounded,
+                      color: Colors.white, size: 20),
+                  label: const Text(
+                    'Kirim Laporan',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// Helper method untuk membuat form field yang konsisten
+  Widget _buildFormField({
+    required String label,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: const Color(0xFF64748B)),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF374151),
+                fontSize: 14,
               ),
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        child,
+      ],
+    );
+  }
+
+// Helper method untuk input decoration yang konsisten
+  InputDecoration _getInputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+      ),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     );
   }
 }

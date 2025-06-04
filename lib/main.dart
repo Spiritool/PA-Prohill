@@ -11,8 +11,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await  LocalNotif.init();
-  await FCM.init();
+  await LocalNotif.init();
+  // await FCM.init();
   runApp(MyApp());
 }
 
