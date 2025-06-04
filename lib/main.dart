@@ -14,7 +14,7 @@ void main() async {
   );
   await dotenv.load(fileName: ".env");
   await LocalNotif.init();
-  await FCM.init();
+  // await FCM.init();
   runApp(MyApp());
 }
 

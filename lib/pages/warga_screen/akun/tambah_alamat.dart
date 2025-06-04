@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -203,23 +204,32 @@ class _TambahAlamatState extends State<TambahAlamat> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        elevation: 1,
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         title: Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left, color: Colors.black),
-              onPressed: () => Navigator.of(context).pop(),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new,
+                    color: Colors.black87, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 16),
             const Text(
               'Tambah Alamat',
               style: TextStyle(
-                color: Colors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -227,39 +237,97 @@ class _TambahAlamatState extends State<TambahAlamat> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DropdownButtonFormField<String>(
+              // Header Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFFFF6600).withOpacity(0.1),
+                      const Color(0xFFFF6600).withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: const Color(0xFFFF6600).withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF6600),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.location_on,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Informasi Alamat',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Lengkapi data alamat Anda dengan detail',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Form Section
+              _buildModernDropdown(
                 value: _selectedKecamatanName,
-                hint: const Text('Pilih Kecamatan'),
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedKecamatanName = newValue;
-                    _selectedKelurahan = null;
-                  });
-                },
+                hint: 'Pilih Kecamatan',
+                label: 'Kecamatan',
+                icon: Icons.map_outlined,
                 items: _kecamatanList.map((item) {
                   return DropdownMenuItem<String>(
                     value: item['nama_kecamatan'],
                     child: Text(item['nama_kecamatan']),
                   );
                 }).toList(),
-                decoration: const InputDecoration(
-                  labelText: "Kecamatan",
-                  prefixIcon: Icon(Icons.map_outlined),
-                  border: OutlineInputBorder(),
-                ),
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedKecamatanName = newValue;
+                    _selectedKelurahan = null;
+                  });
+                },
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
+
+              const SizedBox(height: 20),
+
+              _buildModernDropdown(
                 value: _selectedKelurahan,
-                hint: const Text('Pilih Kelurahan'),
-                onChanged: _selectedKecamatanName != null
-                    ? (newValue) {
-                        setState(() => _selectedKelurahan = newValue);
-                      }
-                    : null,
+                hint: 'Pilih Kelurahan',
+                label: 'Kelurahan',
+                icon: Icons.location_city,
                 items: _selectedKecamatanName != null
                     ? _kelurahanMap[_selectedKecamatanName]!
                         .map((value) => DropdownMenuItem<String>(
@@ -268,79 +336,339 @@ class _TambahAlamatState extends State<TambahAlamat> {
                             ))
                         .toList()
                     : [],
-                decoration: const InputDecoration(
-                  labelText: "Kelurahan",
-                  prefixIcon: Icon(Icons.location_city),
-                  border: OutlineInputBorder(),
-                ),
+                onChanged: _selectedKecamatanName != null
+                    ? (newValue) {
+                        setState(() => _selectedKelurahan = newValue);
+                      }
+                    : null,
               ),
-              const SizedBox(height: 16),
-              TextField(
+
+              const SizedBox(height: 20),
+
+              _buildModernTextField(
                 controller: _deskripsiController,
-                decoration: const InputDecoration(
-                  labelText: 'Deskripsi (Rumah, Toko, RT/RW)',
-                  prefixIcon: Icon(Icons.description_outlined),
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Deskripsi',
+                hint: 'Contoh: Rumah, Toko, RT/RW',
+                icon: Icons.description_outlined,
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _getCurrentLocation,
-                    icon: const Icon(Icons.my_location),
-                    label: _isLoading
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Ambil Lokasi'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _kordinat == null
-                          ? "Lokasi belum diambil"
-                          : "Lokasi berhasil diambil",
+
+              const SizedBox(height: 24),
+
+              // Location Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Lokasi GPS',
                       style: TextStyle(
-                        color: _kordinat == null ? Colors.red : Colors.green,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              if (_kordinat != null)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: _lihatLokasi,
-                    icon: const Icon(Icons.map),
-                    label: const Text('Lihat Lokasi di Google Maps'),
-                  ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 52,
+                            decoration: BoxDecoration(
+                              gradient: _isLoading
+                                  ? LinearGradient(
+                                      colors: [
+                                        Colors.grey[300]!,
+                                        Colors.grey[200]!
+                                      ],
+                                    )
+                                  : const LinearGradient(
+                                      colors: [
+                                        Color(0xFFFF6600),
+                                        Color(0xFFFF8833)
+                                      ],
+                                    ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFFFF6600).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed:
+                                  _isLoading ? null : _getCurrentLocation,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: _isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.my_location,
+                                      color: Colors.white),
+                              label: Text(
+                                _isLoading ? 'Mengambil...' : 'Ambil Lokasi',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _kordinat == null
+                            ? Colors.red[50]
+                            : Colors.green[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _kordinat == null
+                              ? Colors.red[200]!
+                              : Colors.green[200]!,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _kordinat == null
+                                ? Icons.location_off
+                                : Icons.check_circle,
+                            color: _kordinat == null
+                                ? Colors.red[600]
+                                : Colors.green[600],
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _kordinat == null
+                                ? "Lokasi belum diambil"
+                                : "Lokasi berhasil diambil",
+                            style: TextStyle(
+                              color: _kordinat == null
+                                  ? Colors.red[700]
+                                  : Colors.green[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_kordinat != null) ...[
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: _lihatLokasi,
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFFF6600),
+                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                        ),
+                        icon: const Icon(Icons.map, size: 18),
+                        label: const Text(
+                          'Lihat Lokasi di Google Maps',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              const SizedBox(height: 30),
-              SizedBox(
+              ),
+
+              const SizedBox(height: 32),
+
+              // Save Button
+              Container(
                 width: double.infinity,
-                height: 50,
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF6600), Color(0xFFFF8833)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF6600).withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
                 child: ElevatedButton.icon(
                   onPressed: _tambahAlamat,
-                  icon: const Icon(Icons.save),
-                  label: const Text('Simpan Alamat'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    textStyle: const TextStyle(fontSize: 16),
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  icon: const Icon(Icons.save, color: Colors.white),
+                  label: const Text(
+                    'Simpan Alamat',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
+
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildModernDropdown({
+    required String? value,
+    required String hint,
+    required String label,
+    required IconData icon,
+    required List<DropdownMenuItem<String>> items,
+    required void Function(String?)? onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: DropdownButtonFormField<String>(
+            value: value,
+            hint: Text(
+              hint,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            onChanged: onChanged,
+            items: items,
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                icon,
+                color: const Color(0xFFFF6600),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+            dropdownColor: Colors.white,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey[600]),
+              prefixIcon: Icon(
+                icon,
+                color: const Color(0xFFFF6600),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

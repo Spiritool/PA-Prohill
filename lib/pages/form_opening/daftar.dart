@@ -120,14 +120,28 @@ class _DaftarState extends State<Daftar> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16, color: Colors.black)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2D3748),
+          ),
+        ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: [
               Expanded(
@@ -135,22 +149,39 @@ class _DaftarState extends State<Daftar> {
                   controller: controller,
                   keyboardType: keyboardType,
                   obscureText: obscureText,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF2D3748),
+                    fontWeight: FontWeight.w500,
+                  ),
                   decoration: InputDecoration(
                     hintText: label,
                     border: InputBorder.none,
-                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF9CA3AF),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ),
               ),
               if (isPassword)
-                IconButton(
-                  icon: Icon(
-                    obscureText
-                        ? Icons.visibility_off_outlined
-                        : Icons.remove_red_eye_outlined,
-                    color: Colors.grey,
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: IconButton(
+                    icon: Icon(
+                      obscureText
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      color: const Color(0xFF9CA3AF),
+                      size: 22,
+                    ),
+                    onPressed: toggle,
                   ),
-                  onPressed: toggle,
                 ),
             ],
           ),
@@ -162,7 +193,7 @@ class _DaftarState extends State<Daftar> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -173,29 +204,73 @@ class _DaftarState extends State<Daftar> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 20),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left, color: Colors.black),
-                      onPressed: () {
-                        Navigator.pop(context); // back ke halaman sebelumnya
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Sign up',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF3E2C28),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Color(0xFF4A5568),
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
                       ),
                     ),
                     const SizedBox(height: 32),
-                    _buildTextField(label: 'Nama', controller: _namaController),
+                    // Header dengan gradient text effect
+                    Container(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ShaderMask(
+                            shaderCallback: (bounds) => const LinearGradient(
+                              colors: [
+                                Color(0xFFFF6600),
+                                Color(0xFFFF8533),
+                              ],
+                            ).createShader(bounds),
+                            child: const Text(
+                              'Create Account',
+                              style: TextStyle(
+                                fontSize: 42,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Join us today and get started',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    _buildTextField(
+                        label: 'Full Name', controller: _namaController),
                     const SizedBox(height: 24),
                     _buildTextField(
-                        label: 'Email', controller: _emailController),
+                        label: 'Email Address', controller: _emailController),
                     const SizedBox(height: 24),
                     _buildTextField(
-                      label: 'No HP ( Awali 62 )',
+                      label: 'Phone Number (+62)',
                       controller: _noHpController,
                       keyboardType: TextInputType.phone,
                     ),
@@ -211,53 +286,101 @@ class _DaftarState extends State<Daftar> {
                         });
                       },
                     ),
-                    const SizedBox(height: 40),
-                    SizedBox(
+                    const SizedBox(height: 48),
+                    // Modern gradient button
+                    Container(
                       width: double.infinity,
-                      height: 56,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFFF6600),
+                            Color(0xFFFF8533),
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF6600).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
                       child: ElevatedButton(
                         onPressed: _register,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.lightGreen,
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: const Text(
-                          'Daftar',
+                          'Create Account',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 18,
                             color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 24),
+            // Bottom section with modern styling
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
               child: Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const Login()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const Login()),
+                    );
                   },
-                  child: RichText(
-                    text: const TextSpan(
-                      style: TextStyle(fontSize: 16, color: Colors.black54),
-                      children: [
-                        TextSpan(text: 'Sudah punya akun? '),
-                        TextSpan(
-                          text: 'Log in',
-                          style: TextStyle(
-                            color: Color(0xFFA4DB47),
-                            fontWeight: FontWeight.bold,
-                          ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
                         ),
-                      ],
+                        children: [
+                          TextSpan(text: 'Already have an account? '),
+                          TextSpan(
+                            text: 'Sign In',
+                            style: TextStyle(
+                              color: Color(0xFFFF6600),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

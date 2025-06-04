@@ -5,6 +5,7 @@ import 'package:dlh_project/config/local_notif.dart';
 import 'package:dlh_project/main.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dlh_project/pages/splash_screen/splash_screen.dart';
+import 'package:dlh_project/pages/warga_screen/history.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -24,9 +25,9 @@ void _handleMessage(RemoteMessage message) {
   if (data.containsKey('navigate_to')) {
     String route = data['navigate_to'];
 
-    if (route == '/SplashScreen') {
+    if (route == '/history') {
       navigatorKey.currentState?.push(
-        MaterialPageRoute(builder: (context) => const SplashScreen()),
+        MaterialPageRoute(builder: (context) => const History()),
       );
     } else {
       navigatorKey.currentState?.pushNamed(route);
@@ -55,8 +56,7 @@ Future<void> saveTokenToServer(String token) async {
   }
 
   final response = await http.post(
-    Uri.parse(
-        '$baseipapi/user/update-fcm-token'), // GANTI URL SERVER
+    Uri.parse('$baseipapi/user/update-fcm-token'), // GANTI URL SERVER
     headers: {
       'Content-Type': 'application/json',
       // 'Authorization': 'Bearer YOUR_TOKEN_JIKA_PAKAI_AUTH',
