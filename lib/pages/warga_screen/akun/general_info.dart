@@ -7,6 +7,9 @@ import 'package:http/http.dart' as http;
 import 'package:dlh_project/pages/form_opening/login.dart';
 import 'editprofil.dart';
 import 'dart:developer';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class GeneralInfo extends StatefulWidget {
   const GeneralInfo({super.key});

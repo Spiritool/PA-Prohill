@@ -2,13 +2,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:dlh_project/pages/warga_screen/detail_berita.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class Berita extends StatelessWidget {
   const Berita({super.key});
 
   Future<List<dynamic>> fetchBerita() async {
     final response =
-        await http.get(Uri.parse('https://prohildlhcilegon.id/api/berita'));
+        await http.get(Uri.parse('$baseipapi/api/berita'));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success']) {

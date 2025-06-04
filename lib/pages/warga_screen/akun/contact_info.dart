@@ -9,9 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dlh_project/constant/color.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class AlamatService {
-  final String baseUrl = "https://prohildlhcilegon.id/api/alamat/get-by-user/";
+  final String baseUrl = "$baseipapi/api/alamat/get-by-user/";
 
   Future<List<dynamic>> fetchAlamatByUser(int userId) async {
     try {
@@ -280,7 +283,7 @@ class _ContactInfoState extends State<ContactInfo> {
   }
 
   Future<void> _deleteAlamat(int alamatId) async {
-    final url = "https://prohildlhcilegon.id/api/alamat/delete/$alamatId";
+    final url = "$baseipapi/api/alamat/delete/$alamatId";
     final response = await http.delete(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -294,7 +297,7 @@ class _ContactInfoState extends State<ContactInfo> {
   }
 
   Future<void> _updateAlamat(Map<String, dynamic> alamat) async {
-    final url = "https://prohildlhcilegon.id/api/alamat/update/${alamat['id']}";
+    final url = "$baseipapi/api/alamat/update/${alamat['id']}";
     final response = await http.post(
       Uri.parse(url),
       headers: {"Content-Type": "application/json"},

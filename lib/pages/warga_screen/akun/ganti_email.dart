@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert'; // Untuk jsonEncode
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dlh_project/constant/color.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class GantiEmail extends StatefulWidget {
   const GantiEmail({super.key});
@@ -36,7 +39,7 @@ class _GantiEmailState extends State<GantiEmail> {
     }
 
     final url = Uri.parse(
-        'https://prohildlhcilegon.id/api/user/update-email/$userId?_method=PUT');
+        '$baseipapi/api/user/update-email/$userId?_method=PUT');
     final response = await http.put(
       url,
       headers: {

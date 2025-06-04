@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class HargaSampah extends StatefulWidget {
   const HargaSampah({super.key});
@@ -17,7 +20,7 @@ class SelectedItem {
 }
 
 class _HargaSampahState extends State<HargaSampah> {
-  final String baseUrl = 'https://prohildlhcilegon.id';
+  final String baseipapi = 'https://prohildlhcilegon.id';
   List<dynamic> hargaSampahList = [];
   List<dynamic> filteredList = [];
   List<SelectedItem> selectedItems = [];
@@ -35,7 +38,7 @@ class _HargaSampahState extends State<HargaSampah> {
 
   Future<void> fetchHargaSampah() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/harga-barang'));
+      final response = await http.get(Uri.parse('$baseipapi/api/harga-barang'));
       if (response.statusCode == 200) {
         setState(() {
           hargaSampahList = jsonDecode(response.body);
@@ -119,7 +122,7 @@ class _HargaSampahState extends State<HargaSampah> {
                       borderRadius: BorderRadius.circular(20),
                       child: Image.network(
                         item['gambar'] != null && item['gambar'].isNotEmpty
-                            ? '$baseUrl${item['gambar']}'.replaceAll(r'\', '')
+                            ? '$baseipapi${item['gambar']}'.replaceAll(r'\', '')
                             : 'https://via.placeholder.com/150',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
@@ -494,7 +497,7 @@ class _HargaSampahState extends State<HargaSampah> {
                                     child: Image.network(
                                       item['gambar'] != null &&
                                               item['gambar'].isNotEmpty
-                                          ? '$baseUrl${item['gambar']}'
+                                          ? '$baseipapi${item['gambar']}'
                                               .replaceAll(r'\', '')
                                           : 'https://via.placeholder.com/150',
                                       fit: BoxFit.cover,
@@ -770,7 +773,7 @@ class _HargaSampahState extends State<HargaSampah> {
                   String gambarUrl = item['gambar'] ?? '';
 
                   if (gambarUrl.isNotEmpty) {
-                    gambarUrl = '$baseUrl$gambarUrl'.replaceAll(r'\', '');
+                    gambarUrl = '$baseipapi$gambarUrl'.replaceAll(r'\', '');
                   } else {
                     gambarUrl = 'https://via.placeholder.com/150';
                   }

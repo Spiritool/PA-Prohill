@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:dlh_project/constant/color.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class LupaPassword extends StatefulWidget {
   const LupaPassword({super.key});
@@ -16,7 +19,7 @@ class _LupaPasswordState extends State<LupaPassword> {
 
   Future<void> resetPassword() async {
     final response = await http.post(
-      Uri.parse('https://prohildlhcilegon.id/api/password/forgot'),
+      Uri.parse('$baseipapi/api/password/forgot'),
       body: {
         'email': emailController.text,
       },

@@ -18,6 +18,9 @@ import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class HomeKonten extends StatefulWidget {
   final int userId;
@@ -72,7 +75,7 @@ class _HomeKontenState extends State<HomeKonten> {
   }
 
   Future<List<String>> fetchSettings() async {
-    const String url = "https://prohildlhcilegon.id/api/setting";
+    final String url = "$baseipapi/api/setting";
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -300,7 +303,7 @@ class _HomeKontenState extends State<HomeKonten> {
                                             itemBuilder: (context, index) {
                                               final berita = beritaList[index];
                                               final gambarUrl =
-                                                  'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+                                                  '$baseipapi/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
                                               return Container(
                                                 margin:
@@ -851,7 +854,7 @@ class _HomeKontenState extends State<HomeKonten> {
 
   Future<List<dynamic>> fetchBerita() async {
     final response =
-        await http.get(Uri.parse('https://prohildlhcilegon.id/api/berita'));
+        await http.get(Uri.parse('$baseipapi/api/berita'));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success']) {

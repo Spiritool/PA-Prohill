@@ -8,6 +8,9 @@ import 'package:dlh_project/pages/splash_screen/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -53,7 +56,7 @@ Future<void> saveTokenToServer(String token) async {
 
   final response = await http.post(
     Uri.parse(
-        'http://192.168.223.205:8000/api/user/update-fcm-token'), // GANTI URL SERVER
+        '$baseipapi/user/update-fcm-token'), // GANTI URL SERVER
     headers: {
       'Content-Type': 'application/json',
       // 'Authorization': 'Bearer YOUR_TOKEN_JIKA_PAKAI_AUTH',

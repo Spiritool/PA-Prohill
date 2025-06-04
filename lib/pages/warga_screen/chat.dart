@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class ChatPage extends StatefulWidget {
   final int userId;
@@ -50,7 +53,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _loadMessages() async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/contact/get-by-user/$_userId'),
+        Uri.parse('$baseipapi/api/contact/get-by-user/$_userId'),
       );
 
       if (response.statusCode == 200) {
@@ -94,7 +97,7 @@ class _ChatPageState extends State<ChatPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/contact/store'),
+        Uri.parse('$baseipapi/api/contact/store'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'idpengirim': _userId,

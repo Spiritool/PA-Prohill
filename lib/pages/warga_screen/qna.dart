@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class QnAPage extends StatefulWidget {
   const QnAPage({super.key});
@@ -23,7 +26,7 @@ class _QnAPageState extends State<QnAPage> {
 
   Future<void> fetchFAQ() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/qna/show-all'));
+      final response = await http.get(Uri.parse('$baseipapi/qna/show-all'));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
 

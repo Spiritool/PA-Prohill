@@ -15,9 +15,12 @@ import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart';
 import 'package:dlh_project/widget/infoField.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class AlamatService {
-  final String baseUrl = "https://prohildlhcilegon.id/api/alamat/get-by-user/";
+  final String baseUrl = "$baseipapi/api/alamat/get-by-user/";
 
   Future<List<dynamic>> fetchAlamatByUser(int userId) async {
     try {
@@ -389,7 +392,7 @@ class _AkunState extends State<Akun> {
     return GestureDetector(
       onTap: () {
         launchUrl(
-            Uri.parse("https://prohildlhcilegon.id/request_delete_users"));
+            Uri.parse("$baseipapi/request_delete_users"));
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

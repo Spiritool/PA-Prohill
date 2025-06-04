@@ -3,6 +3,9 @@ import 'package:dlh_project/pages/form_opening/login.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class Daftar extends StatefulWidget {
   const Daftar({super.key});
@@ -37,7 +40,7 @@ class _DaftarState extends State<Daftar> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://prohildlhcilegon.id/api/register'),
+        Uri.parse('$baseipapi/api/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'nama': nama,

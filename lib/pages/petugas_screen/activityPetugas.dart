@@ -8,6 +8,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class ActivityPetugasPage extends StatefulWidget {
   const ActivityPetugasPage({super.key});
@@ -45,25 +48,15 @@ Future<Map<String, List<SampahData>>> fetchSampahData() async {
   }
 
   final urls = {
-    // 'riwayat': [
-    //   'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/done',
-    //   'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
-    // ],
-    // 'proses': [
-    //   'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
-    // ],
-    // 'pending': [
-    //   'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
-    // ],
     'riwayat': [
-      'http://192.168.1.21:8000/api/pengangkutan-sampah/history/by-petugas/$userId/done',
-      'http://192.168.1.21:8000/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
+      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/done',
+      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
     ],
     'proses': [
-      'http://192.168.1.21:8000/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
+      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/proses'
     ],
     'pending': [
-      'http://192.168.1.21:8000/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
+      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/pending'
     ],
   };
 
@@ -113,14 +106,14 @@ Future<Map<String, List<SampahLiarData>>> fetchSampahLiarData() async {
 
   final urls = {
     'riwayat': [
-      'http://192.168.1.21:8000/api/pengangkutan-sampah-liar/history/by-petugas/$userId/done',
-      'http://192.168.1.21:8000/api/pengangkutan-sampah-liar/history/by-petugas/$userId/failed'
+      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/done',
+      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/failed'
     ],
     'proses': [
-      'http://192.168.1.21:8000/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses'
+      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses'
     ],
     'pending': [
-      'http://192.168.1.21:8000/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending'
+      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending'
     ],
   };
 

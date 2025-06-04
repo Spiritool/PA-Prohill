@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class Uptd extends StatefulWidget {
   const Uptd({super.key});
@@ -10,7 +13,7 @@ class Uptd extends StatefulWidget {
 }
 
 class _UptdState extends State<Uptd> {
-  final String baseUrl = "https://prohildlhcilegon.id/api/kecamatan";
+  final String baseUrl = "$baseipapi/api/kecamatan";
   late Future<List<Map<String, dynamic>>> _kecamatanData;
 
   @override

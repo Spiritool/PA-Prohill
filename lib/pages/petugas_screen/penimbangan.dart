@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:dlh_project/pages/petugas_screen/home.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class Penimbangan extends StatefulWidget {
   final int idSampah; // ID for the specific waste item
@@ -41,7 +44,7 @@ class _PenimbanganState extends State<Penimbangan> {
       // Submit penimbangan data
       final penimbanganResponse = await http.post(
         Uri.parse(
-            'http://192.168.1.21:8000/api/pengangkutan-sampah/penimbangan-sampah/${widget.idSampah}'),
+            '$baseipapi/api/pengangkutan-sampah/penimbangan-sampah/${widget.idSampah}'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -58,7 +61,7 @@ class _PenimbanganState extends State<Penimbangan> {
         // Update status to 'done'
         final statusUpdateResponse = await http.post(
           Uri.parse(
-              'http://192.168.1.21:8000/api/pengangkutan-sampah/done/${widget.idSampah}'),
+              'http://192.168.223.205:8000/api/pengangkutan-sampah/done/${widget.idSampah}'),
           headers: {
             'Content-Type': 'application/json',
           },

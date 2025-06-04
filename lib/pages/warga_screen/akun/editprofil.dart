@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class EditProfilePage extends StatefulWidget {
   final String initialName;
@@ -118,7 +121,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse("http://192.168.223.205:8000/api/user/update/$userId"),
+      Uri.parse("$baseipapi/api/user/update/$userId"),
     );
     request.headers['Authorization'] = 'Bearer $token';
     request.fields['nama'] = name;
@@ -143,7 +146,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse("http://192.168.223.205:8000/api/user/$userId/foto-profile"),
+      Uri.parse("$baseipapi/api/user/$userId/foto-profile"),
     );
     request.headers['Authorization'] = 'Bearer $token';
     request.fields['_method'] = 'PUT';

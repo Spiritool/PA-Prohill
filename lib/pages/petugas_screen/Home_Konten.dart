@@ -10,6 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
+
 
 class HomeKontenPetugas extends StatefulWidget {
   final int userId;
@@ -41,7 +45,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
   }
 
   Future<List<String>> fetchSettings() async {
-    const String url = "https://prohildlhcilegon.id/api/setting";
+    final String url = "$baseipapi/api/setting";
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -364,7 +368,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                           //               itemBuilder: (context, index) {
                           //                 final berita = beritaList[index];
                           //                 final gambarUrl =
-                          //                     'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+                          //                     '$baseipapi/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
                           //                 return Container(
                           //                   margin: const EdgeInsets.symmetric(
@@ -511,7 +515,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                                   scrollDirection: Axis.horizontal,
                                   children: beritaList.map((berita) {
                                     final gambarUrl =
-                                        'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+                                        '$baseipapi/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
                                     final judul = berita['judul'] ??
                                         'Judul Tidak Tersedia';
 
@@ -682,7 +686,7 @@ void _showLoginRequiredDialog(BuildContext context) {
 
 Future<List<dynamic>> fetchBerita() async {
   final response =
-      await http.get(Uri.parse('https://prohildlhcilegon.id/api/berita'));
+      await http.get(Uri.parse('$baseipapi/api/berita'));
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     if (data['success']) {

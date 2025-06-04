@@ -7,6 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart'; // Add this for opening location in Google Maps
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class SampahLiar extends StatefulWidget {
   const SampahLiar({super.key});
@@ -109,7 +112,7 @@ class _SampahLiarState extends State<SampahLiar> {
   }
 
   Future<void> _fetchKecamatanData() async {
-    const String url = "https://prohildlhcilegon.id/api/kecamatan";
+    final String url = "$baseipapi/api/kecamatan";
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -215,7 +218,7 @@ class _SampahLiarState extends State<SampahLiar> {
         var request = http.MultipartRequest(
           'POST',
           Uri.parse(
-              'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/store'),
+              '$baseipapi/api/pengangkutan-sampah-liar/store'),
         );
         request.fields['id_kecamatan'] = _selectedKecamatanId!;
         request.fields['email'] = _emailController.text;

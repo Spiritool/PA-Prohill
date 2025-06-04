@@ -4,6 +4,9 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class TambahAlamat extends StatefulWidget {
   const TambahAlamat({super.key});
@@ -92,7 +95,7 @@ class _TambahAlamatState extends State<TambahAlamat> {
   }
 
   Future<void> _fetchKecamatanData() async {
-    const String url = "https://prohildlhcilegon.id/api/kecamatan";
+    final String url = "$baseipapi/api/kecamatan";
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -134,7 +137,7 @@ class _TambahAlamatState extends State<TambahAlamat> {
       return;
     }
 
-    final url = Uri.parse('https://prohildlhcilegon.id/api/alamat/store');
+    final url = Uri.parse('$baseipapi/api/alamat/store');
     final response = await http.post(
       url,
       headers: {

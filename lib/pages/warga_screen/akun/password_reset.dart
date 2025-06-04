@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class PasswordReset extends StatefulWidget {
   const PasswordReset({super.key});
@@ -51,7 +54,7 @@ class _PasswordResetState extends State<PasswordReset> {
     }
 
     final url = Uri.parse(
-        'https://prohildlhcilegon.id/api/user/update-password/$userId?_method=PUT');
+        '$baseipapi/api/user/update-password/$userId?_method=PUT');
     final response = await http.put(
       url,
       headers: {

@@ -12,6 +12,9 @@ import 'package:dlh_project/pages/form_opening/daftar.dart';
 import 'package:flutter/services.dart';
 import 'package:dlh_project/config/fcm.dart';
 import 'dart:developer';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -41,8 +44,8 @@ class _LoginState extends State<Login> {
     }
 
     final response = await http.post(
-      Uri.parse('https://prohildlhcilegon.id/api/login'),
-      // Uri.parse('http://192.168.223.205:8000:8000/api/login'),
+      // Uri.parse('https://prohildlhcilegon.id/api/login'),
+      Uri.parse('$baseipapi/api/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
@@ -66,8 +69,6 @@ class _LoginState extends State<Login> {
       await prefs.setString('user_profile_photo', user['foto_profile'] ?? '');
 
       // await FCM.init();
-
-      log('${user['foto_profile']}');
 
       if (user['role'] == 'warga') {
         ScaffoldMessenger.of(context).showSnackBar(

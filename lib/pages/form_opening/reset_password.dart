@@ -2,6 +2,9 @@ import 'package:dlh_project/pages/form_opening/login.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class ResetPassword extends StatefulWidget {
   final String token;
@@ -29,7 +32,7 @@ class _ResetPasswordState extends State<ResetPassword> {
     }
 
     final response = await http.post(
-      Uri.parse('https://prohildlhcilegon.id/api/password/reset'),
+      Uri.parse('$baseipapi/api/password/reset'),
       body: {
         'token': widget.token,
         'password': passwordController.text,

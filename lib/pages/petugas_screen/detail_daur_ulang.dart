@@ -7,6 +7,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dlh_project/pages/petugas_screen/mapPetugasSingle.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class DetailSampahDaurUlangPage extends StatelessWidget {
   final SampahData sampah;
@@ -20,7 +23,7 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
 
     final String apiUrl =
         // 'https://prohildlhcilegon.id/api/pengangkutan-sampah/proses/$idSampah';
-        'http://192.168.1.21:8000/api/pengangkutan-sampah/proses/$idSampah';
+        '$baseipapi/api/pengangkutan-sampah/proses/$idSampah';
 
     final Map<String, String> headers = {
       'Content-Type': 'application/json',

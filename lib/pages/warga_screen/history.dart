@@ -8,6 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 Future<List<SampahData>> fetchSampahData() async {
   final prefs = await SharedPreferences.getInstance();
@@ -18,10 +21,10 @@ Future<List<SampahData>> fetchSampahData() async {
   }
 
   final urls = [
-    'http://192.168.223.205:8000/api/pengangkutan-sampah/history/$userId/proses',
-    'http://192.168.223.205:8000/api/pengangkutan-sampah/history/$userId/done',
-    'http://192.168.223.205:8000/api/pengangkutan-sampah/history/$userId/pending',
-    'http://192.168.223.205:8000/api/pengangkutan-sampah/history/$userId/failed',
+    '$baseipapi/api/pengangkutan-sampah/history/$userId/proses',
+    '$baseipapi/api/pengangkutan-sampah/history/$userId/done',
+    '$baseipapi/api/pengangkutan-sampah/history/$userId/pending',
+    '$baseipapi/api/pengangkutan-sampah/history/$userId/failed',
   ];
 
   List<SampahData> allData = [];
@@ -1021,7 +1024,7 @@ class _HistoryState extends State<History> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  'http://192.168.223.205:8000/storage/foto-sampah/$fotoSampah',
+                  '$baseipapi/storage/foto-sampah/$fotoSampah',
                   errorBuilder: (context, error, stackTrace) =>
                       const Text('Gambar tidak dapat ditampilkan'),
                   loadingBuilder: (context, child, loadingProgress) {

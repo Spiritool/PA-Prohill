@@ -5,6 +5,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class LeaderboardPagePetugas extends StatefulWidget {
   @override
@@ -23,7 +26,7 @@ class _LeaderboardPagePetugasState extends State<LeaderboardPagePetugas> {
 
   Future<void> fetchLeaderboardData() async {
     final response =
-        await http.get(Uri.parse('http://10.251.130.12:8000/api/user/all'));
+        await http.get(Uri.parse('$baseipapi/api/user/all'));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);

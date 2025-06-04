@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class DetailBerita extends StatelessWidget {
   final dynamic berita;
@@ -8,7 +11,7 @@ class DetailBerita extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gambarUrl =
-        'https://prohildlhcilegon.id/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
+        '$baseipapi/storage/gambar-berita/${berita['gambar_konten'][0]['nama']}';
 
     return Scaffold(
       body: SafeArea(

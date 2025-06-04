@@ -7,6 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'inputFotoSampah.dart';
 import 'package:dlh_project/pages/petugas_screen/mapPetugasSingle.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class DetailSampahLiarPage extends StatelessWidget {
   final SampahLiarData sampah;
@@ -19,7 +22,7 @@ class DetailSampahLiarPage extends StatelessWidget {
     final String? token = prefs.getString('token');
 
     final String apiUrl =
-        'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/proses/$idSampah';
+        '$baseipapi/api/pengangkutan-sampah-liar/proses/$idSampah';
 
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -75,7 +78,7 @@ class DetailSampahLiarPage extends StatelessWidget {
     final String? token = prefs.getString('token');
 
     final String apiUrl =
-        'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/failed/$idSampah';
+        '$baseipapi/api/pengangkutan-sampah-liar/failed/$idSampah';
 
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -510,7 +513,7 @@ class DetailSampahLiarPage extends StatelessWidget {
   }
 
   Widget _buildBuktiFoto(List<String> fotoUrls) {
-    const baseUrl = 'https://prohildlhcilegon.id/storage/foto-sampah/';
+    final baseUrl = '$baseipapi/storage/foto-sampah/';
 
     return GridView.builder(
       shrinkWrap: true,

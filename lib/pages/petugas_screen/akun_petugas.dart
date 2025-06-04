@@ -6,6 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dlh_project/pages/form_opening/login.dart';
 import 'package:dlh_project/pages/warga_screen/akun/password_reset.dart';
 import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart'; // Import GantiEmail page
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class AkunPetugas extends StatefulWidget {
   const AkunPetugas({super.key});
@@ -496,7 +499,7 @@ Widget _buildPasswordResetField() {
 
                 // Prepare the API request
                 final String apiUrl =
-                    'https://prohildlhcilegon.id/api/user/update/$idUser?_method=PUT';
+                    '$baseipapi/api/user/update/$idUser?_method=PUT';
                 final String? token = prefs.getString('token');
 
                 final Map<String, String> headers = {
@@ -571,7 +574,7 @@ Widget _buildPasswordResetField() {
     }
 
     final url = Uri.parse(
-        'https://prohildlhcilegon.id/api/user/update/$userId?_method=PUT');
+        '$baseipapi/api/user/update/$userId?_method=PUT');
     final response = await http.put(
       url,
       headers: {
@@ -637,7 +640,7 @@ Widget _buildPasswordResetField() {
     print('Body JSON yang dikirim: $requestBody');
 
     final url = Uri.parse(
-        'https://prohildlhcilegon.id/api/user/$userId/status?_method=PUT');
+        '$baseipapi/api/user/$userId/status?_method=PUT');
     final response = await http.put(
       url,
       headers: {

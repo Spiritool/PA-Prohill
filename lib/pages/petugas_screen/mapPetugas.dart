@@ -10,6 +10,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final baseipapi = dotenv.env['LOCAL_IP'];
 
 class mapPetugas extends StatefulWidget {
   const mapPetugas({super.key});
@@ -83,10 +86,10 @@ class _mapPetugasState extends State<mapPetugas> {
 
   Future<void> _fetchKoordinatFromApi(int userId) async {
     final urls = [
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses',
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending',
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
-      'https://prohildlhcilegon.id/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
+      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses',
+      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending',
+      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
+      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
     ];
 
     List<Map<String, dynamic>> result = [];
