@@ -130,139 +130,274 @@ class _HistoryState extends State<History> {
       endDate = DateTime(selectedYear, now.month + 1, 0);
       selectedDateRange = 'monthly'; // set sebagai bulanan
       _applyFilters(data); // panggil juga langsung setelah fetch
-      _loadRating();
     });
   }
 
-  void _showRatingDialog() {
+// Perbaikan method _submitRating untuk memastikan dialog selalu menutup
+  Future<void> _submitRating(
+      int idlaporan, int idpetugas, int? bintang, String? deskripsi) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Mengirim rating...'),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final idwarga = prefs.getInt('user_id') ?? 0;
+
+      print('=== SUBMIT RATING DEBUG ===');
+      print('User ID: $idwarga');
+      print('Id petugas: $idpetugas');
+      print('Id laporan: $idlaporan');
+      print('bintang: $bintang');
+      print('deskripsi: ${deskripsi ?? "kosong"}');
+
+      if (idwarga == 0) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User ID tidak ditemukan'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final url = '$baseipapi/api/rating/store';
+      final requestBody = {
+        'idwarga': idwarga,
+        "idpetugas": idpetugas,
+        'idlaporan': idlaporan, // ✅ GANTI INI
+        'bintang': bintang,
+        'deskripsi': deskripsi ?? "",
+      };
+
+      print('URL API: $url');
+      print('Request Body: ${jsonEncode(requestBody)}');
+
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(requestBody),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () =>
+                throw Exception('Request timeout - silakan coba lagi'),
+          );
+
+      Navigator.of(context).pop();
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Rating berhasil dikirim ke API');
+
+        setState(() {
+          futureSampahData = fetchSampahData();
+          expandedCards.clear();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rating berhasil dikirim!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        String errorMessage = 'Gagal mengirim rating';
+        try {
+          final responseData = jsonDecode(response.body);
+          if (responseData['message'] != null) {
+            errorMessage = responseData['message'];
+          }
+        } catch (_) {}
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$errorMessage (${response.statusCode})'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      print('❌ Exception: $e');
+      try {
+        Navigator.of(context).pop();
+      } catch (_) {}
+
+      String userErrorMessage = 'Terjadi kesalahan saat mengirim rating';
+      if (e.toString().contains('timeout')) {
+        userErrorMessage = 'Koneksi timeout - silakan coba lagi';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userErrorMessage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'Coba Lagi',
+            textColor: Colors.white,
+            onPressed: () {
+              _showRatingDialog(idlaporan, idpetugas); // ✅ PASTIKAN INI SESUAI
+            },
+          ),
+        ),
+      );
+    }
+
+    print('=== END SUBMIT RATING DEBUG ===\n');
+  }
+
+// Perbaikan method _showRatingDialog dengan handling yang lebih baik
+  void _showRatingDialog(int idlaporan, int idpetugas) {
     double selectedRating = 3.0;
     final TextEditingController commentController = TextEditingController();
+    bool isSubmitting = false; // Flag untuk mencegah double submit
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text(
-            'Beri Rating Petugas',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Seberapa puas Anda dengan layanan petugas?',
-                style: TextStyle(fontSize: 14),
+      barrierDismissible: true, // Biarkan user bisa tutup dengan tap di luar
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              title: const Text(
+                'Beri Rating Petugas',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 12),
-              Center(
-                child: RatingBar.builder(
-                  initialRating: 3,
-                  minRating: 1,
-                  direction: Axis.horizontal,
-                  allowHalfRating: false,
-                  itemCount: 5,
-                  itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  itemBuilder: (context, _) => const Icon(
-                    Icons.star,
-                    color: Colors.amber,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Seberapa puas Anda dengan layanan petugas?',
+                    style: TextStyle(fontSize: 14),
                   ),
-                  onRatingUpdate: (rating) {
-                    selectedRating = rating;
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Komentar (opsional)',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: commentController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Tuliskan komentar Anda...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: RatingBar.builder(
+                      initialRating: 3,
+                      minRating: 1,
+                      direction: Axis.horizontal,
+                      allowHalfRating: false,
+                      itemCount: 5,
+                      itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      itemBuilder: (context, _) => const Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                      ),
+                      onRatingUpdate: (rating) {
+                        selectedRating = rating;
+                      },
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.all(10),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Komentar (opsional)',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    enabled: !isSubmitting, // Disable saat submitting
+                    decoration: InputDecoration(
+                      hintText: 'Tuliskan komentar Anda...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.all(10),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                  child: const Text('Batal'),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.send),
-              label: const Text('Kirim'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () async {
-                await _submitRating(
-                    selectedRating, commentController.text.trim());
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+                ElevatedButton.icon(
+                  icon: isSubmitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.send),
+                  label: Text(isSubmitting ? 'Mengirim...' : 'Kirim'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          // Set flag untuk mencegah double submit
+                          setState(() {
+                            isSubmitting = true;
+                          });
+
+                          try {
+                            // Tutup dialog rating terlebih dahulu
+                            Navigator.of(dialogContext).pop();
+
+                            // Panggil submit rating
+                            await _submitRating(
+                                idlaporan,
+                                idpetugas,
+                                selectedRating.round(),
+                                commentController.text.trim());
+                          } catch (e) {
+                            print('Error in dialog submit: $e');
+                            // Jika ada error, tampilkan snackbar
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Terjadi kesalahan: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } finally {
+                            // Reset flag
+                            isSubmitting = false;
+                          }
+                        },
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  Future<void> _submitRating(double rating, String? comment) async {
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('userId');
-
-    final response = await http.post(
-      Uri.parse('https://192.168.223.205:8000/rating/store'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'user_id': userId,
-        'rating': rating,
-        'comment': comment ?? "",
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      await prefs.setDouble('rating', rating);
-      setState(() {
-        ratingPetugas = rating;
-        catatanPetugas = comment;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Rating berhasil dikirim!')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal mengirim rating')),
-      );
-    }
-  }
-
-  Future<double?> getRating() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs
-        .getDouble('rating'); // Mengambil rating yang disimpan sebelumnya
-  }
-
-  Future<double?> loadRating() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getDouble('rating'); // Mengambil rating
-  }
-
-  Future<void> _loadRating() async {
-    final rating = await getRating();
-    setState(() {
-      ratingPetugas = rating;
-    });
+// Method untuk mengecek apakah sudah ada rating untuk sampah tertentu
+  bool _hasRating(double? ratingPetugas) {
+    return ratingPetugas != null && ratingPetugas > 0;
   }
 
   void _calculateStatusCounts(List<SampahData> data) {
@@ -834,6 +969,7 @@ class _HistoryState extends State<History> {
                                   description: data.deskripsi,
                                   mapUrl: data.alamat.kordinat,
                                   idSampah: data.id,
+                                  idpetugas: data.id_user_petugas,
                                   statusColor: statusColor,
                                   tanggalFormatted: formattedDate,
                                   ratingPetugas: data.ratingPetugas,
@@ -867,6 +1003,7 @@ class _HistoryState extends State<History> {
     required String description,
     required String mapUrl,
     required int idSampah,
+    required int idpetugas,
     required Color statusColor,
     required String tanggalFormatted,
     required double? ratingPetugas,
@@ -885,6 +1022,7 @@ class _HistoryState extends State<History> {
         description: description,
         mapUrl: mapUrl,
         idSampah: idSampah,
+        idpetugas: idpetugas,
         statusColor: statusColor,
         tanggalFormatted: tanggalFormatted,
         ratingPetugas: ratingPetugas,
@@ -904,6 +1042,7 @@ class _HistoryState extends State<History> {
     required String description,
     required String mapUrl,
     required int idSampah,
+    required int idpetugas,
     required Color statusColor,
     required String tanggalFormatted,
     required double? ratingPetugas,
@@ -1036,34 +1175,77 @@ class _HistoryState extends State<History> {
             else
               const Text('Tidak ada foto tersedia.'),
             const SizedBox(height: 16),
+            // Bagian tombol dan rating
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ElevatedButton(
-                  onPressed: () => _openMap(mapUrl),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => _openMap(mapUrl),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Lihat Lokasi'),
                     ),
-                  ),
-                  child: const Text('Lihat Lokasi'),
-                ),
-                if (status == 'done' && ratingPetugas != null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Rating: $ratingPetugas ⭐️'),
-                      if (catatanPetugas != null && catatanPetugas!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            'Komentar: $catatanPetugas',
-                            style: TextStyle(color: Colors.grey[700]),
+
+                    // Tombol rating hanya untuk status 'done' dan belum ada rating
+                    if (status.toLowerCase() == 'done' &&
+                        !_hasRating(ratingPetugas))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: ElevatedButton.icon(
+                          onPressed: () =>
+                              _showRatingDialog(idSampah, idpetugas),
+                          icon: const Icon(Icons.star, size: 16),
+                          label: const Text('Beri Rating'),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.orange,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
-                    ],
+                      ),
+                  ],
+                ),
+
+                // Tampilkan rating jika sudah ada
+                if (status.toLowerCase() == 'done' && _hasRating(ratingPetugas))
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            const Text('Rating: ',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text('$ratingPetugas'),
+                            const Icon(Icons.star,
+                                color: Colors.amber, size: 16),
+                          ],
+                        ),
+                        if (catatanPetugas != null && catatanPetugas.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Komentar: $catatanPetugas',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
               ],
             ),

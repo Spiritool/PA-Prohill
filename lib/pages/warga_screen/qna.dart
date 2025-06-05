@@ -13,7 +13,7 @@ class QnAPage extends StatefulWidget {
 }
 
 class _QnAPageState extends State<QnAPage> {
-  final String baseUrl = 'http://192.168.229.205:8000';
+  final String baseUrl = 'http:/192.168.1.15:8000';
   List<Map<String, String>> _faqData = [];
   List<bool> _isExpanded = [];
   bool _isLoading = true;

@@ -483,7 +483,7 @@ class _PointScreenState extends State<PointScreen> {
           if (isExpanded) ...[
             const SizedBox(height: 16),
             Text('Nama      : $name'),
-            Text('No. HP    : $phone'),
+            // Text('No. HP    : $phone'),
             Row(
               children: [
                 const Text('Status     : '),
