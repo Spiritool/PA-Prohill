@@ -130,6 +130,8 @@ class _HistoryState extends State<History> {
       endDate = DateTime(selectedYear, now.month + 1, 0);
       selectedDateRange = 'monthly'; // set sebagai bulanan
       _applyFilters(data); // panggil juga langsung setelah fetch
+      // 🔥 Tambahkan baris ini:
+      checkAndAutoRate(data);
     });
   }
 
@@ -140,14 +142,47 @@ class _HistoryState extends State<History> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Mengirim rating...'),
-            ],
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6600).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: const CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFFFF6600)),
+                    strokeWidth: 3,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Mengirim rating...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Mohon tunggu sebentar',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -167,9 +202,18 @@ class _HistoryState extends State<History> {
       if (idwarga == 0) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User ID tidak ditemukan'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(child: Text('User ID tidak ditemukan')),
+              ],
+            ),
+            backgroundColor: Colors.red[600],
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
         return;
@@ -179,7 +223,7 @@ class _HistoryState extends State<History> {
       final requestBody = {
         'idwarga': idwarga,
         "idpetugas": idpetugas,
-        'idlaporan': idlaporan, // ✅ GANTI INI
+        'idlaporan': idlaporan,
         'bintang': bintang,
         'deskripsi': deskripsi ?? "",
       };
@@ -210,10 +254,19 @@ class _HistoryState extends State<History> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rating berhasil dikirim!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(child: Text('Rating berhasil dikirim!')),
+              ],
+            ),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 2),
           ),
         );
       } else {
@@ -227,8 +280,17 @@ class _HistoryState extends State<History> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$errorMessage (${response.statusCode})'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('$errorMessage (${response.statusCode})')),
+              ],
+            ),
+            backgroundColor: Colors.red[600],
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -246,14 +308,24 @@ class _HistoryState extends State<History> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(userErrorMessage),
-          backgroundColor: Colors.red,
+          content: Row(
+            children: [
+              const Icon(Icons.wifi_off, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(child: Text(userErrorMessage)),
+            ],
+          ),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
             label: 'Coba Lagi',
             textColor: Colors.white,
+            backgroundColor: Colors.white.withOpacity(0.2),
             onPressed: () {
-              _showRatingDialog(idlaporan, idpetugas); // ✅ PASTIKAN INI SESUAI
+              _showRatingDialog(idlaporan, idpetugas);
             },
           ),
         ),
@@ -263,131 +335,305 @@ class _HistoryState extends State<History> {
     print('=== END SUBMIT RATING DEBUG ===\n');
   }
 
-// Perbaikan method _showRatingDialog dengan handling yang lebih baik
+// Perbaikan method _showRatingDialog dengan tampilan yang lebih menarik
   void _showRatingDialog(int idlaporan, int idpetugas) {
     double selectedRating = 3.0;
     final TextEditingController commentController = TextEditingController();
-    bool isSubmitting = false; // Flag untuk mencegah double submit
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
-      barrierDismissible: true, // Biarkan user bisa tutup dengan tap di luar
+      barrierDismissible: true,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
+            return Dialog(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              title: const Text(
-                'Beri Rating Petugas',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Seberapa puas Anda dengan layanan petugas?',
-                    style: TextStyle(fontSize: 14),
+                  borderRadius: BorderRadius.circular(24)),
+              elevation: 16,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white,
+                      const Color(0xFFFF6600).withOpacity(0.02),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: RatingBar.builder(
-                      initialRating: 3,
-                      minRating: 1,
-                      direction: Axis.horizontal,
-                      allowHalfRating: false,
-                      itemCount: 5,
-                      itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      itemBuilder: (context, _) => const Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                      ),
-                      onRatingUpdate: (rating) {
-                        selectedRating = rating;
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Komentar (opsional)',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: commentController,
-                    maxLines: 3,
-                    enabled: !isSubmitting, // Disable saat submitting
-                    decoration: InputDecoration(
-                      hintText: 'Tuliskan komentar Anda...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.all(10),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () {
-                          Navigator.of(dialogContext).pop();
-                        },
-                  child: const Text('Batal'),
                 ),
-                ElevatedButton.icon(
-                  icon: isSubmitting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Center(
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFFFF6600),
+                              const Color(0xFFFF6600).withOpacity(0.8),
+                            ],
                           ),
-                        )
-                      : const Icon(Icons.send),
-                  label: Text(isSubmitting ? 'Mengirim...' : 'Kirim'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: isSubmitting
-                      ? null
-                      : () async {
-                          // Set flag untuk mencegah double submit
-                          setState(() {
-                            isSubmitting = true;
-                          });
+                          borderRadius: BorderRadius.circular(40),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF6600).withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.star_rounded,
+                          size: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
 
-                          try {
-                            // Tutup dialog rating terlebih dahulu
-                            Navigator.of(dialogContext).pop();
+                    // Title
+                    const Center(
+                      child: Text(
+                        'Beri Rating Petugas',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
 
-                            // Panggil submit rating
-                            await _submitRating(
-                                idlaporan,
-                                idpetugas,
-                                selectedRating.round(),
-                                commentController.text.trim());
-                          } catch (e) {
-                            print('Error in dialog submit: $e');
-                            // Jika ada error, tampilkan snackbar
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Terjadi kesalahan: $e'),
-                                backgroundColor: Colors.red,
+                    // Subtitle
+                    Center(
+                      child: Text(
+                        'Seberapa puas Anda dengan layanan petugas?',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Rating Stars
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF6600).withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFFF6600).withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: RatingBar.builder(
+                          initialRating: 3,
+                          minRating: 1,
+                          direction: Axis.horizontal,
+                          allowHalfRating: false,
+                          itemCount: 5,
+                          itemSize: 36,
+                          itemPadding:
+                              const EdgeInsets.symmetric(horizontal: 4.0),
+                          itemBuilder: (context, _) => const Icon(
+                            Icons.star_rounded,
+                            color: Color(0xFFFF6600),
+                          ),
+                          unratedColor: Colors.grey[300],
+                          onRatingUpdate: (rating) {
+                            selectedRating = rating;
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Comment Section
+                    const Text(
+                      'Komentar (opsional)',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: commentController,
+                        maxLines: 3,
+                        enabled: !isSubmitting,
+                        decoration: InputDecoration(
+                          hintText: 'Tuliskan komentar Anda...',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFFFF6600), width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.all(16),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Action Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: isSubmitting
+                                ? null
+                                : () {
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            );
-                          } finally {
-                            // Reset flag
-                            isSubmitting = false;
-                          }
-                        },
+                            ),
+                            child: Text(
+                              'Batal',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: isSubmitting
+                                ? null
+                                : () async {
+                                    setState(() {
+                                      isSubmitting = true;
+                                    });
+
+                                    try {
+                                      Navigator.of(dialogContext).pop();
+                                      await _submitRating(
+                                          idlaporan,
+                                          idpetugas,
+                                          selectedRating.round(),
+                                          commentController.text.trim());
+                                    } catch (e) {
+                                      print('Error in dialog submit: $e');
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              const Icon(Icons.error_outline,
+                                                  color: Colors.white),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                  child: Text(
+                                                      'Terjadi kesalahan: $e')),
+                                            ],
+                                          ),
+                                          backgroundColor: Colors.red[600],
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12)),
+                                        ),
+                                      );
+                                    } finally {
+                                      isSubmitting = false;
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF6600),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 4,
+                              shadowColor:
+                                  const Color(0xFFFF6600).withOpacity(0.4),
+                            ),
+                            child: isSubmitting
+                                ? const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        'Mengirim...',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.send_rounded, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Kirim Rating',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           },
         );
@@ -398,6 +644,53 @@ class _HistoryState extends State<History> {
 // Method untuk mengecek apakah sudah ada rating untuk sampah tertentu
   bool _hasRating(double? ratingPetugas) {
     return ratingPetugas != null && ratingPetugas > 0;
+  }
+
+  Future<void> checkAndAutoRate(List<SampahData> laporanList) async {
+    final prefs = await SharedPreferences.getInstance();
+    final ratedIds = prefs.getStringList('autoRatedIds') ?? [];
+
+    final now = DateTime.now();
+
+    for (var laporan in laporanList) {
+      try {
+        // Akses menggunakan property dari SampahData, bukan seperti Map
+        final idLaporan = laporan.id.toString(); // Gunakan laporan.id
+        final idPetugas =
+            laporan.id_user_petugas; // Gunakan laporan.id_user_petugas
+        final bintang = laporan.ratingPetugas; // Gunakan laporan.ratingPetugas
+
+        // Untuk tanggal selesai, Anda perlu menambahkan property ini ke SampahData
+        // atau gunakan tanggal yang tersedia. Sementara gunakan laporan.tanggal
+        final tanggalSelesai =
+            laporan.tanggal; // atau laporan.tanggalFormatted jika berbeda
+
+        // Skip jika sudah ada rating atau sudah pernah di-auto-rate
+        if (bintang != null && bintang > 0) continue;
+        if (ratedIds.contains(idLaporan)) continue;
+
+        // Hanya proses yang statusnya 'done'
+        if (laporan.status.toLowerCase() != 'done') continue;
+
+        final selisihHari = now.difference(tanggalSelesai).inDays;
+
+        if (selisihHari >= 2) {
+          await _submitRating(
+            laporan.id, // gunakan laporan.id langsung
+            idPetugas,
+            5,
+            'Rating otomatis oleh sistem setelah 2 hari tanpa penilaian.',
+          );
+
+          ratedIds.add(idLaporan);
+          await prefs.setStringList('autoRatedIds', ratedIds);
+
+          print('✅ Auto-rating berhasil untuk laporan ID: $idLaporan');
+        }
+      } catch (e) {
+        print('❌ Gagal auto-rating laporan: $e');
+      }
+    }
   }
 
   void _calculateStatusCounts(List<SampahData> data) {
@@ -1177,38 +1470,83 @@ class _HistoryState extends State<History> {
             const SizedBox(height: 16),
             // Bagian tombol dan rating
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Left side - Action buttons
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ElevatedButton(
-                      onPressed: () => _openMap(mapUrl),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    // Location button with improved design
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _openMap(mapUrl),
+                        icon: const Icon(Icons.location_on_rounded, size: 18),
+                        label: const Text(
+                          'Lihat Lokasi',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.green[600],
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
                         ),
                       ),
-                      child: const Text('Lihat Lokasi'),
                     ),
 
-                    // Tombol rating hanya untuk status 'done' dan belum ada rating
+                    // Rating button for completed tasks without rating
                     if (status.toLowerCase() == 'done' &&
                         !_hasRating(ratingPetugas))
                       Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: ElevatedButton.icon(
-                          onPressed: () =>
-                              _showRatingDialog(idSampah, idpetugas),
-                          icon: const Icon(Icons.star, size: 16),
-                          label: const Text('Beri Rating'),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.orange,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF6600).withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: () =>
+                                _showRatingDialog(idSampah, idpetugas),
+                            icon: const Icon(Icons.star_rounded, size: 18),
+                            label: const Text(
+                              'Beri Rating',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFFFF6600),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
                             ),
                           ),
                         ),
@@ -1216,39 +1554,183 @@ class _HistoryState extends State<History> {
                   ],
                 ),
 
-                // Tampilkan rating jika sudah ada
+                // Spacer
+                const SizedBox(width: 16),
+
+                // Right side - Rating display (if exists)
                 if (status.toLowerCase() == 'done' && _hasRating(ratingPetugas))
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            const Text('Rating: ',
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text('$ratingPetugas'),
-                            const Icon(Icons.star,
-                                color: Colors.amber, size: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.amber[50]!,
+                            Colors.orange[50]!,
                           ],
                         ),
-                        if (catatanPetugas != null && catatanPetugas.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              'Komentar: $catatanPetugas',
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: 12,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.amber[200]!,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Rating header with stars
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.amber,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Rating',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                        color: Colors.amber[800],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              textAlign: TextAlign.end,
+                              const Spacer(),
+                              // Rating value with stars
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF6600),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFF6600)
+                                          .withOpacity(0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      ratingPetugas.toString(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Rating stars visualization
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: List.generate(5, (index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 2),
+                                  child: Icon(
+                                    index < ratingPetugas!.round()
+                                        ? Icons.star_rounded
+                                        : Icons.star_outline_rounded,
+                                    color: index < ratingPetugas!.round()
+                                        ? Colors.amber[600]
+                                        : Colors.grey[400],
+                                    size: 16,
+                                  ),
+                                );
+                              }),
                             ),
                           ),
-                      ],
+
+                          // Comment section
+                          if (catatanPetugas != null &&
+                              catatanPetugas.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.chat_bubble_outline_rounded,
+                                        size: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Komentar',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    catatanPetugas,
+                                    style: TextStyle(
+                                      color: Colors.grey[800],
+                                      fontSize: 13,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
               ],
-            ),
+            )
           ],
         ],
       ),

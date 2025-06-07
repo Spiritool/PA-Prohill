@@ -1,6 +1,7 @@
 import 'package:dlh_project/pages/form_opening/login.dart';
 import 'package:dlh_project/pages/warga_screen/akun/akun.dart';
 import 'package:dlh_project/pages/warga_screen/qna.dart';
+import 'package:dlh_project/pages/warga_screen/saldo.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -457,9 +458,16 @@ class _UserProfileState extends State<UserProfile> {
                     ),
               _buildEnhancedProfileTile(
                 icon: Icons.apartment_rounded,
-                text: 'Recurring Details',
-                subtitle: 'Detail transaksi berulang',
+                text: 'Saldo Sampah',
+                subtitle: 'Detail Sampah Balanced',
                 color: Colors.blue,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => SaldoSampahScreen()),
+                  );
+                },
               ),
               _buildEnhancedProfileTile(
                 icon: Icons.mail_outline_rounded,
