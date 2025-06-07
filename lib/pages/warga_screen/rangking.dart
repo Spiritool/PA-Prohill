@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
 
@@ -16,6 +17,9 @@ class LeaderboardPageState extends State<LeaderboardPage>
   bool isLoading = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  Map<String, dynamic> currentUser = {};
+  int currentUserRank = 0;
+  int currentUserId = 0;
 
   @override
   void initState() {
@@ -36,6 +40,21 @@ class LeaderboardPageState extends State<LeaderboardPage>
     super.dispose();
   }
 
+  Future<void> _loadUserIdAndFindCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    currentUserId = prefs.getInt('user_id') ?? 0;
+
+    for (int i = 0; i < users.length; i++) {
+      if (users[i]['id'] == currentUserId) {
+        currentUser = users[i];
+        currentUserRank = i + 1;
+        break;
+      }
+    }
+
+    setState(() {});
+  }
+
   Future<void> fetchLeaderboardData() async {
     try {
       final response = await http.get(Uri.parse('$baseipapi/api/user/all'));
@@ -46,16 +65,22 @@ class LeaderboardPageState extends State<LeaderboardPage>
 
         setState(() {
           users = data
+              .where((user) => user['role'] == 'warga')
               .map<Map<String, dynamic>>((user) => {
                     'name': user['nama'],
                     'score': user['poin'] ?? 0,
                     'avatar': getAvatarFromName(user['nama']),
+                    // Tambahkan 'id' user supaya bisa cocokkan id user current
+                    'id': user['id'],
                   })
               .toList();
 
           users.sort((a, b) => b['score'].compareTo(a['score']));
           isLoading = false;
         });
+
+        // Panggil setelah setState agar data users sudah ada
+        await _loadUserIdAndFindCurrentUser();
 
         _animationController.forward();
       } else {
@@ -365,8 +390,6 @@ class LeaderboardPageState extends State<LeaderboardPage>
               Text(
                 user['name'],
                 textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -409,15 +432,16 @@ class LeaderboardPageState extends State<LeaderboardPage>
         ),
         child: Column(
           children: [
-            if (users.length > 3) _buildCurrentUserCard(users[3], 4),
-            if (users.length > 4)
+            if (currentUser.isNotEmpty)
+              _buildCurrentUserCard(currentUser, currentUserRank),
+            if (users.length > 3)
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.only(bottom: 20),
-                  itemCount: users.length - 4,
+                  itemCount: users.length - 3,
                   itemBuilder: (context, index) {
-                    final user = users[index + 4];
-                    final rank = index + 5;
+                    final user = users[index + 3];
+                    final rank = index + 4;
                     return _buildUserListTile(user, rank);
                   },
                 ),

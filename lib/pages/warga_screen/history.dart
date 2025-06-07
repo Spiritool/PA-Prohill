@@ -130,8 +130,8 @@ class _HistoryState extends State<History> {
       endDate = DateTime(selectedYear, now.month + 1, 0);
       selectedDateRange = 'monthly'; // set sebagai bulanan
       _applyFilters(data); // panggil juga langsung setelah fetch
-      // 🔥 Tambahkan baris ini:
-      checkAndAutoRate(data);
+      // // 🔥 Tambahkan baris ini:
+      // checkAndAutoRate(data);
     });
   }
 
@@ -646,52 +646,52 @@ class _HistoryState extends State<History> {
     return ratingPetugas != null && ratingPetugas > 0;
   }
 
-  Future<void> checkAndAutoRate(List<SampahData> laporanList) async {
-    final prefs = await SharedPreferences.getInstance();
-    final ratedIds = prefs.getStringList('autoRatedIds') ?? [];
+  // Future<void> checkAndAutoRate(List<SampahData> laporanList) async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final ratedIds = prefs.getStringList('autoRatedIds') ?? [];
 
-    final now = DateTime.now();
+  //   final now = DateTime.now();
 
-    for (var laporan in laporanList) {
-      try {
-        // Akses menggunakan property dari SampahData, bukan seperti Map
-        final idLaporan = laporan.id.toString(); // Gunakan laporan.id
-        final idPetugas =
-            laporan.id_user_petugas; // Gunakan laporan.id_user_petugas
-        final bintang = laporan.ratingPetugas; // Gunakan laporan.ratingPetugas
+  //   for (var laporan in laporanList) {
+  //     try {
+  //       // Akses menggunakan property dari SampahData, bukan seperti Map
+  //       final idLaporan = laporan.id.toString(); // Gunakan laporan.id
+  //       final idPetugas =
+  //           laporan.id_user_petugas; // Gunakan laporan.id_user_petugas
+  //       final bintang = laporan.ratingPetugas; // Gunakan laporan.ratingPetugas
 
-        // Untuk tanggal selesai, Anda perlu menambahkan property ini ke SampahData
-        // atau gunakan tanggal yang tersedia. Sementara gunakan laporan.tanggal
-        final tanggalSelesai =
-            laporan.tanggal; // atau laporan.tanggalFormatted jika berbeda
+  //       // Untuk tanggal selesai, Anda perlu menambahkan property ini ke SampahData
+  //       // atau gunakan tanggal yang tersedia. Sementara gunakan laporan.tanggal
+  //       final tanggalSelesai =
+  //           laporan.tanggal; // atau laporan.tanggalFormatted jika berbeda
 
-        // Skip jika sudah ada rating atau sudah pernah di-auto-rate
-        if (bintang != null && bintang > 0) continue;
-        if (ratedIds.contains(idLaporan)) continue;
+  //       // Skip jika sudah ada rating atau sudah pernah di-auto-rate
+  //       if (bintang != null && bintang > 0) continue;
+  //       if (ratedIds.contains(idLaporan)) continue;
 
-        // Hanya proses yang statusnya 'done'
-        if (laporan.status.toLowerCase() != 'done') continue;
+  //       // Hanya proses yang statusnya 'done'
+  //       if (laporan.status.toLowerCase() != 'done') continue;
 
-        final selisihHari = now.difference(tanggalSelesai).inDays;
+  //       final selisihHari = now.difference(tanggalSelesai).inDays;
 
-        if (selisihHari >= 2) {
-          await _submitRating(
-            laporan.id, // gunakan laporan.id langsung
-            idPetugas,
-            5,
-            'Rating otomatis oleh sistem setelah 2 hari tanpa penilaian.',
-          );
+  //       if (selisihHari >= 2) {
+  //         await _submitRating(
+  //           laporan.id, // gunakan laporan.id langsung
+  //           idPetugas,
+  //           5,
+  //           'Rating otomatis oleh sistem setelah 2 hari tanpa penilaian.',
+  //         );
 
-          ratedIds.add(idLaporan);
-          await prefs.setStringList('autoRatedIds', ratedIds);
+  //         ratedIds.add(idLaporan);
+  //         await prefs.setStringList('autoRatedIds', ratedIds);
 
-          print('✅ Auto-rating berhasil untuk laporan ID: $idLaporan');
-        }
-      } catch (e) {
-        print('❌ Gagal auto-rating laporan: $e');
-      }
-    }
-  }
+  //         print('✅ Auto-rating berhasil untuk laporan ID: $idLaporan');
+  //       }
+  //     } catch (e) {
+  //       print('❌ Gagal auto-rating laporan: $e');
+  //     }
+  //   }
+  // }
 
   void _calculateStatusCounts(List<SampahData> data) {
     setState(() {
