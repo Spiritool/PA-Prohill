@@ -257,7 +257,6 @@ class _HomeKontenState extends State<HomeKonten> {
 
                           // Avatar (pindah ke kanan)
                           GestureDetector(
-                            onTap: _togglePopup,
                             child: (userName != 'Guest')
                                 ? CircleAvatar(
                                     radius: 30,
@@ -343,10 +342,6 @@ class _HomeKontenState extends State<HomeKonten> {
                 ),
               ),
             ),
-
-            // Popup overlay (only when popup is active)
-            if (_showPopup) _buildPopupOverlayModified(),
-
             // FAB with overlay when popup is active
             _buildFloatingActionButton(),
           ],
@@ -663,166 +658,19 @@ class _HomeKontenState extends State<HomeKonten> {
             clipBehavior: Clip.none,
             children: [
               (userName != 'Guest')
-                  ? GestureDetector(
-                      onTap: _togglePopup,
-                      child: CircleAvatar(
-                        radius: 30,
-                        backgroundImage: _getProfileImage(),
-                      ),
+                  ? CircleAvatar(
+                      radius: 30,
+                      backgroundImage: _getProfileImage(),
                     )
                   : const CircleAvatar(
                       radius: 30,
                       backgroundImage: NetworkImage(
-                          'https://randomuser.me/api/portraits/men/1.jpg'),
-                    ),
-              if (_showPopup)
-                Positioned(
-                  child: GestureDetector(
-                    onTap: _togglePopup,
-                    child: Material(
-                      elevation: 4,
-                      shape: const CircleBorder(),
-                      color: Colors.white,
-                      child: const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Icon(Icons.close, size: 40),
+                        'https://randomuser.me/api/portraits/men/1.jpg',
                       ),
                     ),
-                  ),
-                ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPopupOverlayModified() {
-    return Stack(
-      children: [
-        // Background overlay
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: () => setState(() => _showPopup = false),
-            child: Container(
-              color: Colors.black.withOpacity(0.5),
-            ),
-          ),
-        ),
-
-        // Point popup - pindah ke kanan
-        Positioned(
-          top: 130, // Sesuaikan dengan posisi avatar
-          right: 30, // Ganti dari left: 30
-          child: _buildPopupCard(
-            title: "Total Point",
-            icon:
-                Image.asset('assets/icons/money 4.png', width: 24, height: 24),
-            value: "1",
-            onTap: () {
-              if (userName == 'Guest') {
-                _showLoginRequiredDialog(context);
-              } else {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PointScreen(),
-                    ));
-              }
-            },
-          ),
-        ),
-
-        // Balance popup - pindah ke kanan
-        Positioned(
-          top: 200, // Sesuaikan dengan posisi avatar
-          right: 30, // Ganti dari left: 30
-          child: _buildPopupCard(
-            title: "Balance",
-            icon: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: Colors.green[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.account_balance_wallet,
-                size: 14,
-                color: Colors.green[700],
-              ),
-            ),
-            value: "Rp 50.000",
-            onTap: () {
-              if (userName == 'Guest') {
-                _showLoginRequiredDialog(context);
-              } else {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SaldoSampahScreen(),
-                    ));
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPopupCard({
-    required String title,
-    required Widget icon,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      elevation: 5,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    icon,
-                    const SizedBox(width: 6),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 32),
-                GestureDetector(
-                  onTap: onTap,
-                  child: const Icon(Icons.chevron_right, size: 24),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -852,15 +700,6 @@ class _HomeKontenState extends State<HomeKonten> {
             backgroundColor: const Color(0xFFFF6600),
             child: const Icon(Icons.support_agent, color: Colors.white),
           ),
-          if (_showPopup)
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
         ],
       ),
     );

@@ -68,6 +68,27 @@ class _HistoryState extends State<History> {
   double? ratingPetugas;
   String? catatanPetugas;
 
+  // Fungsi untuk menghitung poin berdasarkan status sampah
+  int calculatePoints(String status) {
+    switch (status.toLowerCase()) {
+      case 'done':
+        return 5; // Status selesai mendapat 1 poin
+      case 'pending':
+      case 'proses':
+      case 'failed':
+        return 0; // Status pending, proses, atau failed mendapat 0 poin
+      default:
+        return 0; // Default 0 poin untuk status tidak dikenal
+    }
+  }
+
+// Fungsi untuk mendapatkan poin dari data yang sudah difilter
+  int getFilteredPoints(List<SampahData> filteredDataList) {
+    return filteredDataList
+        .map((data) => calculatePoints(data.status))
+        .reduce((a, b) => a + b);
+  }
+
   List<String> monthNames = [
     'Jan',
     'Feb',
@@ -133,6 +154,28 @@ class _HistoryState extends State<History> {
       // // 🔥 Tambahkan baris ini:
       // checkAndAutoRate(data);
     });
+  }
+
+// Function untuk handle refresh
+  Future<void> _refreshData() async {
+    setState(() {
+      // Reset future untuk memuat ulang data
+      futureSampahData =
+          _loadSampahData(); // Ganti dengan function load data Anda
+    });
+
+    // Delay singkat untuk menampilkan loading
+    await Future.delayed(Duration(milliseconds: 500));
+  }
+
+  // Function untuk load data (sesuaikan dengan implementasi Anda)
+  Future<List<SampahData>> _loadSampahData() async {
+    // Implementasi sesuai dengan cara Anda mengambil data
+    // Contoh:
+    // return await ApiService.getSampahData();
+
+    // Untuk sementara return empty list
+    return [];
   }
 
 // Perbaikan method _submitRating untuk memastikan dialog selalu menutup
@@ -646,53 +689,6 @@ class _HistoryState extends State<History> {
     return ratingPetugas != null && ratingPetugas > 0;
   }
 
-  // Future<void> checkAndAutoRate(List<SampahData> laporanList) async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final ratedIds = prefs.getStringList('autoRatedIds') ?? [];
-
-  //   final now = DateTime.now();
-
-  //   for (var laporan in laporanList) {
-  //     try {
-  //       // Akses menggunakan property dari SampahData, bukan seperti Map
-  //       final idLaporan = laporan.id.toString(); // Gunakan laporan.id
-  //       final idPetugas =
-  //           laporan.id_user_petugas; // Gunakan laporan.id_user_petugas
-  //       final bintang = laporan.ratingPetugas; // Gunakan laporan.ratingPetugas
-
-  //       // Untuk tanggal selesai, Anda perlu menambahkan property ini ke SampahData
-  //       // atau gunakan tanggal yang tersedia. Sementara gunakan laporan.tanggal
-  //       final tanggalSelesai =
-  //           laporan.tanggal; // atau laporan.tanggalFormatted jika berbeda
-
-  //       // Skip jika sudah ada rating atau sudah pernah di-auto-rate
-  //       if (bintang != null && bintang > 0) continue;
-  //       if (ratedIds.contains(idLaporan)) continue;
-
-  //       // Hanya proses yang statusnya 'done'
-  //       if (laporan.status.toLowerCase() != 'done') continue;
-
-  //       final selisihHari = now.difference(tanggalSelesai).inDays;
-
-  //       if (selisihHari >= 2) {
-  //         await _submitRating(
-  //           laporan.id, // gunakan laporan.id langsung
-  //           idPetugas,
-  //           5,
-  //           'Rating otomatis oleh sistem setelah 2 hari tanpa penilaian.',
-  //         );
-
-  //         ratedIds.add(idLaporan);
-  //         await prefs.setStringList('autoRatedIds', ratedIds);
-
-  //         print('✅ Auto-rating berhasil untuk laporan ID: $idLaporan');
-  //       }
-  //     } catch (e) {
-  //       print('❌ Gagal auto-rating laporan: $e');
-  //     }
-  //   }
-  // }
-
   void _calculateStatusCounts(List<SampahData> data) {
     setState(() {
       prosesCount =
@@ -1133,154 +1129,179 @@ class _HistoryState extends State<History> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: Column(
-        children: [
-          // Bagian atas: abu-abu dengan fixed tinggi
-          Container(
-            color: Color(0xFFF2F2F2), // abu-abu muda
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Column(
-              children: [
-                _buildStatusChart(),
-                _buildChartLegend(),
-              ],
-            ),
-          ),
-
-          // Bagian bawah: putih, penuh sisa layar
-          Expanded(
-            child: Container(
-              color: Colors.white,
+      body: RefreshIndicator(
+        color: Color(0xFFFF6600), // Warna refresh indicator
+        backgroundColor: Colors.white,
+        onRefresh: _refreshData, // Function untuk refresh data
+        child: Column(
+          children: [
+            // Bagian atas: abu-abu dengan fixed tinggi
+            Container(
+              color: Color(0xFFF2F2F2), // abu-abu muda
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Column(
                 children: [
-                  // Ini fixed, tidak scroll
-                  _buildStatusSummary(),
+                  _buildStatusChart(),
+                  _buildChartLegend(),
+                ],
+              ),
+            ),
 
-                  // Spacer kecil jika perlu
-                  SizedBox(height: 8),
+            // Bagian bawah: putih, penuh sisa layar
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  children: [
+                    // Ini fixed, tidak scroll
+                    _buildStatusSummary(),
 
-                  // Bagian daftar yang scroll
-                  Expanded(
-                    child: FutureBuilder<List<SampahData>>(
-                      future: futureSampahData,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        } else if (snapshot.hasError) {
-                          return Text('Error: ${snapshot.error}');
-                        } else if (!snapshot.hasData ||
-                            snapshot.data!.isEmpty) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(20.0),
-                              child: Text(
-                                'Tidak ada data Riwayat.',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.w500),
+                    // Spacer kecil jika perlu
+                    SizedBox(height: 8),
+
+                    // Bagian daftar yang scroll
+                    Expanded(
+                      child: FutureBuilder<List<SampahData>>(
+                        future: futureSampahData,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFFFF6600),
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'Memuat data...',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color:
+                                            Color.fromARGB(255, 190, 185, 181)),
+                                  ),
+                                ],
                               ),
-                            ),
-                          );
-                        } else {
-                          final rawData = snapshot.data!;
-                          final filteredData = rawData.where((data) {
-                            final matchesStatus = selectedStatus == 'all' ||
-                                data.status.toLowerCase() == selectedStatus;
-
-                            final matchesMonth = selectedMonthIndex == null ||
-                                (data.tanggal.month ==
-                                        selectedMonthIndex! + 1 &&
-                                    data.tanggal.year == selectedYear);
-
-                            return matchesStatus && matchesMonth;
-                          }).toList();
-
-                          if (filteredData.isEmpty) {
+                            );
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else if (!snapshot.hasData ||
+                              snapshot.data!.isEmpty) {
                             return const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(20.0),
                                 child: Text(
-                                  'Tidak ada data Riwayat untuk bulan ini.',
+                                  'Tidak ada data Riwayat.',
                                   style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500),
                                 ),
                               ),
                             );
-                          }
+                          } else {
+                            final rawData = snapshot.data!;
+                            final filteredData = rawData.where((data) {
+                              final matchesStatus = selectedStatus == 'all' ||
+                                  data.status.toLowerCase() == selectedStatus;
 
-                          return ListView.builder(
-                            padding: EdgeInsets.zero,
-                            itemCount: filteredData.length,
-                            itemBuilder: (context, index) {
-                              SampahData data = filteredData[index];
-                              Color statusColor;
-                              String formattedDate =
-                                  DateFormat('dd-MM-yyyy').format(data.tanggal);
+                              final matchesMonth = selectedMonthIndex == null ||
+                                  (data.tanggal.month ==
+                                          selectedMonthIndex! + 1 &&
+                                      data.tanggal.year == selectedYear);
 
-                              switch (data.status.toLowerCase()) {
-                                case 'proses':
-                                  statusColor = Colors.yellow;
-                                  break;
-                                case 'done':
-                                  statusColor = Colors.green;
-                                  break;
-                                case 'pending':
-                                  statusColor = Colors.orange.shade300;
-                                  break;
-                                case 'failed':
-                                  statusColor = Colors.red;
-                                  break;
-                                default:
-                                  statusColor = Colors.grey;
-                              }
+                              return matchesStatus && matchesMonth;
+                            }).toList();
 
-                              final isExpanded = expandedCards.contains(index);
-
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    if (isExpanded) {
-                                      expandedCards.remove(index);
-                                    } else {
-                                      expandedCards.add(index);
-                                    }
-                                  });
-                                },
-                                child: _buildOuterCard(
-                                  index: index + 1,
-                                  name: data.nama,
-                                  FotoSampah: data.fotoSampah,
-                                  phone: data.noHp,
-                                  status: data.status,
-                                  namaUpt: data.namaUpt,
-                                  location:
-                                      '${data.alamat.kelurahan}, ${data.alamat.kecamatan}, ${data.alamat.deskripsi}',
-                                  description: data.deskripsi,
-                                  mapUrl: data.alamat.kordinat,
-                                  idSampah: data.id,
-                                  idpetugas: data.id_user_petugas,
-                                  statusColor: statusColor,
-                                  tanggalFormatted: formattedDate,
-                                  ratingPetugas: data.ratingPetugas,
-                                  catatanPetugas: data.catatanPetugas,
-                                  isExpanded: isExpanded,
+                            if (filteredData.isEmpty) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: Text(
+                                    'Tidak ada data Riwayat untuk bulan ini.',
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500),
+                                  ),
                                 ),
                               );
-                            },
-                          );
-                        }
-                      },
+                            }
+
+                            return ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: filteredData.length,
+                              itemBuilder: (context, index) {
+                                SampahData data = filteredData[index];
+                                Color statusColor;
+                                String formattedDate = DateFormat('dd-MM-yyyy')
+                                    .format(data.tanggal);
+
+                                switch (data.status.toLowerCase()) {
+                                  case 'proses':
+                                    statusColor = Colors.yellow;
+                                    break;
+                                  case 'done':
+                                    statusColor = Colors.green;
+                                    break;
+                                  case 'pending':
+                                    statusColor = Colors.orange.shade300;
+                                    break;
+                                  case 'failed':
+                                    statusColor = Colors.red;
+                                    break;
+                                  default:
+                                    statusColor = Colors.grey;
+                                }
+
+                                final isExpanded =
+                                    expandedCards.contains(index);
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      if (isExpanded) {
+                                        expandedCards.remove(index);
+                                      } else {
+                                        expandedCards.add(index);
+                                      }
+                                    });
+                                  },
+                                  child: _buildOuterCard(
+                                    index: index + 1,
+                                    name: data.nama,
+                                    FotoSampah: data.fotoSampah,
+                                    phone: data.noHp,
+                                    status: data.status,
+                                    namaUpt: data.namaUpt,
+                                    location:
+                                        '${data.alamat.kelurahan}, ${data.alamat.kecamatan}, ${data.alamat.deskripsi}',
+                                    description: data.deskripsi,
+                                    mapUrl: data.alamat.kordinat,
+                                    idSampah: data.id,
+                                    idpetugas: data.id_user_petugas,
+                                    statusColor: statusColor,
+                                    tanggalFormatted: formattedDate,
+                                    ratingPetugas: data.ratingPetugas,
+                                    catatanPetugas: data.catatanPetugas,
+                                    isExpanded: isExpanded,
+                                  ),
+                                );
+                              },
+                            );
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1367,7 +1388,7 @@ class _HistoryState extends State<History> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '⭐ Waste & get Point',
+                      '⭐ Sampah Terpilah',
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                     SizedBox(height: 4),
@@ -1406,8 +1427,9 @@ class _HistoryState extends State<History> {
                           height: 20,
                         ),
                         const SizedBox(width: 6),
-                        const Text(
-                          '1', // <- nanti bisa diganti dinamis kalau mau
+                        Text(
+                          calculatePoints(status)
+                              .toString(), // <- nanti bisa diganti dinamis kalau mau
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         )

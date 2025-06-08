@@ -12,11 +12,39 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
 
+// Fungsi untuk mengambil data user points
+Future<int> fetchUserPoints() async {
+  final prefs = await SharedPreferences.getInstance();
+  final poin = prefs.getInt('poin');
+
+  // DEBUG: Print semua data dari SharedPreferences
+  print('=== DEBUG SharedPreferences ===');
+  final keys = prefs.getKeys();
+  for (var key in keys) {
+    print('$key: ${prefs.get(key)}');
+  }
+  print('=== END DEBUG ===');
+
+  if (poin == null) {
+    print('WARNING: user_poin belum diset di SharedPreferences');
+    return 0;
+  }
+
+  print('User poin diambil dari SharedPreferences: $poin');
+  return poin;
+}
+
 Future<List<SampahData>> fetchSampahData() async {
   final prefs = await SharedPreferences.getInstance();
   final userId = prefs.getInt('user_id') ?? 0;
 
+  // LOG: Print user_id untuk sampah data
+  print('=== DEBUG LOG fetchSampahData ===');
+  print('User ID untuk sampah data: $userId');
+
   if (userId == 0) {
+    print(
+        'ERROR: User ID tidak ditemukan di SharedPreferences untuk sampah data');
     throw Exception('User ID not found in SharedPreferences');
   }
 
@@ -27,20 +55,37 @@ Future<List<SampahData>> fetchSampahData() async {
     '$baseipapi/api/pengangkutan-sampah/history/$userId/failed',
   ];
 
+  print('URLs yang akan diakses:');
+  urls.forEach((url) => print('- $url'));
+
   List<SampahData> allData = [];
 
   for (String url in urls) {
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body)['data'];
-      allData.addAll(data.map((item) => SampahData.fromJson(item)).toList());
-    } else {
-      throw Exception('Failed to load data from $url');
+    try {
+      print('Mengakses URL: $url');
+      final response = await http.get(Uri.parse(url));
+      print('Status Code untuk $url: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body)['data'];
+        print('Data diterima dari $url: ${data.length} items');
+        allData.addAll(data.map((item) => SampahData.fromJson(item)).toList());
+      } else {
+        print(
+            'ERROR: Failed to load data from $url - Status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Failed to load data from $url');
+      }
+    } catch (e) {
+      print('EXCEPTION saat mengakses $url: $e');
+      rethrow;
     }
   }
 
   // Balikkan daftar agar data terbaru tampil di atas
   allData.sort((a, b) => b.id.compareTo(a.id));
+  print('Total data sampah yang berhasil diambil: ${allData.length}');
+  print('=== END DEBUG LOG fetchSampahData ===');
 
   return allData;
 }
@@ -54,16 +99,70 @@ class PointScreen extends StatefulWidget {
 
 class _PointScreenState extends State<PointScreen> {
   late Future<List<SampahData>> futureSampahData;
+  late Future<int> futureUserPoints;
+  int prosesCount = 0;
   DateTime? startDate;
   DateTime? endDate;
   bool showSampahData = true;
-  bool isMyPointActive = true; // dipindah ke sini
+  bool isMyPointActive = true;
   Set<int> expandedCards = {};
+
+  // Fungsi untuk menghitung poin berdasarkan status sampah
+  int calculatePoints(String status) {
+    switch (status.toLowerCase()) {
+      case 'done':
+        return 5; // Status selesai mendapat 5 poin
+      case 'pending':
+      case 'proses':
+      case 'failed':
+        return 0; // Status pending, proses, atau failed mendapat 0 poin
+      default:
+        return 0; // Default 0 poin untuk status tidak dikenal
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    print('=== INIT STATE PointScreen ===');
+
+    // Log SharedPreferences saat initState
+    _logSharedPreferences();
+
     futureSampahData = fetchSampahData();
+    futureUserPoints = fetchUserPoints();
+  }
+
+  // Fungsi untuk log semua data di SharedPreferences
+  void _logSharedPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+
+      print('=== SHARED PREFERENCES DEBUG ===');
+      print('Semua keys yang tersimpan: $keys');
+
+      for (String key in keys) {
+        final value = prefs.get(key);
+        print('$key: $value (type: ${value.runtimeType})');
+      }
+
+      // Khusus untuk user_id
+      final userId = prefs.getInt('user_id');
+      print('Spesifik user_id: $userId');
+
+      // Cek juga kemungkinan key lain yang mirip
+      final userIdString = prefs.getString('user_id');
+      final id = prefs.getInt('id');
+      final idString = prefs.getString('id');
+
+      print('user_id (string): $userIdString');
+      print('id (int): $id');
+      print('id (string): $idString');
+      print('=== END SHARED PREFERENCES DEBUG ===');
+    } catch (e) {
+      print('ERROR saat mengakses SharedPreferences: $e');
+    }
   }
 
   final List<Map<String, dynamic>> redeemItems = [
@@ -98,13 +197,13 @@ class _PointScreenState extends State<PointScreen> {
           onTap: () {
             Navigator.pop(context);
           },
-          child: Icon(
+          child: const Icon(
             Icons.chevron_left,
             color: Colors.black,
             size: 30,
           ),
         ),
-        title: Text(
+        title: const Text(
           'Point',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
@@ -113,12 +212,12 @@ class _PointScreenState extends State<PointScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Container(
               decoration: BoxDecoration(
-                color: Color(0xFFF2F2F2),
+                color: const Color(0xFFF2F2F2),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Row(
@@ -131,7 +230,7 @@ class _PointScreenState extends State<PointScreen> {
                         });
                       },
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
                           color: isMyPointActive
                               ? Colors.orange
@@ -159,7 +258,7 @@ class _PointScreenState extends State<PointScreen> {
                         });
                       },
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
                           color: isMyPointActive
                               ? Colors.transparent
@@ -185,7 +284,7 @@ class _PointScreenState extends State<PointScreen> {
           ),
           Expanded(
             child: AnimatedCrossFade(
-              duration: Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 300),
               firstChild: SizedBox.expand(child: _buildMyPointSection()),
               secondChild: SizedBox.expand(child: _buildRedeemSection()),
               crossFadeState: isMyPointActive
@@ -203,9 +302,9 @@ class _PointScreenState extends State<PointScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          color: Color(0xFFF9F9F9),
-          margin: EdgeInsets.only(top: 10),
-          padding: EdgeInsets.symmetric(vertical: 30),
+          color: const Color(0xFFF9F9F9),
+          margin: const EdgeInsets.only(top: 10),
+          padding: const EdgeInsets.symmetric(vertical: 30),
           child: Column(
             children: [
               SizedBox(
@@ -213,16 +312,56 @@ class _PointScreenState extends State<PointScreen> {
                 height: 80,
                 child: Image.asset('assets/icons/money 4.png'),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text('Total Point',
                   style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-              SizedBox(height: 4),
-              Text('1',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              // Display total points from user.point
+              FutureBuilder<int>(
+                future: futureUserPoints,
+                builder: (context, snapshot) {
+                  print('=== FUTUREBUILDER DEBUG ===');
+                  print('ConnectionState: ${snapshot.connectionState}');
+                  print('HasData: ${snapshot.hasData}');
+                  print('HasError: ${snapshot.hasError}');
+                  if (snapshot.hasError) {
+                    print('Error: ${snapshot.error}');
+                  }
+                  if (snapshot.hasData) {
+                    print('Data: ${snapshot.data}');
+                  }
+                  print('=== END FUTUREBUILDER DEBUG ===');
+
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Text('...',
+                        style: TextStyle(
+                            fontSize: 32, fontWeight: FontWeight.bold));
+                  } else if (snapshot.hasError) {
+                    return Column(
+                      children: [
+                        const Text('0',
+                            style: TextStyle(
+                                fontSize: 32, fontWeight: FontWeight.bold)),
+                        Text('Error: ${snapshot.error}',
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.red)),
+                      ],
+                    );
+                  } else if (!snapshot.hasData) {
+                    return const Text('0',
+                        style: TextStyle(
+                            fontSize: 32, fontWeight: FontWeight.bold));
+                  }
+
+                  return Text(snapshot.data.toString(),
+                      style: const TextStyle(
+                          fontSize: 32, fontWeight: FontWeight.bold));
+                },
+              ),
             ],
           ),
         ),
-        Padding(
+        const Padding(
           padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
           child: Text(
             'My History',
@@ -248,7 +387,24 @@ class _PointScreenState extends State<PointScreen> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Error: ${snapshot.error}'),
+                              const SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    futureSampahData = fetchSampahData();
+                                    futureUserPoints = fetchUserPoints();
+                                  });
+                                },
+                                child: const Text('Refresh'),
+                              ),
+                            ],
+                          ),
+                        );
                       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return const Center(
                           child: Padding(
@@ -264,11 +420,32 @@ class _PointScreenState extends State<PointScreen> {
                         );
                       }
 
-                      final filteredData = snapshot.data!; // tanpa filter
+                      // FILTER: Sembunyikan status 'pending', 'proses', dan 'failed'
+                      final filteredData = snapshot.data!
+                          .where((data) => !['pending', 'proses', 'failed']
+                              .contains(data.status.toLowerCase()))
+                          .toList();
+
+                      print('=== FILTER DEBUG ===');
+                      print(
+                          'Total data sebelum filter: ${snapshot.data!.length}');
+                      print(
+                          'Total data setelah filter: ${filteredData.length}');
+                      print('=== END FILTER DEBUG ===');
 
                       if (filteredData.isEmpty) {
                         return const Center(
-                            child: Text('Tidak ada data Riwayat.'));
+                          child: Padding(
+                            padding: EdgeInsets.all(20.0),
+                            child: Text(
+                              'Belum ada riwayat sampah yang selesai.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        );
                       }
 
                       return ListView.builder(
@@ -280,22 +457,8 @@ class _PointScreenState extends State<PointScreen> {
                           String formattedDate =
                               DateFormat('dd-MM-yyyy').format(data.tanggal);
 
-                          switch (data.status.toLowerCase()) {
-                            case 'proses':
-                              statusColor = Colors.yellow;
-                              break;
-                            case 'done':
-                              statusColor = Colors.green;
-                              break;
-                            case 'pending':
-                              statusColor = Colors.orange.shade300;
-                              break;
-                            case 'failed':
-                              statusColor = Colors.red;
-                              break;
-                            default:
-                              statusColor = Colors.grey;
-                          }
+                          // Karena sudah difilter, semua status pasti 'done'
+                          statusColor = Colors.green;
 
                           final isExpanded = expandedCards.contains(index);
 
@@ -356,7 +519,7 @@ class _PointScreenState extends State<PointScreen> {
     required String tanggalFormatted,
     required double? ratingPetugas,
     required String? catatanPetugas,
-    required bool isExpanded, // tambah parameter ini
+    required bool isExpanded,
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -374,7 +537,7 @@ class _PointScreenState extends State<PointScreen> {
         tanggalFormatted: tanggalFormatted,
         ratingPetugas: ratingPetugas,
         catatanPetugas: catatanPetugas,
-        isExpanded: isExpanded, // teruskan ke inner card juga
+        isExpanded: isExpanded,
       ),
     );
   }
@@ -400,7 +563,7 @@ class _PointScreenState extends State<PointScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 6,
@@ -423,7 +586,7 @@ class _PointScreenState extends State<PointScreen> {
                       '⭐ Waste & get Point',
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       description,
                       style: const TextStyle(
@@ -432,7 +595,7 @@ class _PointScreenState extends State<PointScreen> {
                         color: Colors.black,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       tanggalFormatted,
                       style: TextStyle(fontSize: 13, color: Colors.grey[600]),
@@ -459,21 +622,15 @@ class _PointScreenState extends State<PointScreen> {
                           height: 20,
                         ),
                         const SizedBox(width: 6),
-                        const Text(
-                          '1', // <- nanti bisa diganti dinamis kalau mau
-                          style: TextStyle(
+                        Text(
+                          calculatePoints(status).toString(),
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         )
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Icon(
-                  //   isExpanded
-                  //       ? Icons.keyboard_arrow_up
-                  //       : Icons.keyboard_arrow_down,
-                  //   color: Colors.grey,
-                  // ),
                 ],
               )
             ],
@@ -483,7 +640,6 @@ class _PointScreenState extends State<PointScreen> {
           if (isExpanded) ...[
             const SizedBox(height: 16),
             Text('Nama      : $name'),
-            // Text('No. HP    : $phone'),
             Row(
               children: [
                 const Text('Status     : '),
@@ -559,7 +715,7 @@ class _PointScreenState extends State<PointScreen> {
 
   Widget _buildRedeemSection() {
     if (redeemItems.isEmpty) {
-      return Center(
+      return const Center(
         child: Text(
           'No redeem',
           style: TextStyle(
@@ -569,16 +725,16 @@ class _PointScreenState extends State<PointScreen> {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       itemCount: redeemItems.length,
       itemBuilder: (context, index) {
         final item = redeemItems[index];
         return Container(
-          margin: EdgeInsets.only(bottom: 20),
+          margin: const EdgeInsets.only(bottom: 20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.white,
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                   color: Colors.black12, blurRadius: 6, offset: Offset(0, 4))
             ],
@@ -587,7 +743,8 @@ class _PointScreenState extends State<PointScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
                 child: Image.network(item['image'],
                     fit: BoxFit.cover, width: double.infinity, height: 200),
               ),
@@ -597,19 +754,19 @@ class _PointScreenState extends State<PointScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(item['title'] ?? 'Promo Title',
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w600)),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        Text('Point Needed: ',
+                        const Text('Point Needed: ',
                             style: TextStyle(
                                 fontSize: 14, fontWeight: FontWeight.w500)),
                         Image.asset('assets/icons/money 4.png',
                             width: 20, height: 20),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Text('${item['point']}',
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold)),
                       ],
                     ),
