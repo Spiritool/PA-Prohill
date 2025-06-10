@@ -82,37 +82,25 @@ class Berita extends StatelessWidget {
 
             return CustomScrollView(
               slivers: [
-                // Custom App Bar
+                // Custom App Bar dengan title yang benar-benar center
+                // Replace the existing SliverAppBar section with this simplified version:
+
                 SliverAppBar(
-                  expandedHeight: 90.0,
+                  expandedHeight: 50.0,
                   floating: false,
                   pinned: true,
                   backgroundColor: const Color(0xFFFF6600),
-                  flexibleSpace: FlexibleSpaceBar(
-                    title: const Center(
-                      child: Text(
-                        'NEWS',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    background: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFFF6600),
-                            Color(0xFFFF8533),
-                          ],
-                        ),
-                      ),
+                  automaticallyImplyLeading: false,
+                  centerTitle: true,
+                  title: const Text(
+                    'NEWS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
                     ),
                   ),
                 ),
-
                 // Content
                 SliverToBoxAdapter(
                   child: Padding(

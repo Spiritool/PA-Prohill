@@ -546,7 +546,8 @@ class _HomeKontenState extends State<HomeKonten> {
                 ));
           }
         }),
-        iconButton(context, Icons.card_giftcard, 'Wallet\nSampah!', () {
+        iconButton(context, Icons.account_balance_wallet, 'Wallet\nSampah!',
+            () {
           if (userName == 'Guest') {
             _showLoginRequiredDialog(context);
           } else {
