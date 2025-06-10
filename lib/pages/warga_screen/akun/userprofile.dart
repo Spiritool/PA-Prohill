@@ -457,7 +457,7 @@ class _UserProfileState extends State<UserProfile> {
                       },
                     ),
               _buildEnhancedProfileTile(
-                icon: Icons.apartment_rounded,
+                icon: Icons.account_balance_wallet,
                 text: 'Saldo Sampah',
                 subtitle: 'Detail Sampah Balanced',
                 color: Colors.blue,

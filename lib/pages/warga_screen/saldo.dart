@@ -55,10 +55,13 @@ Future<double> fetchUserBalance() async {
   try {
     final url = '$baseipapi/penarikan/$userId';
     print('Fetching saldo from: $url');
-    
+
     final response = await http.get(
       Uri.parse(url),
-      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
     );
 
     print('Response status: ${response.statusCode}');
@@ -82,7 +85,8 @@ Future<double> fetchUserBalance() async {
         return 0.0;
       }
 
-      double totalBalance = data.containsKey('balance') ? safeToDouble(data['balance']) : 0.0;
+      double totalBalance =
+          data.containsKey('balance') ? safeToDouble(data['balance']) : 0.0;
       return totalBalance;
     } else {
       throw Exception('Failed to fetch balance: ${response.body}');
@@ -114,7 +118,10 @@ Future<bool> tarikSaldo(double jumlah, String metodePenarikan) async {
 
     final response = await http.post(
       Uri.parse(url),
-      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: jsonEncode(payload),
     );
 
@@ -128,7 +135,8 @@ Future<bool> tarikSaldo(double jumlah, String metodePenarikan) async {
     } else {
       final errorData = jsonDecode(response.body);
       print('Tarik saldo error: $errorData');
-      throw Exception(errorData['message'] ?? 'Gagal melakukan penarikan saldo');
+      throw Exception(
+          errorData['message'] ?? 'Gagal melakukan penarikan saldo');
     }
   } catch (e) {
     print('Exception during tarikSaldo: $e');
@@ -144,7 +152,7 @@ Future<List<Map<String, dynamic>>> fetchPenarikanData() async {
     throw Exception('User ID not found in SharedPreferences');
   }
 
-  final url = '$baseipapi/api/penarikan-riwayat/$userId';
+  final url = '$baseipapi/api/penarikan/$userId';
   print('Fetching penarikan data from: $url');
 
   final response = await http.get(Uri.parse(url));
@@ -156,7 +164,9 @@ Future<List<Map<String, dynamic>>> fetchPenarikanData() async {
     try {
       final jsonData = jsonDecode(response.body);
       final dataList = jsonData['data'] as List;
-      return dataList.map<Map<String, dynamic>>((item) => item as Map<String, dynamic>).toList();
+      return dataList
+          .map<Map<String, dynamic>>((item) => item as Map<String, dynamic>)
+          .toList();
     } catch (e) {
       print('Error parsing penarikan data: $e');
       rethrow;
@@ -181,6 +191,7 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
   late Future<List<Map<String, dynamic>>> futurePenarikanHistory;
 
   Set<int> expandedCards = <int>{};
+  int selectedTabIndex = 0;
 
   @override
   void initState() {
@@ -202,8 +213,6 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
 
   void _showTarikSaldoDialog() {
     final TextEditingController jumlahController = TextEditingController();
-    String selectedMetode = 'Bank Transfer';
-    final List<String> metodeOptions = ['Bank Transfer', 'E-Wallet', 'Tunai'];
 
     showDialog(
       context: context,
@@ -283,7 +292,7 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                     controller: jumlahController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      hintText: 'Masukkan jumlah (min. Rp 10.000)',
+                      hintText: 'Masukkan jumlah (min. Rp 50.000)',
                       prefixText: 'Rp ',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -292,16 +301,6 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(color: Color(0xFFFF6600)),
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Pilihan metode penarikan
-                  Text(
-                    'Metode Penarikan',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -331,11 +330,11 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                     }
 
                     final jumlah = double.tryParse(jumlahText);
-                    if (jumlah == null || jumlah < 10000) {
+                    if (jumlah == null || jumlah < 50000) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content:
-                              Text('Jumlah minimum penarikan adalah Rp 10.000'),
+                              Text('Jumlah minimum penarikan adalah Rp 50.000'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -382,8 +381,8 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                         },
                       );
 
-                      // Proses penarikan
-                      final success = await tarikSaldo(jumlah, selectedMetode);
+                      // Proses penarikan (tanpa metode penarikan)
+                      final success = await tarikSaldo(jumlah, 'Default');
 
                       // Close loading dialog
                       Navigator.of(context).pop();
@@ -421,14 +420,6 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                                     'Penarikan sebesar ${formatCurrency(jumlah)} telah diproses.',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Metode: $selectedMetode',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFFFF6600),
-                                    ),
                                   ),
                                 ],
                               ),
@@ -516,7 +507,7 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header dengan gradient
+            // Header dengan gradient - tetap sama
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
@@ -529,7 +520,7 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
               child: Column(
                 children: [
                   SizedBox(height: 20),
-                  // Main Balance Card
+                  // Main Balance Card - tetap sama
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: 20),
                     padding: EdgeInsets.all(28),
@@ -561,7 +552,6 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                                   ),
                                 ),
                                 SizedBox(height: 8),
-                                // Dynamic balance display
                                 FutureBuilder<double>(
                                   future: futureUserBalance,
                                   builder: (context, snapshot) {
@@ -621,175 +611,95 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                 ],
               ),
             ),
-            Text(
-              'Riwayat Penarikan Saldo',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            SizedBox(height: 12),
 
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: futurePenarikanHistory,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Text('Tidak ada data penarikan.');
-                } else {
-                  final penarikanList = snapshot.data!;
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: penarikanList.length,
-                    itemBuilder: (context, index) {
-                      final item = penarikanList[index];
-                      final jumlah = item['jumlah']?.toString() ?? '0';
-                      final metode = item['metode'] ?? '-';
-                      final tanggal = item['tanggal'] ?? '';
-
-                      return Card(
-                        child: ListTile(
-                          title: Text('Rp $jumlah'),
-                          subtitle: Text('Metode: $metode\nTanggal: $tanggal'),
-                          leading: Icon(Icons.history),
-                        ),
-                      );
-                    },
-                  );
-                }
-              },
-            ),
-
-            SizedBox(height: 30),
-
-            // Recent Transactions Section
+            // Tab Section - BAGIAN BARU
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Transaksi Selesai',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                  // Tab Header
+                  SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedTabIndex = 0;
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: selectedTabIndex == 0
+                                    ? Color(0xFFFF6600)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Transaksi Selesai',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: selectedTabIndex == 0
+                                      ? Colors.white
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedTabIndex = 1;
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: selectedTabIndex == 1
+                                    ? Color(0xFFFF6600)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Riwayat Penarikan',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: selectedTabIndex == 1
+                                      ? Colors.white
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 20),
 
-                  // Data List
-                  FutureBuilder<List<SampahData>>(
-                    future: futureSampahData,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Container(
-                          height: 200,
-                          child: const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Color(0xFFFF6600),
-                                  ),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Memuat data...',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                      color:
-                                          Color.fromARGB(255, 190, 185, 181)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else if (snapshot.hasError) {
-                        return Container(
-                          height: 100,
-                          child: Center(
-                            child: Text('Error: ${snapshot.error}'),
-                          ),
-                        );
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Container(
-                          height: 100,
-                          child: const Center(
-                            child: Text(
-                              'Tidak ada transaksi yang selesai.',
-                              style: TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        );
-                      } else {
-                        final data = snapshot.data!;
-
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: data.length,
-                          itemBuilder: (context, index) {
-                            SampahData sampahData = data[index];
-                            String formattedDate = DateFormat('dd-MM-yyyy')
-                                .format(sampahData.tanggal);
-
-                            // Karena kita hanya mengambil status "done", semua akan berwarna hijau
-                            Color statusColor = Colors.green;
-
-                            final isExpanded = expandedCards.contains(index);
-
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  if (isExpanded) {
-                                    expandedCards.remove(index);
-                                  } else {
-                                    expandedCards.add(index);
-                                  }
-                                });
-                              },
-                              child: _buildTransactionCard(
-                                name: sampahData.nama,
-                                phone: sampahData.noHp,
-                                fotoSampah: sampahData.fotoSampah,
-                                status: sampahData.status,
-                                namaUpt: sampahData.namaUpt,
-                                location:
-                                    '${sampahData.alamat.kelurahan}, ${sampahData.alamat.kecamatan}, ${sampahData.alamat.deskripsi}',
-                                description: sampahData.deskripsi,
-                                mapUrl: sampahData.alamat.kordinat,
-                                idSampah: sampahData.id,
-                                idpetugas: sampahData.id_user_petugas,
-                                statusColor: statusColor,
-                                tanggalFormatted: formattedDate,
-                                ratingPetugas: sampahData.ratingPetugas,
-                                catatanPetugas: sampahData.catatanPetugas,
-                                isExpanded: isExpanded,
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    },
-                  ),
+                  // Tab Content
+                  if (selectedTabIndex == 0)
+                    _buildTransaksiSelesaiTab()
+                  else
+                    _buildRiwayatPenarikanTab(),
 
                   SizedBox(height: 30),
 
-                  // Withdraw Button
+                  // Withdraw Button - tetap sama
                   Container(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed:
-                          _showTarikSaldoDialog, // Ubah dari () {} menjadi ini
+                      onPressed: _showTarikSaldoDialog,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFFFF6600),
                         padding: EdgeInsets.symmetric(vertical: 18),
@@ -830,6 +740,237 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
     );
   }
 
+  // Widget untuk tab Transaksi Selesai
+  Widget _buildTransaksiSelesaiTab() {
+    return FutureBuilder<List<SampahData>>(
+      future: futureSampahData,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 200,
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFF6600),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Memuat data...',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color.fromARGB(255, 190, 185, 181)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return Container(
+            height: 100,
+            child: Center(
+              child: Text('Error: ${snapshot.error}'),
+            ),
+          );
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Container(
+            height: 100,
+            child: const Center(
+              child: Text(
+                'Tidak ada transaksi yang selesai.',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          );
+        } else {
+          final data = snapshot.data!;
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              SampahData sampahData = data[index];
+              String formattedDate =
+                  DateFormat('dd-MM-yyyy').format(sampahData.tanggal);
+              Color statusColor = Colors.green;
+              final isExpanded = expandedCards.contains(index);
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (isExpanded) {
+                      expandedCards.remove(index);
+                    } else {
+                      expandedCards.add(index);
+                    }
+                  });
+                },
+                child: _buildTransactionCard(
+                  name: sampahData.nama,
+                  phone: sampahData.noHp,
+                  fotoSampah: sampahData.fotoSampah,
+                  status: sampahData.status,
+                  namaUpt: sampahData.namaUpt,
+                  location:
+                      '${sampahData.alamat.kelurahan}, ${sampahData.alamat.kecamatan}, ${sampahData.alamat.deskripsi}',
+                  description: sampahData.deskripsi,
+                  mapUrl: sampahData.alamat.kordinat,
+                  idSampah: sampahData.id,
+                  idpetugas: sampahData.id_user_petugas,
+                  statusColor: statusColor,
+                  tanggalFormatted: formattedDate,
+                  ratingPetugas: sampahData.ratingPetugas,
+                  catatanPetugas: sampahData.catatanPetugas,
+                  pendapatan: sampahData.pendapatan ?? 0.0,
+                  isExpanded: isExpanded,
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
+  }
+
+  // Widget untuk tab Riwayat Penarikan
+  Widget _buildRiwayatPenarikanTab() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: futurePenarikanHistory,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 200,
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFF6600),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Memuat riwayat penarikan...',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color.fromARGB(255, 190, 185, 181)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return Container(
+            height: 100,
+            child: Center(
+              child: Text('Error: ${snapshot.error}'),
+            ),
+          );
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Container(
+            height: 100,
+            child: const Center(
+              child: Text(
+                'Tidak ada riwayat penarikan.',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          );
+        } else {
+          final penarikanList = snapshot.data!;
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: penarikanList.length,
+            itemBuilder: (context, index) {
+              final item = penarikanList[index];
+              final jumlah = item['jumlah']?.toString() ?? '0';
+              final created_at = item['created_at'] ?? '';
+              final metode = item['metode_penarikan'] ?? 'Tidak diketahui';
+
+              return Container(
+                margin: EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF6600).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.monetization_on,
+                        color: Color(0xFFFF6600),
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Rp $jumlah',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Tanggal: $created_at',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Selesai',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
+  }
+
   Widget _buildTransactionCard({
     required String name,
     required String phone,
@@ -845,6 +986,7 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
     required String tanggalFormatted,
     required double? ratingPetugas,
     required String? catatanPetugas,
+    required double pendapatan,
     required bool isExpanded,
   }) {
     return Container(
@@ -910,7 +1052,7 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Rp.25.000,-',
+                      'Rp ${pendapatan.toStringAsFixed(0)}', // Format angka tanpa desimal
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.green[600],

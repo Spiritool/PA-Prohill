@@ -16,7 +16,13 @@ Future<List<SampahData>> fetchSampahData() async {
   final prefs = await SharedPreferences.getInstance();
   final userId = prefs.getInt('user_id') ?? 0;
 
+  // LOG: Print user_id untuk sampah data
+  print('=== DEBUG LOG fetchSampahData ===');
+  print('User ID untuk sampah data: $userId');
+
   if (userId == 0) {
+    print(
+        'ERROR: User ID tidak ditemukan di SharedPreferences untuk sampah data');
     throw Exception('User ID not found in SharedPreferences');
   }
 
@@ -27,24 +33,62 @@ Future<List<SampahData>> fetchSampahData() async {
     '$baseipapi/api/pengangkutan-sampah/history/$userId/failed',
   ];
 
+  print('URLs yang akan diakses:');
+  urls.forEach((url) => print('- $url'));
+
   List<SampahData> allData = [];
 
   for (String url in urls) {
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body)['data'];
-      allData.addAll(data.map((item) => SampahData.fromJson(item)).toList());
-    } else {
-      throw Exception('Failed to load data from $url');
+    try {
+      print('Mengakses URL: $url');
+      final response = await http.get(Uri.parse(url));
+      print('Status Code untuk $url: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        // Fix: Properly cast the decoded JSON to Map<String, dynamic>
+        final decodedResponse = jsonDecode(response.body);
+        
+        // Ensure the response is a Map and has 'data' key
+        if (decodedResponse is Map<String, dynamic> && decodedResponse.containsKey('data')) {
+          final dataList = decodedResponse['data'];
+          
+          // Ensure 'data' is a List
+          if (dataList is List) {
+            print('Data diterima dari $url: ${dataList.length} items');
+            
+            // Convert each item to SampahData with proper type casting
+            for (var item in dataList) {
+              if (item is Map) {
+                // Cast to Map<String, dynamic> before passing to fromJson
+                final Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+                allData.add(SampahData.fromJson(itemMap));
+              }
+            }
+          } else {
+            print('WARNING: Data from $url is not a List');
+          }
+        } else {
+          print('WARNING: Invalid response structure from $url');
+        }
+      } else {
+        print(
+            'ERROR: Failed to load data from $url - Status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Failed to load data from $url');
+      }
+    } catch (e) {
+      print('EXCEPTION saat mengakses $url: $e');
+      rethrow;
     }
   }
 
   // Balikkan daftar agar data terbaru tampil di atas
   allData.sort((a, b) => b.id.compareTo(a.id));
+  print('Total data sampah yang berhasil diambil: ${allData.length}');
+  print('=== END DEBUG LOG fetchSampahData ===');
 
   return allData;
 }
-
 class History extends StatefulWidget {
   const History({super.key});
 

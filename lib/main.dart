@@ -23,13 +23,6 @@ void main() async {
     await dotenv.load(fileName: ".env");
     log('✅ Environment loaded');
 
-    // Initialize notifications
-    await LocalNotif.init();
-    log('✅ LocalNotif initialized');
-
-    await FCM.init();
-    log('✅ FCM initialized');
-
     runApp(MyApp());
   } catch (e) {
     log('❌ Error in main: $e');
@@ -52,7 +45,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _initializeNotifications();
+    // Initialize notifications after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeNotifications();
+    });
   }
 
   Future<void> _initializeNotifications() async {
@@ -60,19 +56,30 @@ class _MyAppState extends State<MyApp> {
     _isInitializing = true;
 
     try {
-      // Add delay to ensure app is fully loaded
-      await Future.delayed(Duration(seconds: 1));
-
-      // Handle initial messages
-      await LocalNotif.initialMessage();
-      await FCM.initialMessage();
-
-      log('✅ Initial notifications handled');
+      // Move heavy initialization to background isolate or use compute
+      await _initializeInBackground();
+      log('✅ Background initialization completed');
     } catch (e) {
       log('❌ Error initializing notifications: $e');
     } finally {
       _isInitializing = false;
     }
+  }
+
+  Future<void> _initializeInBackground() async {
+    // Initialize LocalNotif first
+    await LocalNotif.init();
+    log('✅ LocalNotif initialized');
+
+    // Initialize FCM
+    await FCM.init();
+    log('✅ FCM initialized');
+
+    // Handle initial messages with proper timing
+    await Future.microtask(() async {
+      await LocalNotif.initialMessage();
+      await FCM.initialMessage();
+    });
   }
 
   @override
@@ -86,37 +93,14 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
       ),
       home: const SplashScreen(),
-      // Add error handling for navigation
+      // Optimized error handling
       builder: (context, child) {
         // Handle any uncaught errors in navigation
         ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
           log('❌ Flutter Error: ${errorDetails.exception}');
-          return Material(
-            child: Container(
-              color: Colors.white,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    SizedBox(height: 16),
-                    Text(
-                      'Something went wrong',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Please restart the app',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
+          return _buildErrorWidget();
         };
-        return child ?? Container();
+        return child ?? const SizedBox.shrink();
       },
       // Add routes for better navigation handling
       routes: {
@@ -131,6 +115,32 @@ class _MyAppState extends State<MyApp> {
           builder: (context) => const SplashScreen(),
         );
       },
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Material(
+      child: Container(
+        color: Colors.white,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: Colors.red),
+              SizedBox(height: 16),
+              Text(
+                'Something went wrong',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Please restart the app',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

@@ -253,11 +253,6 @@ class _UptdState extends State<Uptd> {
                           ),
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 14,
-                        color: const Color(0xFFFF6600).withOpacity(0.6),
-                      ),
                     ],
                   ),
                 );
@@ -311,15 +306,15 @@ class _UptdState extends State<Uptd> {
           ),
         ),
         actions: [
-          IconButton(
-            onPressed: () {
-              // Add refresh functionality
-            },
-            icon: Icon(
-              Icons.refresh,
-              color: const Color(0xFFFF6600),
-            ),
-          ),
+          // IconButton(
+          //   onPressed: () {
+          //     // Add refresh functionality
+          //   },
+          //   icon: Icon(
+          //     Icons.refresh,
+          //     color: const Color(0xFFFF6600),
+          //   ),
+          // ),
         ],
       ),
       body: Padding(

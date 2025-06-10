@@ -516,25 +516,25 @@ class _HomeKontenState extends State<HomeKonten> {
                 builder: (context) => LeaderboardPage(),
               ));
         }),
-        iconButton(context, Icons.feedback_outlined, 'Feedback', () async {
-          final token = await FirebaseMessaging.instance.getToken();
-          setState(() {
-            fcmToken = token ?? '-';
-          });
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('FCM Token'),
-              content: SelectableText(fcmToken!),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Tutup'),
-                )
-              ],
-            ),
-          );
-        }),
+        // iconButton(context, Icons.feedback_outlined, 'Feedback', () async {
+        //   final token = await FirebaseMessaging.instance.getToken();
+        //   setState(() {
+        //     fcmToken = token ?? '-';
+        //   });
+        //   showDialog(
+        //     context: context,
+        //     builder: (context) => AlertDialog(
+        //       title: const Text('FCM Token'),
+        //       content: SelectableText(fcmToken!),
+        //       actions: [
+        //         TextButton(
+        //           onPressed: () => Navigator.pop(context),
+        //           child: const Text('Tutup'),
+        //         )
+        //       ],
+        //     ),
+        //   );
+        // }),
         iconButton(context, Icons.card_giftcard, 'Point\nReward!', () {
           if (userName == 'Guest') {
             _showLoginRequiredDialog(context);

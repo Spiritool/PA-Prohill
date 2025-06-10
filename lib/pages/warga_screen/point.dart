@@ -159,59 +159,109 @@ Future<List<Map<String, dynamic>>> fetchPenukaranHistory(int userId) async {
 }
 
 Future<List<SampahData>> fetchSampahData() async {
-  final prefs = await SharedPreferences.getInstance();
-  final userId = prefs.getInt('user_id') ?? 0;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
 
-  // LOG: Print user_id untuk sampah data
-  print('=== DEBUG LOG fetchSampahData ===');
-  print('User ID untuk sampah data: $userId');
-
-  if (userId == 0) {
-    print(
-        'ERROR: User ID tidak ditemukan di SharedPreferences untuk sampah data');
-    throw Exception('User ID not found in SharedPreferences');
-  }
-
-  final urls = [
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/proses',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/done',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/pending',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/failed',
-  ];
-
-  print('URLs yang akan diakses:');
-  urls.forEach((url) => print('- $url'));
-
-  List<SampahData> allData = [];
-
-  for (String url in urls) {
-    try {
-      print('Mengakses URL: $url');
-      final response = await http.get(Uri.parse(url));
-      print('Status Code untuk $url: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        List<dynamic> data = jsonDecode(response.body)['data'];
-        print('Data diterima dari $url: ${data.length} items');
-        allData.addAll(data.map((item) => SampahData.fromJson(item)).toList());
-      } else {
-        print(
-            'ERROR: Failed to load data from $url - Status: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        throw Exception('Failed to load data from $url');
-      }
-    } catch (e) {
-      print('EXCEPTION saat mengakses $url: $e');
-      rethrow;
+    if (userId == 0) {
+      throw Exception('User ID not found in SharedPreferences');
     }
+
+    print('Fetching data for user ID: $userId'); // Debug log
+
+    final response = await http.get(
+      Uri.parse('$baseipapi/api/pengangkutan-sampah/history/$userId/done'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    print('Response status: ${response.statusCode}'); // Debug log
+    print('Response body: ${response.body}'); // Debug log
+
+    if (response.statusCode == 200) {
+      // Parse JSON response dengan error handling
+      late Map<String, dynamic> jsonResponse;
+      try {
+        var decodedResponse = jsonDecode(response.body);
+
+        // Pastikan response adalah Map
+        if (decodedResponse is Map<String, dynamic>) {
+          jsonResponse = decodedResponse;
+        } else {
+          throw Exception('Response is not a valid JSON object');
+        }
+      } catch (e) {
+        print('JSON decode error: $e');
+        throw Exception('Failed to parse JSON response: $e');
+      }
+
+      // Ekstrak data array
+      List<dynamic> rawData = [];
+      if (jsonResponse.containsKey('data')) {
+        var dataField = jsonResponse['data'];
+        if (dataField is List) {
+          rawData = dataField;
+        } else {
+          throw Exception('Data field is not an array');
+        }
+      } else {
+        throw Exception('Response does not contain data field');
+      }
+
+      print('Raw data length: ${rawData.length}'); // Debug log
+
+      // Parse setiap item dengan error handling
+      List<SampahData> sampahDataList = [];
+      for (int i = 0; i < rawData.length; i++) {
+        try {
+          var item = rawData[i];
+
+          // Pastikan item adalah Map
+          if (item is! Map) {
+            print('Item $i is not a Map, skipping');
+            continue;
+          }
+
+          // Cast ke Map<String, dynamic> dengan aman
+          Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+
+          // Parse ke SampahData
+          SampahData sampahData = SampahData.fromJson(itemMap);
+          sampahDataList.add(sampahData);
+        } catch (e) {
+          print('Error parsing item $i: $e');
+          print('Item data: ${rawData[i]}');
+          // Skip item yang error dan lanjutkan
+          continue;
+        }
+      }
+
+      print('Successfully parsed ${sampahDataList.length} items'); // Debug log
+
+      // Sort berdasarkan ID (terbaru di atas)
+      sampahDataList.sort((a, b) => b.id.compareTo(a.id));
+
+      return sampahDataList;
+    } else if (response.statusCode == 404) {
+      // Tidak ada data
+      return <SampahData>[];
+    } else {
+      throw Exception(
+          'Failed to load data. Status: ${response.statusCode}, Body: ${response.body}');
+    }
+  } catch (e) {
+    print('Exception in fetchSampahData: $e');
+
+    // Jika error karena network atau parsing, return list kosong atau rethrow
+    if (e.toString().contains('SocketException') ||
+        e.toString().contains('TimeoutException')) {
+      throw Exception('Network error: Please check your internet connection');
+    }
+
+    rethrow;
   }
-
-  // Balikkan daftar agar data terbaru tampil di atas
-  allData.sort((a, b) => b.id.compareTo(a.id));
-  print('Total data sampah yang berhasil diambil: ${allData.length}');
-  print('=== END DEBUG LOG fetchSampahData ===');
-
-  return allData;
 }
 
 class PointScreen extends StatefulWidget {
