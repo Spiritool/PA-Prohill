@@ -154,6 +154,13 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
   late Future<Map<String, List<SampahData>>> futureSampahData;
   late Future<Map<String, List<SampahLiarData>>> futureSampahLiarData;
 
+  // Orange color scheme
+  static const Color primaryOrange = Color(0xFFFF8C00);
+  static const Color lightOrange = Color(0xFFFFA500);
+  static const Color darkOrange = Color(0xFFFF6600);
+  static const Color paleOrange = Color(0xFFFFE4B5);
+  static const Color deepOrange = Color(0xFFFF4500);
+
   @override
   void initState() {
     super.initState();
@@ -173,37 +180,73 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF8F0),
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: darkOrange,
         title: const Text(
           'Activity Petugas',
           style: TextStyle(
-            fontStyle: FontStyle.italic,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
+            color: darkOrange,
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: Colors.black,
-          tabs: const [
-            Tab(text: 'Riwayat'),
-            Tab(text: 'Dalam Proses'),
-            Tab(text: 'Pending'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: primaryOrange,
+              unselectedLabelColor: const Color(0xFF7F8C8D),
+              indicatorColor: primaryOrange,
+              indicatorWeight: 3,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              tabs: [
+                Tab(
+                  icon: const Icon(Icons.history, size: 20),
+                  text: 'Riwayat',
+                ),
+                Tab(
+                  icon: const Icon(Icons.hourglass_empty, size: 20),
+                  text: 'Proses',
+                ),
+                Tab(
+                  icon: const Icon(Icons.pending_actions, size: 20),
+                  text: 'Pending',
+                ),
+              ],
+            ),
+          ),
         ),
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          Container(
+            margin: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
                   child: _buildFilterButton(
                     'Sampah Daur Ulang',
+                    Icons.recycling,
                     showSampahData,
-                    Colors.blue,
+                    primaryOrange,
                     () {
                       setState(() {
                         showSampahData = true;
@@ -211,12 +254,13 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
                     },
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildFilterButton(
                     'Sampah Liar',
+                    Icons.delete_outline,
                     !showSampahData,
-                    Colors.red,
+                    deepOrange,
                     () {
                       setState(() {
                         showSampahData = false;
@@ -231,44 +275,75 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildListSampah(0), // ✅ Tab Riwayat
-                _buildListSampah(1), // ✅ Tab Dalam Proses
-                _buildListSampah(2), // ✅ Tab Pending
+                _buildListSampah(0), // Tab Riwayat
+                _buildListSampah(1), // Tab Dalam Proses
+                _buildListSampah(2), // Tab Pending
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    const mapPetugas()), // Ganti MapPage sesuai nama file kamu
-          );
-        },
-        backgroundColor: Colors.green,
-        tooltip: 'Lihat Peta',
-        child: const Icon(Icons.map),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: primaryOrange.withOpacity(0.3),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const mapPetugas()),
+            );
+          },
+          backgroundColor: primaryOrange,
+          icon: const Icon(Icons.map, color: Colors.white),
+          label: const Text(
+            'Lihat Peta',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildFilterButton(
-      String text, bool isSelected, Color color, VoidCallback onPressed) {
-    return Expanded(
-      child: ElevatedButton(
+  Widget _buildFilterButton(String text, IconData icon, bool isSelected,
+      Color color, VoidCallback onPressed) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      child: ElevatedButton.icon(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? color : Colors.grey.shade300,
-          foregroundColor: isSelected ? Colors.white : Colors.black,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        child: Text(
+        icon: Icon(icon, size: 18),
+        label: Text(
           text,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? color : Colors.white,
+          foregroundColor: isSelected ? Colors.white : color,
+          elevation: isSelected ? 4 : 1,
+          shadowColor: color.withOpacity(0.3),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isSelected ? color : color.withOpacity(0.3),
+              width: 1.5,
+            ),
+          ),
         ),
       ),
     );
@@ -281,9 +356,72 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
           : futureSampahLiarData as Future<Map<String, List<dynamic>>>,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: primaryOrange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(primaryOrange),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Memuat data...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF7F8C8D),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
         } else if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: deepOrange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(40),
+                  ),
+                  child: const Icon(
+                    Icons.error_outline,
+                    color: deepOrange,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Terjadi kesalahan',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "${snapshot.error}",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF7F8C8D),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
         } else if (!snapshot.hasData) {
           return const Center(child: Text("Tidak ada data sampah."));
         }
@@ -300,32 +438,68 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
           sampahList = snapshot.data!['pending'] ?? [];
         }
 
-        // ✅ Tampilkan pesan jika data kosong
+        // Tampilkan pesan jika data kosong
         if (sampahList.isEmpty) {
           String tabName = selectedTab == 0
               ? "Riwayat"
               : selectedTab == 1
                   ? "Dalam Proses"
                   : "Pending";
+          
           return Center(
-            child: Text(
-              "Tidak ada data sampah $jenisSampah untuk tab $tabName.",
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: lightOrange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  child: Icon(
+                    selectedTab == 0 
+                        ? Icons.history_edu 
+                        : selectedTab == 1 
+                            ? Icons.hourglass_empty 
+                            : Icons.pending_actions,
+                    color: lightOrange,
+                    size: 50,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Belum ada data",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Tidak ada data sampah $jenisSampah\nuntuk tab $tabName",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF7F8C8D),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           );
         }
 
-        // ✅ Jika ada data, tampilkan daftar
+        // Jika ada data, tampilkan daftar
         return ListView.builder(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           itemCount: sampahList.length,
           itemBuilder: (context, index) {
             final item = sampahList[index];
             if (showSampahData) {
-              return _buildSampahCard(item as SampahData, selectedTab);
+              return _buildSampahCard(item as SampahData, selectedTab, index);
             } else {
-              return _buildSampahCard(item as SampahLiarData, selectedTab);
+              return _buildSampahCard(item as SampahLiarData, selectedTab, index);
             }
           },
         );
@@ -333,78 +507,217 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
     );
   }
 
-  Widget _buildSampahCard(dynamic item, int selectedTab) {
-    return GestureDetector(
-      onTap: () async {
-        bool? updated = false;
+  Widget _buildSampahCard(dynamic item, int selectedTab, int index) {
+    // Determine card colors based on tab and type with orange theme
+    Color cardColor;
+    Color shadowColor;
+    IconData cardIcon;
+    
+    if (selectedTab == 0) {
+      // Riwayat - Success Green but with orange accent
+      cardColor = showSampahData ? primaryOrange : deepOrange;
+      shadowColor = cardColor.withOpacity(0.3);
+      cardIcon = Icons.check_circle;
+    } else if (selectedTab == 1) {
+      // Dalam Proses - Orange
+      cardColor = lightOrange;
+      shadowColor = cardColor.withOpacity(0.3);
+      cardIcon = Icons.hourglass_empty;
+    } else {
+      // Pending - Light Orange
+      cardColor = const Color(0xFFFFB366);
+      shadowColor = cardColor.withOpacity(0.3);
+      cardIcon = Icons.pending_actions;
+    }
 
-        // Navigasi ke halaman detail berdasarkan jenis sampah
-        if (showSampahData) {
-          // Sampah Daur Ulang
-          updated = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DetailSampahDaurUlangPage(
-                sampah: item as SampahData,
-              ),
-            ),
-          );
-        } else {
-          // Sampah Liar
-          updated = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DetailSampahLiarPage(
-                sampah: item as SampahLiarData,
-              ),
-            ),
-          );
-        }
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200 + (index * 50)),
+      curve: Curves.easeOutBack,
+      child: GestureDetector(
+        onTap: () async {
+          bool? updated = false;
 
-        // Jika status diperbarui, lakukan refresh pada daftar
-        if (updated == true) {
-          setState(() {
-            // Refresh data atau UI
-            futureSampahData =
-                fetchSampahData(); // Memanggil kembali data terbaru
-            futureSampahLiarData = fetchSampahLiarData();
-          });
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: selectedTab == 0
-              ? (showSampahData ? Colors.blue : Colors.red)
-              : (selectedTab == 1 ? Colors.orange : Colors.grey),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              showSampahData
-                  ? (item as SampahData).name
-                  : (item as SampahLiarData).email,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              item.deskripsi,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Text(
-                DateFormat('dd-MM-yyyy').format(item.tanggal),
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+          // Navigasi ke halaman detail berdasarkan jenis sampah
+          if (showSampahData) {
+            // Sampah Daur Ulang
+            updated = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetailSampahDaurUlangPage(
+                  sampah: item as SampahData,
+                ),
+              ),
+            );
+          } else {
+            // Sampah Liar
+            updated = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetailSampahLiarPage(
+                  sampah: item as SampahLiarData,
+                ),
+              ),
+            );
+          }
+
+          // Jika status diperbarui, lakukan refresh pada daftar
+          if (updated == true) {
+            setState(() {
+              futureSampahData = fetchSampahData();
+              futureSampahLiarData = fetchSampahLiarData();
+            });
+          }
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: shadowColor,
+                spreadRadius: 1,
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: cardColor,
+                    width: 5,
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: cardColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            cardIcon,
+                            color: cardColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                showSampahData
+                                    ? (item as SampahData).name
+                                    : (item as SampahLiarData).email,
+                                style: const TextStyle(
+                                  color: Color(0xFF2C3E50),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: cardColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  showSampahData ? 'Daur Ulang' : 'Sampah Liar',
+                                  style: TextStyle(
+                                    color: cardColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: const Color(0xFF95A5A6),
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      item.deskripsi,
+                      style: const TextStyle(
+                        color: Color(0xFF5D6D7E),
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              color: const Color(0xFF95A5A6),
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(item.tanggal),
+                              style: const TextStyle(
+                                color: Color(0xFF95A5A6),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cardColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            selectedTab == 0
+                                ? 'Selesai'
+                                : selectedTab == 1
+                                    ? 'Proses'
+                                    : 'Menunggu',
+                            style: TextStyle(
+                              color: cardColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -412,9 +725,9 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
 
   Future<void> _loadUserStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    _status = prefs.getString('status') ?? 'tidak ready';
+    _status = prefs.getString('status') ?? 'tidak_ready';
 
-    if (_status == 'tidak ready') {
+    if (_status == 'tidak_ready') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showAktifkanAkunDialog();
       });
@@ -424,17 +737,85 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
   void _showAktifkanAkunDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Akun Tidak Aktif'),
-          content: const Text(
-              'Akun Anda dalam status *tidak ready*. Silakan aktifkan di halaman akun agar bisa menerima laporan.'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 10,
+          child: Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, paleOrange.withOpacity(0.3)],
+              ),
             ),
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: lightOrange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(40),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: lightOrange,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Akun Tidak Aktif',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Akun Anda dalam status tidak tersedia. Silakan aktifkan di halaman akun agar bisa menerima laporan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF7F8C8D),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                      shadowColor: primaryOrange.withOpacity(0.3),
+                    ),
+                    child: const Text(
+                      'Mengerti',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );

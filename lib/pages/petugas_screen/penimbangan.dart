@@ -7,7 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 final baseipapi = dotenv.env['LOCAL_IP'];
 
 class Penimbangan extends StatefulWidget {
-  final int idSampah; // ID for the specific waste item
+  final int idSampah;
 
   const Penimbangan({super.key, required this.idSampah});
 
@@ -16,93 +16,114 @@ class Penimbangan extends StatefulWidget {
 }
 
 class _PenimbanganState extends State<Penimbangan> {
-  final _kertasController = TextEditingController();
-  final _plastikController = TextEditingController();
-  final _logamController = TextEditingController();
-  final _lainnyaController = TextEditingController();
-  final _minyakController = TextEditingController();
+  List<dynamic> _hargaBarang = [];
+  List<Map<String, dynamic>> _selectedItems = [];
+  double _totalPendapatan = 0.0;
 
-  Future<void> _submitData() async {
-    final jumlahKertas = double.tryParse(_kertasController.text) ?? 0;
-    final jumlahPlastik = double.tryParse(_plastikController.text) ?? 0;
-    final jumlahLogam = double.tryParse(_logamController.text) ?? 0;
-    final jumlahLainnya = double.tryParse(_lainnyaController.text) ?? 0;
-    final jumlahMinyak = double.tryParse(_minyakController.text) ?? 0;
+  @override
+  void initState() {
+    super.initState();
+    _fetchHargaBarang();
+  }
 
-    // Show loading indicator
+  Future<void> _fetchHargaBarang() async {
+    final response = await http.get(Uri.parse('$baseipapi/api/harga-barang'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _hargaBarang = jsonDecode(response.body);
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memuat data harga barang')),
+      );
+    }
+  }
+
+  void _showPilihBarangDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(),
+      builder: (_) {
+        return AlertDialog(
+          title: const Text('Pilih Barang'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _hargaBarang.length,
+              itemBuilder: (context, index) {
+                final barang = _hargaBarang[index];
+                return ListTile(
+                  title: Text(barang['Nama_Barang']),
+                  subtitle: Text('Rp${barang['Harga_Beli']} / kg'),
+                  onTap: () {
+                    final sudahDipilih = _selectedItems.any((e) => e['ID'] == barang['ID']);
+                    if (!sudahDipilih) {
+                      setState(() {
+                        _selectedItems.add({...barang, 'jumlah': 0.0});
+                      });
+                    }
+                    Navigator.pop(context);
+                  },
+                );
+              },
+            ),
+          ),
         );
       },
     );
+  }
+
+  void _hitungTotalPendapatan() {
+    double total = 0.0;
+    for (var item in _selectedItems) {
+      total += item['jumlah'] * (double.tryParse(item['Harga_Beli'].toString()) ?? 0.0);
+    }
+    setState(() {
+      _totalPendapatan = total;
+    });
+  }
+
+  Future<void> _submitData() async {
+    final listString = _selectedItems
+        .map((item) => "${item['Nama_Barang']}: ${item['jumlah']}kg")
+        .join(", ");
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
 
     try {
-      // Submit penimbangan data
-      final penimbanganResponse = await http.post(
-        Uri.parse(
-            '$baseipapi/api/pengangkutan-sampah/penimbangan-sampah/${widget.idSampah}'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      final response = await http.post(
+        Uri.parse('$baseipapi/api/pengangkutan-sampah/penimbangan-sampah/${widget.idSampah}'),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'jumlah_kertas': jumlahKertas,
-          'jumlah_plastik': jumlahPlastik,
-          'jumlah_logam': jumlahLogam,
-          'jumlah_sampah_lain': jumlahLainnya,
-          'jumlah_minyak_jalantah': jumlahMinyak,
+          'list': listString,
+          'pendapatan': _totalPendapatan,
         }),
       );
 
-      if (penimbanganResponse.statusCode == 200) {
-        // Update status to 'done'
-        final statusUpdateResponse = await http.post(
-          Uri.parse(
-              'http://192.168.223.205:8000/api/pengangkutan-sampah/done/${widget.idSampah}'),
-          headers: {
-            'Content-Type': 'application/json',
-          },
+      if (response.statusCode == 200) {
+        Navigator.of(context, rootNavigator: true).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Data berhasil disimpan')),
         );
 
-        if (statusUpdateResponse.statusCode == 200) {
-          // Tutup dialog loading
-          Navigator.of(context, rootNavigator: true).pop();
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Data penimbangan berhasil disimpan dan status diperbarui menjadi Done'),
-            ),
-          );
-
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  const HomePetugasPage(initialIndex: 1), // 👈 Tab Riwayat
-            ),
-            (Route<dynamic> route) => false,
-          );
-        } else {
-          Navigator.of(context, rootNavigator: true).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    'Gagal memperbarui status menjadi Done: ${statusUpdateResponse.reasonPhrase}')),
-          );
-        }
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePetugasPage(initialIndex: 1)),
+          (route) => false,
+        );
       } else {
         Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Gagal menyimpan data penimbangan: ${penimbanganResponse.reasonPhrase}')),
+          SnackBar(content: Text('Gagal submit: ${response.reasonPhrase}')),
         );
       }
     } catch (e) {
+      Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
       );
@@ -116,68 +137,89 @@ class _PenimbanganState extends State<Penimbangan> {
         title: const Text("Data Penimbangan"),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const Text(
-                'Masukkan Data Penimbangan',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _kertasController,
-                decoration: const InputDecoration(
-                  labelText: 'Berat Sampah Kertas (kg)',
-                  border: OutlineInputBorder(),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Barang yang Dipilih:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ..._selectedItems.map((item) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Row(
+                  children: [
+                    Expanded(flex: 2, child: Text(item['Nama_Barang'])),
+                    Expanded(
+                      child: TextField(
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'kg'),
+                        onChanged: (value) {
+                          setState(() {
+                            item['jumlah'] = double.tryParse(value) ?? 0.0;
+                            _hitungTotalPendapatan();
+                          });
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                                               'Rp${((item['jumlah'] ?? 1.0) * (double.tryParse(item['Harga_Beli'].toString()) ?? 0.0)).toStringAsFixed(0)}',
+
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        setState(() {
+                          _selectedItems.remove(item);
+                          _hitungTotalPendapatan();
+                        });
+                      },
+                    )
+                  ],
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _plastikController,
-                decoration: const InputDecoration(
-                  labelText: 'Berat Sampah Plastik (kg)',
-                  border: OutlineInputBorder(),
+              );
+            }).toList(),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('Tambah Barang'),
+                  onPressed: _showPilihBarangDialog,
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _logamController,
-                decoration: const InputDecoration(
-                  labelText: 'Berat Sampah Logam (kg)',
-                  border: OutlineInputBorder(),
+                Text(
+                  'Total: Rp${_totalPendapatan.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _lainnyaController,
-                decoration: const InputDecoration(
-                  labelText: 'Berat Sampah Lainnya (kg)',
-                  border: OutlineInputBorder(),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Center(
+              child: ElevatedButton(
+                onPressed: _selectedItems.isEmpty ? null : _submitData,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _minyakController,
-                decoration: const InputDecoration(
-                  labelText: 'Jumlah Minyak Jelantah (kg)',
-                  border: OutlineInputBorder(),
+                child: const Text(
+                  'Simpan Data Penimbangan',
+                  style: TextStyle(fontSize: 16),
                 ),
-                keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _submitData,
-                child: const Text('Simpan'),
-              ),
-            ],
-          ),
+            )
+          ],
         ),
       ),
     );
   }
 }
+

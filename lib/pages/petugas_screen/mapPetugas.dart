@@ -84,185 +84,141 @@ class _mapPetugasState extends State<mapPetugas> {
     return distance;
   }
 
-  Future<void> _fetchKoordinatFromApi(int userId) async {
-    final urls = [
-      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses',
-      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending',
-      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
-      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
-    ];
+Future<void> _fetchKoordinatFromApi(int userId) async {
+  final urls = [
+    '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses',
+    '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/pending',
+    '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
+    '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
+  ];
 
-    List<Map<String, dynamic>> result = [];
+  List<Map<String, dynamic>> result = [];
 
-    for (final url in urls) {
-      try {
-        final response = await http.get(Uri.parse(url));
-        if (response.statusCode == 200) {
-          final decoded = jsonDecode(response.body);
-          final dataList = decoded['data'];
-
-          String jenisSampah = '';
-          if (url.contains('sampah-liar')) {
-            jenisSampah = 'Sampah Liar';
-          } else if (url.contains('pengangkutan-sampah')) {
-            jenisSampah = 'Sampah Daur Ulang';
-          }
-
-          if (dataList is List) {
-            for (final item in dataList) {
-              final dynamic kordinatValue =
-                  item['kordinat'] ?? item['alamat']?['kordinat'];
-
-              if (kordinatValue is String && kordinatValue.contains('query=')) {
-                result.add({
-                  'kordinat': kordinatValue,
-                  'jenis_sampah': jenisSampah,
-                });
-              }
-            }
-          } else {
-            debugPrint('Respons tidak mengandung daftar data: $dataList');
-          }
-        } else {
-          debugPrint('Gagal fetch dari $url: ${response.statusCode}');
-        }
-      } catch (e) {
-        debugPrint('Error saat fetch dari API $url: $e');
-      }
-    }
-
-    setState(() {
-      koordinatList.clear();
-      koordinatList.addAll(result);
-    });
-    debugPrint('Hasil koordinatList: $koordinatList');
-  }
-
-  Future<void> _generateRoute() async {
-    if (currentPosition == null || koordinatList.isEmpty || lokasiTPA == null) {
-      debugPrint("Posisi awal, daftar koordinat, atau TPA tidak valid.");
-      return;
-    }
-
-    const double maxDistanceInKm = 10.0;
-
-    print('Posisi sekarang: $currentPosition');
-    print('Total titik sampah di koordinatList: ${koordinatList.length}');
-
-    for (var item in koordinatList) {
-      final point = _extractLatLngFromMap(item);
-      print('Koordinat URL: ${item['kordinat']}');
-      print('Hasil parsing: $point');
-
-      if (point != null) {
-        final jarak = calculateDistanceInKm(currentPosition!, point);
-        print('➡️ Jarak ke titik: ${jarak.toStringAsFixed(2)} km');
-      } else {
-        print('❌ Gagal extract koordinat!');
-      }
-    }
-
-    // Filter lokasi sampah dalam radius
-    final destinations = koordinatList
-        .map(_extractLatLngFromMap)
-        .whereType<LatLng>()
-        .where((point) =>
-            calculateDistanceInKm(currentPosition!, point) <= maxDistanceInKm)
-        .toList();
-
-    if (koordinatList.isEmpty) {
-      debugPrint('Tidak ada titik sampah dalam radius $maxDistanceInKm km');
-
-      // Buat rute langsung ke TPA dari posisi petugas
-      final url =
-          'http://router.project-osrm.org/route/v1/driving/${currentPosition!.longitude},${currentPosition!.latitude};${lokasiTPA.longitude},${lokasiTPA.latitude}?overview=full&geometries=geojson';
-
-      try {
-        final response = await http.get(Uri.parse(url));
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final coords = data['routes'][0]['geometry']['coordinates'] as List;
-
-          setState(() {
-            routePoints = coords.map((c) => LatLng(c[1], c[0])).toList();
-          });
-
-          print('✅ Rute langsung ke TPA dibuat.');
-        } else {
-          debugPrint(
-              'Gagal ambil rute langsung ke TPA: ${response.statusCode}');
-        }
-      } catch (e) {
-        debugPrint('❌ Error ambil rute langsung ke TPA: $e');
-      }
-      return;
-    }
-
-    // Susun rute: awal (petugas) → titik sampah → akhir (TPA)
-    final allPoints = [
-      currentPosition!,
-      ...destinations,
-      lokasiTPA,
-    ];
-
-    final coordsStr =
-        allPoints.map((p) => '${p.longitude},${p.latitude}').join(';');
-
-    final url = 'http://router.project-osrm.org/trip/v1/driving/$coordsStr'
-        '?geometries=geojson&roundtrip=false&source=first&destination=last';
-
-    debugPrint('URL untuk rute: $url');
-
+  for (final url in urls) {
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final trips = data['trips'];
-        if (trips != null && trips.isNotEmpty) {
-          final coords = trips[0]['geometry']['coordinates'] as List;
+        final decoded = jsonDecode(response.body);
+        final dataList = decoded['data'];
 
-          // Mengonversi koordinat rute menjadi LatLng
-          final points = coords.map((c) => LatLng(c[1], c[0])).toList();
+        String jenisSampah = '';
+        if (url.contains('sampah-liar')) {
+          jenisSampah = 'Sampah Liar';
+        } else if (url.contains('pengangkutan-sampah')) {
+          jenisSampah = 'Sampah Daur Ulang';
+        }
 
-          // Isi routePoints dengan hasil koordinat rute
-          setState(() {
-            routePoints = points; // Ini yang mengisi routePoints
-          });
+        if (dataList is List) {
+          for (final item in dataList) {
+            String? kordinatValue;
 
-          List<int> estimatedTimes = [];
-          for (int i = 0; i < points.length - 1; i++) {
-            // Hitung waktu untuk segmen ini
-            final distance = calculateDistanceInKm(points[i], points[i + 1]);
-            final duration =
-                (distance / 50) * 60; // Anggap kecepatan rata-rata 50 km/jam
-            final estimatedTime = duration.toInt();
+            if (item['kordinat'] != null && item['kordinat'].toString().contains('query=')) {
+              kordinatValue = item['kordinat'];
+            } else if (item['alamat'] != null &&
+                       item['alamat']['kordinat'] != null) {
+              kordinatValue = item['alamat']['kordinat'];
+            } else if (item['warga'] != null &&
+                       item['warga']['alamat'] is List &&
+                       item['warga']['alamat'].isNotEmpty &&
+                       item['warga']['alamat'][0]['kordinat'] != null) {
+              kordinatValue = item['warga']['alamat'][0]['kordinat'];
+            }
 
-// Cek nilai estimatedTime
-            if (estimatedTime <= 0) {
-              estimatedTimes.add(1); // Minimal 1 menit
-            } else {
-              estimatedTimes.add(
-                  estimatedTime); // Menambahkan nilai estimatedTime ke dalam list
+            if (kordinatValue != null && kordinatValue.contains('query=')) {
+              result.add({
+                'kordinat': kordinatValue,
+                'jenis_sampah': jenisSampah,
+              });
             }
           }
-
-          print("Route Points: $routePoints");
-          print("Estimated Times: $estimatedTimes");
-
-          setState(() {
-            _estimatedTime =
-                estimatedTimes; // Menyimpan estimasi waktu per segmen
-          });
         } else {
-          debugPrint('Tidak ada rute yang ditemukan oleh OSRM.');
+          debugPrint('Respons tidak mengandung daftar data: $dataList');
         }
       } else {
-        debugPrint('Gagal ambil rute: ${response.statusCode}');
+        debugPrint('Gagal fetch dari $url: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error ambil rute: $e');
+      debugPrint('Error saat fetch dari API $url: $e');
     }
   }
+
+  setState(() {
+    koordinatList.clear();
+    koordinatList.addAll(result);
+  });
+
+  debugPrint('Hasil koordinatList: $koordinatList');
+}
+
+Future<void> _generateRoute() async {
+  if (currentPosition == null || koordinatList.isEmpty || lokasiTPA == null) {
+    debugPrint("Posisi awal, daftar koordinat, atau TPA tidak valid.");
+    return;
+  }
+
+  const double maxDistanceInKm = 10.0;
+
+  final destinations = koordinatList
+      .map(_extractLatLngFromMap)
+      .whereType<LatLng>()
+      .where((point) =>
+          calculateDistanceInKm(currentPosition!, point) <= maxDistanceInKm)
+      .toList();
+
+  final allPoints = [
+    currentPosition!,
+    ...destinations,
+    lokasiTPA,
+  ];
+
+  final jsonPoints = allPoints
+      .map((p) => {'lat': p.latitude, 'lng': p.longitude})
+      .toList();
+
+  final url = Uri.parse('http://192.168.1.18:5000/trip');
+  debugPrint('🔄 Mengirim ke API lokal: $url');
+  debugPrint('🧭 Koordinat dikirim: $jsonPoints');
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'coordinates': jsonPoints}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final coords = data['route'] as List;
+
+      final points = coords
+          .map<LatLng>((c) => LatLng(c[0].toDouble(), c[1].toDouble())) // ✅ FIXED
+          .toList();
+
+      setState(() {
+        routePoints = points;
+      });
+
+      print("✅ Rute diterima: $routePoints");
+
+      List<int> estimatedTimes = [];
+      for (int i = 0; i < points.length - 1; i++) {
+        final distance = calculateDistanceInKm(points[i], points[i + 1]);
+        final duration = (distance / 50) * 60;
+        estimatedTimes.add(duration <= 0 ? 1 : duration.toInt());
+      }
+
+      setState(() {
+        _estimatedTime = estimatedTimes;
+      });
+
+      print("🕒 Estimasi waktu: $estimatedTimes");
+    } else {
+      debugPrint('❌ Gagal ambil rute dari API lokal: ${response.statusCode}');
+    }
+  } catch (e) {
+    debugPrint('❌ Error saat ambil rute dari API lokal: $e');
+  }
+}
 
   Timer? _locationTimer;
 

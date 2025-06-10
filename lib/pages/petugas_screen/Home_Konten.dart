@@ -1,9 +1,10 @@
 import 'package:dlh_project/pages/form_opening/login.dart';
+import 'package:dlh_project/pages/petugas_screen/mapPetugas.dart';
 import 'package:dlh_project/pages/petugas_screen/sop_petugas.dart';
 import 'package:dlh_project/pages/warga_screen/detail_berita.dart';
 import 'package:dlh_project/pages/warga_screen/harga_sampah.dart';
-import 'package:dlh_project/pages/warga_screen/rangking.dart';
 import 'package:dlh_project/pages/petugas_screen/leaderboard_petugas.dart';
+import 'package:dlh_project/pages/petugas_screen/pointPetugas.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +14,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
-
 
 class HomeKontenPetugas extends StatefulWidget {
   final int userId;
@@ -448,6 +448,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                             physics: const NeverScrollableScrollPhysics(),
                             childAspectRatio: 0.8,
                             children: [
+                              // Icon buttons yang telah diperbaiki
                               iconButton(context, Icons.attach_money,
                                   'Hitung\nExchange', () {
                                 Navigator.push(
@@ -457,28 +458,72 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                                   ),
                                 );
                               }),
-                              // iconButton(context, Icons.emoji_events_outlined,
-                              //     'Join Contest\n& Win', () {}),
-                              iconButton(context, Icons.numbers,
+
+// Uncomment jika diperlukan
+// iconButton(
+//   context,
+//   Icons.emoji_events_outlined,
+//   'Join Contest\n& Win',
+//   () {
+//     // Tambahkan fungsi untuk contest
+//   }
+// ),
+
+                              iconButton(
+                                  context,
+                                  Icons
+                                      .leaderboard_outlined, // Ganti icon untuk lebih sesuai
                                   'Peringkat', () {
-                                    Navigator.push(
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => LeaderboardPagePetugas(),
+                                    builder: (context) =>
+                                        LeaderboardPagePetugas(),
                                   ),
                                 );
-                                  }),
-                              iconButton(context, Icons.numbers,
-                                  'Point Petugas', () {} ),
-                              iconButton(context, Icons.play_circle_outline,
+                              }),
+
+                              iconButton(
+                                  context,
+                                  Icons
+                                      .stars_outlined, // Ganti icon untuk Point Petugas
+                                  'Point Petugas', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const PointScreenPetugas(),
+                                  ),
+                                );
+                                // Tambahkan navigasi ke halaman Point Petugas
+                              }),
+
+                              iconButton(
+                                  context,
+                                  Icons
+                                      .assignment_outlined, // Ganti icon untuk SOP
                                   'SOP Petugas', () {
-                                    Navigator.push(
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const SopPetugasPage(),
+                                    builder: (context) =>
+                                        const SopPetugasPage(),
                                   ),
                                 );
-                                  }),
+                              }),
+
+                              iconButton(
+                                  context,
+                                  Icons.map_outlined, // Ganti icon untuk Map
+                                  'Map Rute', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const mapPetugas(), // Pastikan nama class konsisten (huruf besar)
+                                  ),
+                                );
+                              }),
                               // iconButton(
                               //     context,
                               //     Icons.videogame_asset_outlined,
@@ -685,8 +730,7 @@ void _showLoginRequiredDialog(BuildContext context) {
 }
 
 Future<List<dynamic>> fetchBerita() async {
-  final response =
-      await http.get(Uri.parse('$baseipapi/api/berita'));
+  final response = await http.get(Uri.parse('$baseipapi/api/berita'));
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     if (data['success']) {

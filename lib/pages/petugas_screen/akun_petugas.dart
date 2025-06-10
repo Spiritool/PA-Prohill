@@ -17,19 +17,31 @@ class AkunPetugas extends StatefulWidget {
   _AkunPetugasState createState() => _AkunPetugasState();
 }
 
-class _AkunPetugasState extends State<AkunPetugas> {
+class _AkunPetugasState extends State<AkunPetugas>
+    with TickerProviderStateMixin {
   String userName = 'Guest';
   String userEmail = 'user@example.com';
   String userPhone = '081234567890';
   String userStatus = 'ready';
-  String _status = 'ready'; // Default valuey
+  String _status = 'ready';
   final List<String> _addresses = ['Rumah', 'Kantor', 'Kos'];
   bool _isLoggedIn = false;
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
     _loadUserData().then((_) => _loadUserStatus());
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -47,369 +59,225 @@ class _AkunPetugasState extends State<AkunPetugas> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
         title: const Text(
-          'Akun Petugas',
+          'Profil Petugas',
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2C3E50),
           ),
         ),
-        backgroundColor: Colors.white,
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: _isLoggedIn ? _buildLoggedInContent() : _buildLoginButton(),
-      ),
+      body: _isLoggedIn ? _buildLoggedInContent() : _buildLoginButton(),
     );
   }
 
-  
-
   Widget _buildLoggedInContent() {
-    return Column(
-      children: [
-        _buildHeader(),
-        const SizedBox(height: 10),
-        Expanded(
-          child: ListView(
-            children: [
-              // InfoField(label: 'Nama', value: userName),
-              _buildNameField(), // Custom name field with edit button
-              _buildNomorField(), // Custom phone number field with edit button
-              _buildEmailField(), // Custom email field with edit button
-              _buildPasswordResetField(),
-
-              // ✅ Dropdown Status dengan API
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Card(
-                  margin: const EdgeInsets.symmetric(vertical: 5),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Text(
-                        //   'Status: $userStatus',
-                        //   style: TextStyle(
-                        //     fontSize: 16,
-                        //     fontWeight: FontWeight.bold,
-                        //   ),
-                        // ),
-                        const SizedBox(height: 5),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Status: ${_status == "ready" ? "Ready" : "Tidak Ready"}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Switch(
-                              value: _status ==
-                                  "ready", // Jika "ready", maka switch aktif (ON)
-                              onChanged: (bool newValue) async {
-                                String newStatus =
-                                    newValue ? "ready" : "tidak ready";
-
-                                setState(() {
-                                  _status = newStatus;
-                                });
-
-                                SharedPreferences prefs =
-                                    await SharedPreferences.getInstance();
-                                await prefs.setString('user_status', newStatus);
-
-                                _updateUserStatus(
-                                    newStatus); // 🔥 Panggil API untuk update status
-                              },
-                              activeColor: Colors.green, // Warna saat ON
-                              inactiveThumbColor: Colors.red, // Warna saat OFF
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(child: _buildEditAllButton()),
-            const SizedBox(width: 10),
-            Expanded(child: _buildLogoutButton()),
-          ],
-        ),
-        const SizedBox(height: 10),
-      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          _buildProfileHeader(),
+          const SizedBox(height: 30),
+          _buildStatusCard(),
+          const SizedBox(height: 20),
+          _buildInfoCards(),
+          const SizedBox(height: 30),
+          _buildActionButtons(),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 
   Widget _buildLoginButton() {
     return Center(
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const Login(),
-            ),
-          );
-        },
-        child: const Text('Login'),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        // Container Utama
-        Container(
-          width: double.infinity,
-          height: 140,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD1EFE3),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: const Color.fromARGB(255, 0, 0, 0), // Warna border
-              width: 1, // Ketebalan border
-            ),
-          ),
-          child: const Center(
-            child: Text(
-              'Profil Petugas',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.black,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-
-        // Gambar di Pojok Kanan Atas
-        Positioned(
-          top: 8,
-          right: 8,
-          child: Container(
-            width: 60, // Sesuaikan ukuran gambar
-            height: 60,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle, // Agar gambar dalam lingkaran
-              // Warna background jika ingin efek outline
-            ),
-            padding:
-                const EdgeInsets.all(4), // Tambahkan padding agar gambar tidak mentok
-            child: ClipOval(
-              child: Image.asset(
-                'assets/images/logo.png', // Ganti dengan path gambar kamu
-                fit: BoxFit.cover, // Agar gambar menyesuaikan
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNameField() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white, // Latar belakang putih
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Ikon di sebelah kiri
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: Center(child: Image.asset('assets/icons/nama.png')
-                // Jika ingin gambar kustom, ganti dengan Image.asset('assets/icon.png')
-                ),
-          ),
-          const SizedBox(width: 10), // Spasi antara ikon dan teks
-
-          // Nama dan label
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Nama:',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                userName,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNomorField() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white, // Latar belakang putih
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Ikon di sebelah kiri
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: Center(child: Image.asset('assets/icons/nomer.png')
-                // Jika ingin gambar kustom, ganti dengan Image.asset('assets/icon.png')
-                ),
-          ),
-          const SizedBox(width: 10), // Spasi antara ikon dan teks
-
-          // Nama dan label
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'No. Hp:',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                userPhone,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmailField() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          // Ikon di sebelah kiri
-          Image.asset(
-            'assets/icons/email.png', // Sesuaikan dengan path ikon email
-            width: 30, // Ukuran ikon
-            height: 30,
-          ),
-          const SizedBox(width: 10), // Spasi antara ikon dan teks
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Email:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold, // Bold seperti pada "Nama:"
-                  ),
-                ),
-                Text(
-                  userEmail,
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
-          ),
-          // Tombol Edit di sebelah kanan
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const GantiEmail(), // Navigate to GantiEmail page
-                ),
-              );
-            },
-            child: const Text(
-              'Edit',
-              style: TextStyle(fontSize: 16, color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-Widget _buildPasswordResetField() {
-  return Container(
-    margin: const EdgeInsets.symmetric(vertical: 5),
-    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-    decoration: BoxDecoration(
-      color: Colors.grey[200],
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-      children: [
-        // Gambar kunci dari assets
-        Image.asset(
-          'assets/icons/password.png', // Pastikan path sesuai
-          width: 24, // Sesuaikan ukuran dengan desain
-          height: 24,
-          fit: BoxFit.contain,
-        ),
-        const SizedBox(width: 10),
-
-        // Teks "Ganti Password:"
-        const Text(
-          'Ganti Password:',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        const Spacer(),
-
-        // Tombol "Edit"
-        TextButton(
+      child: Container(
+        margin: const EdgeInsets.all(20),
+        child: ElevatedButton(
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const PasswordReset(),
-              ),
+              MaterialPageRoute(builder: (context) => const Login()),
             );
           },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFF6B35),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+            ),
+            elevation: 5,
+          ),
           child: const Text(
-            'Edit',
-            style: TextStyle(fontSize: 16, color: Colors.red),
+            'Login',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFF6B35),
+            Color(0xFFFF8E53),
+            Color(0xFFFFA500),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF6B35).withOpacity(0.3),
+            spreadRadius: 0,
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.2),
+              border: Border.all(color: Colors.white, width: 3),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.person,
+                    size: 50,
+                    color: Colors.white,
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            userName,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Text(
+              'Petugas Lapangan',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusCard() {
+  bool isReady = _status == "ready"; // Tetap sama
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(15),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          spreadRadius: 0,
+          blurRadius: 10,
+          offset: const Offset(0, 5),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: isReady ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            isReady ? Icons.check_circle : Icons.cancel,
+            color: isReady ? Colors.green : Colors.red,
+            size: 30,
+          ),
+        ),
+        const SizedBox(width: 15),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Status Ketersediaan',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                isReady ? 'Siap Menerima Tugas' : 'Tidak Tersedia',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isReady ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Transform.scale(
+          scale: 1.2,
+          child: Switch(
+            value: isReady,
+            onChanged: (bool newValue) async {
+              String newStatus = newValue ? "ready" : "tidak_ready"; // Dengan underscore
+              setState(() {
+                _status = newStatus;
+              });
+
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setString('user_status', newStatus);
+              _updateUserStatus(newStatus);
+            },
+            activeColor: Colors.white,
+            activeTrackColor: Colors.green,
+            inactiveThumbColor: Colors.white,
+            inactiveTrackColor: Colors.red,
           ),
         ),
       ],
@@ -417,24 +285,177 @@ Widget _buildPasswordResetField() {
   );
 }
 
-
-  Widget _buildEditAllButton() {
-    return ElevatedButton(
-      onPressed: _showEditAllDialog,
-      child: const Text('Edit Semua Data'),
+  Widget _buildInfoCards() {
+    return Column(
+      children: [
+        _buildInfoCard(
+          icon: Icons.person_outline,
+          title: 'Nama Lengkap',
+          value: userName,
+          color: const Color(0xFF3498DB),
+        ),
+        const SizedBox(height: 15),
+        _buildInfoCard(
+          icon: Icons.phone_outlined,
+          title: 'Nomor Telepon',
+          value: userPhone,
+          color: const Color(0xFF27AE60),
+        ),
+        const SizedBox(height: 15),
+        _buildInfoCard(
+          icon: Icons.email_outlined,
+          title: 'Email',
+          value: userEmail,
+          color: const Color(0xFFE74C3C),
+          hasEditButton: true,
+          onEdit: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const GantiEmail()),
+            );
+          },
+        ),
+        const SizedBox(height: 15),
+        _buildInfoCard(
+          icon: Icons.lock_outline,
+          title: 'Password',
+          value: '••••••••',
+          color: const Color(0xFF9B59B6),
+          hasEditButton: true,
+          onEdit: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const PasswordReset()),
+            );
+          },
+        ),
+      ],
     );
   }
 
-  Widget _buildLogoutButton() {
-    return ElevatedButton(
-      onPressed: _logout,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red,
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+    bool hasEditButton = false,
+    VoidCallback? onEdit,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      child: const Text(
-        'Logout',
-        style: TextStyle(color: Colors.white),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 25),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF7F8C8D),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (hasEditButton)
+            GestureDetector(
+              onTap: onEdit,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B35).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.edit,
+                  color: Color(0xFFFF6B35),
+                  size: 20,
+                ),
+              ),
+            ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _showEditAllDialog,
+            icon: const Icon(Icons.edit, size: 20),
+            label: const Text(
+              'Edit Data',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF6B35),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 3,
+            ),
+          ),
+        ),
+        const SizedBox(width: 15),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout, size: 20),
+            label: const Text(
+              'Logout',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE74C3C),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 3,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -447,114 +468,228 @@ Widget _buildPasswordResetField() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Semua Data'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama',
-                  border: OutlineInputBorder(),
-                ),
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Color(0xFFF8F9FA)],
               ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'No. HP ( Awali 62 )',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Batal'),
             ),
-            TextButton(
-              onPressed: () async {
-                final userNameInput = usernameController.text;
-                final userPhoneInput = phoneController.text;
-
-                // Check if the username has at least 8 characters
-                if (userNameInput.length < 8) {
-                  // Show a snackbar with an error message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Nama harus memiliki minimal 8 karakter!'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B35).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Icon(
+                    Icons.edit,
+                    color: Color(0xFFFF6B35),
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Edit Data Profil',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 25),
+                TextField(
+                  controller: usernameController,
+                  decoration: InputDecoration(
+                    labelText: 'Nama Lengkap',
+                    prefixIcon: const Icon(Icons.person_outline,
+                        color: Color(0xFFFF6B35)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE1E8ED)),
                     ),
-                  );
-                  return; // Do not proceed with the API request
-                }
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: Color(0xFFFF6B35), width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: phoneController,
+                  decoration: InputDecoration(
+                    labelText: 'No. HP (Awali dengan 62)',
+                    prefixIcon: const Icon(Icons.phone_outlined,
+                        color: Color(0xFFFF6B35)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE1E8ED)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: Color(0xFFFF6B35), width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Color(0xFFE1E8ED)),
+                          ),
+                        ),
+                        child: const Text(
+                          'Batal',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF7F8C8D),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final userNameInput = usernameController.text;
+                          final userPhoneInput = phoneController.text;
 
-                SharedPreferences prefs = await SharedPreferences.getInstance();
-                final idUser = prefs.getInt('user_id') ?? 0;
+                          if (userNameInput.length < 8) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                    'Nama harus memiliki minimal 8 karakter!'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
 
-                // Prepare the API request
-                final String apiUrl =
-                    '$baseipapi/api/user/update/$idUser?_method=PUT';
-                final String? token = prefs.getString('token');
+                          SharedPreferences prefs =
+                              await SharedPreferences.getInstance();
+                          final idUser = prefs.getInt('user_id') ?? 0;
+                          final String apiUrl =
+                              '$baseipapi/api/user/update/$idUser?_method=PUT';
+                          final String? token = prefs.getString('token');
 
-                final Map<String, String> headers = {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Bearer $token',
-                };
+                          final Map<String, String> headers = {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer $token',
+                          };
 
-                final Map<String, dynamic> body = {
-                  'nama': userNameInput,
-                  'no_hp': userPhoneInput,
-                };
+                          final Map<String, dynamic> body = {
+                            'nama': userNameInput,
+                            'no_hp': userPhoneInput,
+                          };
 
-                try {
-                  // Send the PUT request to update user data
-                  final response = await http.put(
-                    Uri.parse(apiUrl),
-                    headers: headers,
-                    body: jsonEncode(body),
-                  );
+                          try {
+                            final response = await http.put(
+                              Uri.parse(apiUrl),
+                              headers: headers,
+                              body: jsonEncode(body),
+                            );
 
-                  if (response.statusCode == 200) {
-                    // Handle success
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Data berhasil diperbarui!')),
-                    );
+                            if (response.statusCode == 200) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      const Text('Data berhasil diperbarui!'),
+                                  backgroundColor: Colors.green,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              );
 
-                    // Update SharedPreferences with the new data
-                    await prefs.setString('user_name', userNameInput);
-                    await prefs.setString('user_phone', userPhoneInput);
-                  } else {
-                    // Log the full response for debugging
-                    print('Response body: ${response.body}');
+                              await prefs.setString('user_name', userNameInput);
+                              await prefs.setString(
+                                  'user_phone', userPhoneInput);
 
-                    // Handle error with a fallback message
-                    final errorMessage = jsonDecode(response.body)['message'] ??
-                        'Error: ${response.statusCode} - ${response.reasonPhrase}';
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content:
-                              Text('Gagal memperbarui data: $errorMessage')),
-                    );
-                  }
-                } catch (e) {
-                  // Handle exceptions
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
+                              setState(() {
+                                userName = userNameInput;
+                                userPhone = userPhoneInput;
+                              });
+                            } else {
+                              final errorMessage = jsonDecode(
+                                      response.body)['message'] ??
+                                  'Error: ${response.statusCode} - ${response.reasonPhrase}';
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Gagal memperbarui data: $errorMessage'),
+                                  backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: $e'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                          }
 
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Simpan'),
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF6B35),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          'Simpan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -562,8 +697,7 @@ Widget _buildPasswordResetField() {
 
   Future<void> _updateUserData(String name, String phone) async {
     final prefs = await SharedPreferences.getInstance();
-    final userId =
-        prefs.getInt('user_id'); // Dapatkan user_id dari SharedPreferences
+    final userId = prefs.getInt('user_id');
     final token = prefs.getString('token');
 
     if (userId == null || token == null) {
@@ -573,8 +707,7 @@ Widget _buildPasswordResetField() {
       return;
     }
 
-    final url = Uri.parse(
-        '$baseipapi/api/user/update/$userId?_method=PUT');
+    final url = Uri.parse('$baseipapi/api/user/update/$userId?_method=PUT');
     final response = await http.put(
       url,
       headers: {
@@ -610,18 +743,122 @@ Widget _buildPasswordResetField() {
   }
 
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Color(0xFFF8F9FA)],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE74C3C).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Icon(
+                    Icons.logout,
+                    color: Color(0xFFE74C3C),
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Konfirmasi Logout',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'Apakah Anda yakin ingin keluar dari aplikasi?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF7F8C8D),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Color(0xFFE1E8ED)),
+                          ),
+                        ),
+                        child: const Text(
+                          'Batal',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF7F8C8D),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.clear();
 
-    // Clear all data from SharedPreferences
-    await prefs.clear();
-
-    // Navigate back to login page
-    Navigator.pushReplacement(
-      // ignore: use_build_context_synchronously
-      context,
-      MaterialPageRoute(builder: (context) => const Login()),
+                          Navigator.of(context).pop(); // Close dialog
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const Login()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE74C3C),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
+
+// Ganti fungsi _updateUserStatus dengan kode ini:
 
   Future<void> _updateUserStatus(String status) async {
     final prefs = await SharedPreferences.getInstance();
@@ -630,17 +867,19 @@ Widget _buildPasswordResetField() {
 
     if (userId == null || token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal mendapatkan data pengguna.')),
+        const SnackBar(
+          content: Text('Gagal mendapatkan data pengguna.'),
+          behavior: SnackBarBehavior.fixed, // Ganti dari floating ke fixed
+        ),
       );
       return;
     }
 
     final requestBody = jsonEncode({'status': status});
-    print('Status yang dikirim: $status'); // ✅ Debugging
+    print('Status yang dikirim: $status');
     print('Body JSON yang dikirim: $requestBody');
 
-    final url = Uri.parse(
-        '$baseipapi/api/user/$userId/status?_method=PUT');
+    final url = Uri.parse('$baseipapi/api/user/$userId/status?_method=PUT');
     final response = await http.put(
       url,
       headers: {
@@ -654,46 +893,125 @@ Widget _buildPasswordResetField() {
       setState(() {
         userStatus = status;
       });
-      await prefs.setString('status', status); // ✅ Simpan status terbaru
+      await prefs.setString('status', status);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Status berhasil diperbarui!')),
+        SnackBar(
+          content: const Text('Status berhasil diperbarui!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.fixed, // Ganti dari floating ke fixed
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
     } else {
       print('Gagal memperbarui status. Response: ${response.body}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memperbarui status: ${response.body}')),
+        SnackBar(
+          content: Text('Gagal memperbarui status: ${response.body}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.fixed, // Ganti dari floating ke fixed
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
     }
   }
 
   Future<void> _loadUserStatus() async {
-  final prefs = await SharedPreferences.getInstance();
-  _status = prefs.getString('status') ?? 'tidak ready';
+    final prefs = await SharedPreferences.getInstance();
+    _status =
+        prefs.getString('status') ?? 'tidak_ready'; // Ganti dengan underscore
 
-  if (_status == 'tidak ready') {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showAktifkanAkunDialog();
-    });
+    if (_status == 'tidak_ready') {
+      // Ganti dengan underscore
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showAktifkanAkunDialog();
+      });
+    }
   }
-}
 
-void _showAktifkanAkunDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Akun Tidak Aktif'),
-        content: const Text('Akun Anda dalam status *tidak ready*. Silakan aktifkan di halaman akun agar bisa menerima laporan.'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+  void _showAktifkanAkunDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Color(0xFFF8F9FA)],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA500).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Color(0xFFFFA500),
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Akun Tidak Aktif',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'Akun Anda dalam status tidak tersedia. Silakan aktifkan di halaman akun agar bisa menerima laporan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF7F8C8D),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6B35),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: const Text(
+                      'Mengerti',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      );
-    },
-  );
-}
-
-
+        );
+      },
+    );
+  }
 }

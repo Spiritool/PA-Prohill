@@ -5,6 +5,7 @@ class SampahData {
   final String noHp;
   final String status;
   final String fotoSampah;
+  final String list; 
   final String deskripsi;
   final Alamat alamat;
   final DateTime tanggal; // Menggunakan DateTime
@@ -16,6 +17,7 @@ class SampahData {
     required this.noHp,
     required this.status,
     required this.fotoSampah,
+    required this.list,
     required this.deskripsi,
     required this.alamat,
     required this.tanggal,
@@ -29,6 +31,7 @@ class SampahData {
       noHp: json['warga']['no_hp'],
       status: json['status'],
       fotoSampah: json['foto_sampah'],
+      list: json['list'] ?? '', 
       deskripsi: json['deskripsi'],
       alamat: Alamat.fromJson(json['warga']['alamat'][0]),
       tanggal: DateTime.parse(json['created_at']), // Parsing tanggal
