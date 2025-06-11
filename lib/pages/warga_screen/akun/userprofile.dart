@@ -1,7 +1,9 @@
 import 'package:dlh_project/pages/form_opening/login.dart';
 import 'package:dlh_project/pages/warga_screen/akun/akun.dart';
+import 'package:dlh_project/pages/warga_screen/contactus.dart';
 import 'package:dlh_project/pages/warga_screen/qna.dart';
 import 'package:dlh_project/pages/warga_screen/saldo.dart';
+import 'package:dlh_project/pages/warga_screen/syarat.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -474,12 +476,24 @@ class _UserProfileState extends State<UserProfile> {
                 text: 'Contact Us',
                 subtitle: 'Hubungi tim support',
                 color: Colors.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ContactSupportPage()),
+                  );
+                },
               ),
               _buildEnhancedProfileTile(
                 icon: Icons.description_rounded,
                 text: 'Terms & Conditions',
                 subtitle: 'Syarat dan ketentuan',
                 color: Colors.teal,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => TermsAndConditionsPage()),
+                ),
               ),
               _buildEnhancedProfileTile(
                 icon: Icons.help_outline_rounded,
@@ -499,12 +513,12 @@ class _UserProfileState extends State<UserProfile> {
                 subtitle: 'Tentang aplikasi',
                 color: Colors.cyan,
               ),
-              _buildEnhancedProfileTile(
-                icon: Icons.location_on_rounded,
-                text: 'Location',
-                subtitle: 'Pengaturan lokasi',
-                color: Colors.red,
-              ),
+              // _buildEnhancedProfileTile(
+              //   icon: Icons.location_on_rounded,
+              //   text: 'Location',
+              //   subtitle: 'Pengaturan lokasi',
+              //   color: Colors.red,
+              // ),
               if (_isLoggedIn)
                 _buildEnhancedProfileTile(
                   icon: Icons.logout_rounded,

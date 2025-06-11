@@ -256,7 +256,7 @@ class _LupaPasswordState extends State<LupaPassword> {
                           borderRadius: BorderRadius.circular(16),
                           child: const Center(
                             child: Text(
-                              'Send Reset Link',
+                              'Get New Password!',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,

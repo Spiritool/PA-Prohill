@@ -567,7 +567,7 @@ class _SaldoSampahScreenState extends State<SaldoSampahScreen> {
                                       );
                                     } else if (snapshot.hasError) {
                                       return Text(
-                                        'Error',
+                                        'Kosong',
                                         style: TextStyle(
                                           color: Colors.red,
                                           fontSize: 42,

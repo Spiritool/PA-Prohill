@@ -146,11 +146,24 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
         var data = json.decode(response.body);
 
         if (data['success']) {
+          List<Map<String, dynamic>> alamatData =
+              List<Map<String, dynamic>>.from(data['data'] ?? []);
+
           setState(() {
-            _alamatList = List<Map<String, dynamic>>.from(data['data'] ?? []);
+            _alamatList = alamatData;
           });
+
+          // Cek jika alamat kosong, tampilkan popup
+          if (alamatData.isEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showAlamatKosongDialog();
+            });
+          }
         } else {
-          _showErrorDialog('Data Alamat Kosong atau Gagal Diambil');
+          // Jika response tidak success, kemungkinan alamat kosong
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showAlamatKosongDialog();
+          });
         }
       } else {
         _showErrorDialog(
@@ -159,6 +172,263 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
     } catch (e) {
       _showErrorDialog('Error: $e');
     }
+  }
+
+  void _showAlamatKosongDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User tidak bisa dismiss dialog
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            width: 320,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF4CAF50),
+                  Color(0xFF66BB6A),
+                ],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header dengan icon
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: const Icon(
+                          Icons.location_off,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Alamat Belum Tersedia',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Content
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Untuk melaporkan sampah, Anda perlu mengisi alamat terlebih dahulu.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Langkah-langkah
+                      const Text(
+                        'Langkah mudah mengisi alamat:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2E7D50),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      _buildStepItem(
+                        number: '1',
+                        title: 'Buka Menu Akun',
+                        description: 'Tap ikon profil di pojok kanan atas',
+                        icon: Icons.account_circle,
+                      ),
+
+                      _buildStepItem(
+                        number: '2',
+                        title: 'Pilih Contact Info',
+                        description: 'Cari dan pilih menu "Contact Info"',
+                        icon: Icons.contact_mail,
+                      ),
+
+                      _buildStepItem(
+                        number: '3',
+                        title: 'Tambah Alamat',
+                        description: 'Isi detail alamat lengkap Anda',
+                        icon: Icons.add_location,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                Navigator.of(context)
+                                    .pop(); // Kembali ke halaman sebelumnya
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                side:
+                                    const BorderSide(color: Color(0xFF4CAF50)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Nanti Saja',
+                                style: TextStyle(
+                                  color: Color(0xFF4CAF50),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                Navigator.of(context).pop();
+                                // Navigasi ke halaman contact info/alamat
+                                // Ganti dengan route yang sesuai dengan aplikasi Anda
+                                // Navigator.pushNamed(context, '/contact-info');
+
+                                // Atau jika ada navigator spesifik untuk alamat:
+                                // Navigator.push(context, MaterialPageRoute(
+                                //   builder: (context) => ContactInfoPage(),
+                                // ));
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4CAF50),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: const Text(
+                                'Isi Alamat',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStepItem({
+    required String number,
+    required String title,
+    required String description,
+    required IconData icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      icon,
+                      size: 18,
+                      color: const Color(0xFF4CAF50),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _getCurrentLocation() async {

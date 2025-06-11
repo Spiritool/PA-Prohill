@@ -1038,7 +1038,7 @@ class _PointScreenState extends State<PointScreen> {
                 idSampah: data.id,
                 statusColor: statusColor,
                 tanggalFormatted: formattedDate,
-                ratingPetugas: data.ratingPetugas,
+                // ratingPetugas: data.ratingPetugas,
                 catatanPetugas: data.catatanPetugas,
                 isExpanded: isExpanded,
               ),
@@ -1386,7 +1386,7 @@ class _PointScreenState extends State<PointScreen> {
     required int idSampah,
     required Color statusColor,
     required String tanggalFormatted,
-    required double? ratingPetugas,
+    // required double? ratingPetugas,
     required String? catatanPetugas,
     required bool isExpanded,
   }) {
@@ -1404,7 +1404,7 @@ class _PointScreenState extends State<PointScreen> {
         idSampah: idSampah,
         statusColor: statusColor,
         tanggalFormatted: tanggalFormatted,
-        ratingPetugas: ratingPetugas,
+        // ratingPetugas: ratingPetugas,
         catatanPetugas: catatanPetugas,
         isExpanded: isExpanded,
       ),
@@ -1423,7 +1423,7 @@ class _PointScreenState extends State<PointScreen> {
     required int idSampah,
     required Color statusColor,
     required String tanggalFormatted,
-    required double? ratingPetugas,
+    // required double? ratingPetugas,
     required String? catatanPetugas,
     required bool isExpanded,
   }) {
@@ -1452,7 +1452,7 @@ class _PointScreenState extends State<PointScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '⭐ Waste & get Point',
+                      '⭐ Sampah Terpilah',
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                     const SizedBox(height: 4),
@@ -1560,20 +1560,20 @@ class _PointScreenState extends State<PointScreen> {
                   ),
                   child: const Text('Lihat Lokasi'),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (status == 'done' && ratingPetugas == null)
-                      ElevatedButton(
-                        onPressed: () {
-                          // Tampilkan dialog rating
-                        },
-                        child: const Text('Rating Petugas'),
-                      ),
-                    if (status == 'done' && ratingPetugas != null)
-                      Text('Rating: $ratingPetugas ⭐️'),
-                  ],
-                ),
+                // Column(
+                //   crossAxisAlignment: CrossAxisAlignment.start,
+                //   children: [
+                //     if (status == 'done' && ratingPetugas == null)
+                //       ElevatedButton(
+                //         onPressed: () {
+                //           // Tampilkan dialog rating
+                //         },
+                //         child: const Text('Rating Petugas'),
+                //       ),
+                //     if (status == 'done' && ratingPetugas != null)
+                //       Text('Rating: $ratingPetugas ⭐️'),
+                //   ],
+                // ),
               ],
             ),
           ],

@@ -78,7 +78,7 @@ class _ResetPasswordState extends State<ResetPassword> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         title: const Text(
-          'Reset Password',
+          'Update Password',
           style: TextStyle(
             color: Color(0xFF2D3748),
             fontSize: 22,
@@ -293,7 +293,7 @@ class _ResetPasswordState extends State<ResetPassword> {
                     ),
                   ),
                   child: const Text(
-                    'Reset Password',
+                    'Update Password',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -353,4 +353,4 @@ class _ResetPasswordState extends State<ResetPassword> {
       ),
     );
   }
- }
+}

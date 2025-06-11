@@ -55,12 +55,40 @@ class _EditAlamatScreenState extends State<EditAlamatScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Error',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.error_outline, color: Colors.red.shade600),
+              ),
+              const SizedBox(width: 12),
+              const Text('Error',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
+          content: Text(message, style: const TextStyle(fontSize: 16)),
           actions: <Widget>[
             TextButton(
-              child: const Text('OK'),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.orange.shade100,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                'OK',
+                style: TextStyle(
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -97,125 +125,325 @@ class _EditAlamatScreenState extends State<EditAlamatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.orange.shade50,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.grey[200], // Latar belakang abu-abu putih
-        elevation: 1,
+        backgroundColor: Colors.white,
+        elevation: 0,
         title: Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left,
-                  color: Colors.black), // Ganti ikon kembali
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.arrow_back_ios_new,
+                    color: Colors.orange.shade700, size: 20),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
             ),
-            const SizedBox(width: 8),
-            const Text(
+            const SizedBox(width: 12),
+            Text(
               'Edit Alamat',
               style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange.shade800,
+              ),
             ),
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Dropdown for Kecamatan with icon
-            DropdownButtonFormField<String>(
-              value: _selectedKecamatanName,
-              hint: const Text('Pilih Kecamatan'),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedKecamatanName = newValue;
-                });
-              },
-              items: _kecamatanList.map<DropdownMenuItem<String>>(
-                (Map<String, dynamic> item) {
-                  return DropdownMenuItem<String>(
-                    value: item['nama_kecamatan'],
-                    child: Row(
-                      children: [
-                        Icon(Icons.location_on, color: Colors.grey[700]),
-                        const SizedBox(width: 10),
-                        Text(item['nama_kecamatan']),
-                      ],
-                    ),
-                  );
-                },
-              ).toList(),
-              decoration: InputDecoration(
-                labelText: 'Kecamatan',
-                labelStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Kelurahan input with icon
-            TextField(
-              controller: _kelurahanController,
-              decoration: InputDecoration(
-                labelText: 'Kelurahan',
-                labelStyle: const TextStyle(color: Colors.grey),
-                prefixIcon: const Icon(Icons.place, color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Deskripsi input with icon
-            TextField(
-              controller: _deskripsiController,
-              decoration: InputDecoration(
-                labelText: 'Deskripsi (Rumah, Toko, Kantor, RT/RW)',
-                labelStyle: const TextStyle(color: Colors.grey),
-                prefixIcon: const Icon(Icons.edit, color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-              ),
-            ),
-            const SizedBox(height: 30),
-
-            // Save Button with gradient
-            Center(
-              child: ElevatedButton(
-                onPressed: _saveChanges,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[600], // Tombol abu-abu
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white,
+              Colors.orange.shade50,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              // Header Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.orange.shade400, Colors.orange.shade600],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  side: const BorderSide(width: 2, color: Colors.white),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.shade200,
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: const Icon(Icons.edit_location,
+                          color: Colors.white, size: 28),
+                    ),
+                    const SizedBox(width: 15),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Edit Informasi Alamat',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Perbarui detail alamat Anda',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 30),
+
+              // Form Fields
+              _buildFormField(
+                child: DropdownButtonFormField<String>(
+                  value: _selectedKecamatanName,
+                  hint: Text('Pilih Kecamatan',
+                      style: TextStyle(color: Colors.grey.shade600)),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedKecamatanName = newValue;
+                    });
+                  },
+                  items: _kecamatanList.map<DropdownMenuItem<String>>(
+                    (Map<String, dynamic> item) {
+                      return DropdownMenuItem<String>(
+                        value: item['nama_kecamatan'],
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_city,
+                                color: Colors.orange.shade600, size: 20),
+                            const SizedBox(width: 12),
+                            Text(item['nama_kecamatan'],
+                                style: const TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                      );
+                    },
+                  ).toList(),
+                  decoration: InputDecoration(
+                    labelText: 'Kecamatan',
+                    labelStyle: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    prefixIcon: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(Icons.location_city,
+                          color: Colors.orange.shade600),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide(color: Colors.orange.shade200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide:
+                          BorderSide(color: Colors.orange.shade500, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 18),
+                  ),
+                ),
+                icon: Icons.location_city,
+                label: 'Kecamatan',
+              ),
+
+              const SizedBox(height: 20),
+
+              _buildFormField(
+                child: TextField(
+                  controller: _kelurahanController,
+                  style: const TextStyle(fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: 'Kelurahan',
+                    labelStyle: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    prefixIcon: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(Icons.place, color: Colors.orange.shade600),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide(color: Colors.orange.shade200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide:
+                          BorderSide(color: Colors.orange.shade500, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 18),
+                  ),
+                ),
+                icon: Icons.place,
+                label: 'Kelurahan',
+              ),
+
+              const SizedBox(height: 20),
+
+              _buildFormField(
+                child: TextField(
+                  controller: _deskripsiController,
+                  maxLines: 3,
+                  style: const TextStyle(fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: 'Deskripsi (Rumah, Toko, Kantor, RT/RW)',
+                    labelStyle: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    prefixIcon: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(Icons.description,
+                          color: Colors.orange.shade600),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide(color: Colors.orange.shade200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide:
+                          BorderSide(color: Colors.orange.shade500, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 18),
+                  ),
+                ),
+                icon: Icons.description,
+                label: 'Deskripsi',
+              ),
+
+              const SizedBox(height: 40),
+
+              // Save Button
+              Container(
+                width: double.infinity,
+                height: 55,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.orange.shade400, Colors.orange.shade600],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.shade300,
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: _saveChanges,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.save, color: Colors.white, size: 22),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Simpan Perubahan',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFormField({
+    required Widget child,
+    required IconData icon,
+    required String label,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.shade100,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

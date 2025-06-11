@@ -313,7 +313,7 @@ class _HomeKontenState extends State<HomeKonten> {
 
                         // My Services Title
                         Text(
-                          'My Services',
+                          'Aktivitas Peduli Lingkungan',
                           style: GoogleFonts.poppins(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -328,7 +328,7 @@ class _HomeKontenState extends State<HomeKonten> {
                         const SizedBox(height: 25),
 
                         // Awareness Community Title
-                        Text('Awareness Community',
+                        Text('Berita Peduli Lingkungan',
                             style: GoogleFonts.poppins(
                                 fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 5),
