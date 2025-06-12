@@ -180,10 +180,7 @@ class LeaderboardPageState extends State<LeaderboardPage>
               ),
             ),
           ),
-          IconButton(
-            onPressed: () => fetchLeaderboardData(),
-            icon: const Icon(Icons.refresh, color: Colors.white),
-          ),
+          const SizedBox(width: 52),
         ],
       ),
     );

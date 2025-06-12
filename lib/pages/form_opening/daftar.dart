@@ -241,7 +241,7 @@ class _DaftarState extends State<Daftar> {
                               ],
                             ).createShader(bounds),
                             child: const Text(
-                              'Create Account',
+                              'Buat Akun Baru',
                               style: TextStyle(
                                 fontSize: 42,
                                 fontWeight: FontWeight.w900,
@@ -252,7 +252,7 @@ class _DaftarState extends State<Daftar> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Join us today and get started',
+                            'Ayo Segera bergabung dengan kami untuk mendapatkan layanan terbaik.',
                             style: TextStyle(
                               fontSize: 16,
                               color: Color(0xFF64748B),
@@ -264,13 +264,13 @@ class _DaftarState extends State<Daftar> {
                     ),
                     const SizedBox(height: 48),
                     _buildTextField(
-                        label: 'Full Name', controller: _namaController),
+                        label: 'Nama Lengkap', controller: _namaController),
                     const SizedBox(height: 24),
                     _buildTextField(
-                        label: 'Email Address', controller: _emailController),
+                        label: 'Alamat Email', controller: _emailController),
                     const SizedBox(height: 24),
                     _buildTextField(
-                      label: 'Phone Number (+62)',
+                      label: 'Nomor Telfon/Ponsel (+62)',
                       controller: _noHpController,
                       keyboardType: TextInputType.phone,
                     ),
@@ -319,7 +319,7 @@ class _DaftarState extends State<Daftar> {
                           ),
                         ),
                         child: const Text(
-                          'Create Account',
+                          'Buat Akun',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,
@@ -371,9 +371,9 @@ class _DaftarState extends State<Daftar> {
                           fontWeight: FontWeight.w500,
                         ),
                         children: [
-                          TextSpan(text: 'Already have an account? '),
+                          TextSpan(text: 'Sudah punya akun? '),
                           TextSpan(
-                            text: 'Sign In',
+                            text: 'Masuk',
                             style: TextStyle(
                               color: Color(0xFFFF6600),
                               fontWeight: FontWeight.w700,
