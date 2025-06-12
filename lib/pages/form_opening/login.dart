@@ -67,8 +67,9 @@ class _LoginState extends State<Login> {
       await prefs.setString('user_role', user['role']);
       prefs.setString('status', user['status'] ?? 'ready');
       prefs.setInt('poin', user['poin']);
-      prefs.setInt('poin2', user['poin2']);
-      prefs.setInt('saldo', user['saldo']);
+      prefs.setInt('poin2', user['poin2'] ?? 0);
+      int saldoValue = user['saldo'] as int? ?? 0;
+      prefs.setInt('saldo', saldoValue);  
       await prefs.setString('user_profile_photo', user['foto_profile'] ?? '');
 
       // await FCM.init();

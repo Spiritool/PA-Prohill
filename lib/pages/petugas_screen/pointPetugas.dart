@@ -14,24 +14,67 @@ final baseipapi = dotenv.env['LOCAL_IP'];
 
 // Fungsi untuk mengambil data user points
 Future<int> fetchUserPoints() async {
-  final prefs = await SharedPreferences.getInstance();
-  final poin = prefs.getInt('poin');
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id');
 
-  // DEBUG: Print semua data dari SharedPreferences
-  print('=== DEBUG SharedPreferences ===');
-  final keys = prefs.getKeys();
-  for (var key in keys) {
-    print('$key: ${prefs.get(key)}');
+    if (userId == null) {
+      print('WARNING: user_id tidak ditemukan di SharedPreferences');
+      return 0;
+    }
+
+    print('Mengambil poin dari API untuk user ID: $userId');
+
+    final response = await http.get(
+      Uri.parse('$baseipapi/api/user/$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    print('=== FETCH USER POINTS FROM API ===');
+    print('Status Code: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+    print('=== END FETCH USER POINTS FROM API ===');
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+
+      // Sesuaikan dengan struktur response API Anda
+      int poin = 0;
+      if (responseData is Map) {
+        // Jika response berbentuk {"data": {"poin": 100}} atau {"poin": 100}
+        if (responseData.containsKey('data') && responseData['data'] is Map) {
+          poin = responseData['data']['poin'] ?? 0;
+        } else if (responseData.containsKey('poin')) {
+          poin = responseData['poin'] ?? 0;
+        }
+        // Bisa juga struktur lain seperti {"user": {"poin": 100}}
+        else if (responseData.containsKey('user') &&
+            responseData['user'] is Map) {
+          poin = responseData['user']['poin'] ?? 0;
+        }
+      }
+
+      print('Poin dari API: $poin');
+
+      // Update SharedPreferences dengan poin terbaru dari API
+      await prefs.setInt('poin', poin);
+
+      return poin;
+    } else {
+      print(
+          'ERROR: Failed to load user points - Status: ${response.statusCode}');
+      // Fallback ke SharedPreferences jika API gagal
+      return prefs.getInt('poin') ?? 0;
+    }
+  } catch (e) {
+    print('ERROR saat fetch user points dari API: $e');
+    // Fallback ke SharedPreferences jika terjadi error
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('poin') ?? 0;
   }
-  print('=== END DEBUG ===');
-
-  if (poin == null) {
-    print('WARNING: user_poin belum diset di SharedPreferences');
-    return 0;
-  }
-
-  print('User poin diambil dari SharedPreferences: $poin');
-  return poin;
 }
 
 // Fungsi untuk fetch data rewards dari backend
@@ -106,14 +149,14 @@ Future<Map<String, dynamic>> tukarPoin({
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
 
-      // Update poin di SharedPreferences jika berhasil
-      if (responseData['success'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        final currentPoin = prefs.getInt('poin') ?? 0;
-        final newPoin = currentPoin - poin_tukar;
-        await prefs.setInt('poin', newPoin);
-        print('Poin berhasil diupdate: $currentPoin -> $newPoin');
-      }
+      // // Update poin di SharedPreferences jika berhasil
+      // if (responseData['success'] == true) {
+      //   final prefs = await SharedPreferences.getInstance();
+      //   final currentPoin = prefs.getInt('poin') ?? 0;
+      //   final newPoin = currentPoin - poin_tukar;
+      //   await prefs.setInt('poin', newPoin);
+      //   print('Poin berhasil diupdate: $currentPoin -> $newPoin');
+      // }
 
       return responseData;
     } else {
@@ -159,59 +202,110 @@ Future<List<Map<String, dynamic>>> fetchPenukaranHistory(int userId) async {
 }
 
 Future<List<SampahData>> fetchSampahData() async {
-  final prefs = await SharedPreferences.getInstance();
-  final userId = prefs.getInt('user_id') ?? 0;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
 
-  // LOG: Print user_id untuk sampah data
-  print('=== DEBUG LOG fetchSampahData ===');
-  print('User ID untuk sampah data: $userId');
-
-  if (userId == 0) {
-    print(
-        'ERROR: User ID tidak ditemukan di SharedPreferences untuk sampah data');
-    throw Exception('User ID not found in SharedPreferences');
-  }
-
-  final urls = [
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/proses',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/done',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/pending',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/failed',
-  ];
-
-  print('URLs yang akan diakses:');
-  urls.forEach((url) => print('- $url'));
-
-  List<SampahData> allData = [];
-
-  for (String url in urls) {
-    try {
-      print('Mengakses URL: $url');
-      final response = await http.get(Uri.parse(url));
-      print('Status Code untuk $url: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        List<dynamic> data = jsonDecode(response.body)['data'];
-        print('Data diterima dari $url: ${data.length} items');
-        allData.addAll(data.map((item) => SampahData.fromJson(item)).toList());
-      } else {
-        print(
-            'ERROR: Failed to load data from $url - Status: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        throw Exception('Failed to load data from $url');
-      }
-    } catch (e) {
-      print('EXCEPTION saat mengakses $url: $e');
-      rethrow;
+    if (userId == 0) {
+      throw Exception('User ID not found in SharedPreferences');
     }
+
+    print('Fetching data for user ID: $userId'); // Debug log
+
+    final response = await http.get(
+      Uri.parse(
+          '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/done'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    print('Response status: ${response.statusCode}'); // Debug log
+    print('Response body: ${response.body}'); // Debug log
+
+    if (response.statusCode == 200) {
+      // Parse JSON response dengan error handling
+      late Map<String, dynamic> jsonResponse;
+      try {
+        var decodedResponse = jsonDecode(response.body);
+
+        // Pastikan response adalah Map
+        if (decodedResponse is Map<String, dynamic>) {
+          jsonResponse = decodedResponse;
+        } else {
+          throw Exception('Response is not a valid JSON object');
+        }
+      } catch (e) {
+        print('JSON decode error: $e');
+        throw Exception('Failed to parse JSON response: $e');
+      }
+
+      // Ekstrak data array
+      List<dynamic> rawData = [];
+      if (jsonResponse.containsKey('data')) {
+        var dataField = jsonResponse['data'];
+        if (dataField is List) {
+          rawData = dataField;
+        } else {
+          throw Exception('Data field is not an array');
+        }
+      } else {
+        throw Exception('Response does not contain data field');
+      }
+
+      print('Raw data length: ${rawData.length}'); // Debug log
+
+      // Parse setiap item dengan error handling
+      List<SampahData> sampahDataList = [];
+      for (int i = 0; i < rawData.length; i++) {
+        try {
+          var item = rawData[i];
+
+          // Pastikan item adalah Map
+          if (item is! Map) {
+            print('Item $i is not a Map, skipping');
+            continue;
+          }
+
+          // Cast ke Map<String, dynamic> dengan aman
+          Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+
+          // Parse ke SampahData
+          SampahData sampahData = SampahData.fromJson(itemMap);
+          sampahDataList.add(sampahData);
+        } catch (e) {
+          print('Error parsing item $i: $e');
+          print('Item data: ${rawData[i]}');
+          // Skip item yang error dan lanjutkan
+          continue;
+        }
+      }
+
+      print('Successfully parsed ${sampahDataList.length} items'); // Debug log
+
+      // Sort berdasarkan ID (terbaru di atas)
+      sampahDataList.sort((a, b) => b.id.compareTo(a.id));
+
+      return sampahDataList;
+    } else if (response.statusCode == 404) {
+      // Tidak ada data
+      return <SampahData>[];
+    } else {
+      throw Exception(
+          'Failed to load data. Status: ${response.statusCode}, Body: ${response.body}');
+    }
+  } catch (e) {
+    print('Exception in fetchSampahData: $e');
+
+    // Jika error karena network atau parsing, return list kosong atau rethrow
+    if (e.toString().contains('SocketException') ||
+        e.toString().contains('TimeoutException')) {
+      throw Exception('Network error: Please check your internet connection');
+    }
+
+    rethrow;
   }
-
-  // Balikkan daftar agar data terbaru tampil di atas
-  allData.sort((a, b) => b.id.compareTo(a.id));
-  print('Total data sampah yang berhasil diambil: ${allData.length}');
-  print('=== END DEBUG LOG fetchSampahData ===');
-
-  return allData;
 }
 
 class PointScreenPetugas extends StatefulWidget {
@@ -281,29 +375,44 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
   // Fungsi untuk load data user
   void _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id');
+
     setState(() {
-      currentUserId = prefs.getInt('user_id');
-      currentUserPoints = prefs.getInt('poin') ?? 0;
+      currentUserId = userId;
     });
 
-    // Refresh penukaran history setelah user data loaded
-    if (currentUserId != null) {
+    // Refresh poin dari API
+    if (userId != null) {
+      final latestPoints = await fetchUserPoints();
       setState(() {
-        futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
+        currentUserPoints = latestPoints;
+      });
+
+      // Refresh penukaran history
+      setState(() {
+        futurePenukaranHistory = fetchPenukaranHistory(userId);
       });
     }
   }
 
   // Fungsi untuk refresh data
-  void _refreshData() {
+  void _refreshData() async {
+  setState(() {
+    futureSampahData = fetchSampahData();
+    futureUserPoints = fetchUserPoints(); // Ini akan ambil dari API
+    if (currentUserId != null) {
+      futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
+    }
+  });
+  
+  // Update currentUserPoints juga
+  if (currentUserId != null) {
+    final latestPoints = await fetchUserPoints();
     setState(() {
-      futureSampahData = fetchSampahData();
-      futureUserPoints = fetchUserPoints();
-      if (currentUserId != null) {
-        futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
-      }
+      currentUserPoints = latestPoints;
     });
   }
+}
 
   // Fungsi untuk log semua data di SharedPreferences
   void _logSharedPreferences() async {
@@ -480,7 +589,6 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
       return;
     }
 
-    // Pastikan semua field ada nilai default
     final String title = item['nama_barang']?.toString() ?? 'Reward';
     final int pointTukar = item['poin_tukar'] ?? 0;
     final int itemId = item['id'] ?? 0;
@@ -506,7 +614,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
       final result = await tukarPoin(
         userId: currentUserId!,
         poin_tukar: pointTukar,
-        jenisReward: 'hadiah', // Default jenis reward
+        jenisReward: 'hadiah',
         namaReward: title,
         hadiahId: itemId,
       );
@@ -515,10 +623,16 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
       Navigator.of(context).pop();
 
       if (result['success'] == true) {
-        // Update current user points
+        // Refresh poin dari API (bukan mengurangi manual)
+        final latestPoints = await fetchUserPoints();
+
         setState(() {
-          currentUserPoints -= pointTukar;
+          currentUserPoints = latestPoints;
           futureUserPoints = fetchUserPoints(); // Refresh future
+          // Refresh history penukaran juga
+          if (currentUserId != null) {
+            futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
+          }
         });
 
         _showSuccessDialog(item);
@@ -529,7 +643,6 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
         );
       }
     } catch (e) {
-      // Tutup loading dialog
       Navigator.of(context).pop();
       _showSnackbar('Terjadi kesalahan: $e', isError: true);
     }
@@ -988,7 +1101,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                 idSampah: data.id,
                 statusColor: statusColor,
                 tanggalFormatted: formattedDate,
-                ratingPetugas: data.ratingPetugas,
+                // ratingPetugas: data.ratingPetugas,
                 catatanPetugas: data.catatanPetugas,
                 isExpanded: isExpanded,
               ),
@@ -1336,7 +1449,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
     required int idSampah,
     required Color statusColor,
     required String tanggalFormatted,
-    required double? ratingPetugas,
+    // required double? ratingPetugas,
     required String? catatanPetugas,
     required bool isExpanded,
   }) {
@@ -1354,7 +1467,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
         idSampah: idSampah,
         statusColor: statusColor,
         tanggalFormatted: tanggalFormatted,
-        ratingPetugas: ratingPetugas,
+        // ratingPetugas: ratingPetugas,
         catatanPetugas: catatanPetugas,
         isExpanded: isExpanded,
       ),
@@ -1373,7 +1486,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
     required int idSampah,
     required Color statusColor,
     required String tanggalFormatted,
-    required double? ratingPetugas,
+    // required double? ratingPetugas,
     required String? catatanPetugas,
     required bool isExpanded,
   }) {
@@ -1402,7 +1515,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '⭐ Waste & get Point',
+                      '⭐ Sampah Terpilah',
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                     const SizedBox(height: 4),
@@ -1510,20 +1623,20 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                   ),
                   child: const Text('Lihat Lokasi'),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (status == 'done' && ratingPetugas == null)
-                      ElevatedButton(
-                        onPressed: () {
-                          // Tampilkan dialog rating
-                        },
-                        child: const Text('Rating Petugas'),
-                      ),
-                    if (status == 'done' && ratingPetugas != null)
-                      Text('Rating: $ratingPetugas ⭐️'),
-                  ],
-                ),
+                // Column(
+                //   crossAxisAlignment: CrossAxisAlignment.start,
+                //   children: [
+                //     if (status == 'done' && ratingPetugas == null)
+                //       ElevatedButton(
+                //         onPressed: () {
+                //           // Tampilkan dialog rating
+                //         },
+                //         child: const Text('Rating Petugas'),
+                //       ),
+                //     if (status == 'done' && ratingPetugas != null)
+                //       Text('Rating: $ratingPetugas ⭐️'),
+                //   ],
+                // ),
               ],
             ),
           ],

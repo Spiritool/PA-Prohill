@@ -7,8 +7,11 @@ import 'package:dlh_project/pages/form_opening/login.dart';
 import 'package:dlh_project/pages/warga_screen/akun/password_reset.dart';
 import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart'; // Import GantiEmail page
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
+
 
 class AkunPetugas extends StatefulWidget {
   const AkunPetugas({super.key});
@@ -28,6 +31,12 @@ class _AkunPetugasState extends State<AkunPetugas>
   bool _isLoggedIn = false;
   late AnimationController _animationController;
 
+  // TAMBAHAN BARU - Variabel untuk foto profil
+  final ImagePicker _picker = ImagePicker();
+  XFile? _image;
+  bool _photoSelected = false;
+  String? fotoUrl;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +45,74 @@ class _AkunPetugasState extends State<AkunPetugas>
       vsync: this,
     );
     _loadUserData().then((_) => _loadUserStatus());
+    _loadFotoUrl(); // TAMBAHAN BARU
+  }
+
+  // TAMBAHAN BARU - Method untuk load foto URL
+  void _loadFotoUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      fotoUrl = prefs.getString('user_profile_photo');
+    });
+  }
+
+  // TAMBAHAN BARU - Method untuk pilih gambar
+  Future<void> _getImage(ImageSource source) async {
+    final pickedImage = await _picker.pickImage(source: source);
+    if (pickedImage != null) {
+      final fileExtension = pickedImage.path.split('.').last.toLowerCase();
+      if (['jpg', 'jpeg', 'png'].contains(fileExtension)) {
+        setState(() {
+          _image = pickedImage;
+          _photoSelected = true;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Format tidak didukung. Hanya JPG, JPEG, atau PNG.'),
+          ),
+        );
+      }
+    }
+  }
+
+  // TAMBAHAN BARU - Method untuk upload foto profil
+  Future<void> _uploadProfilePhoto() async {
+    if (_image == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
+    final token = prefs.getString('token');
+
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse("$baseipapi/api/user/$userId/foto-profile"),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['_method'] = 'PUT';
+    request.files.add(await http.MultipartFile.fromPath(
+      'foto_profile',
+      _image!.path,
+    ));
+
+    final response = await request.send();
+    final resBody = await response.stream.bytesToString();
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(resBody);
+      final fotoUrlFromServer = data['data']['foto_profile'];
+
+      if (fotoUrlFromServer is String) {
+        await prefs.setString('user_profile_photo', fotoUrlFromServer);
+        setState(() {
+          fotoUrl = fotoUrlFromServer;
+          _photoSelected = false;
+          _image = null;
+        });
+      }
+    } else {
+      throw Exception('Gagal upload foto. Status: ${response.statusCode}');
+    }
   }
 
   @override
@@ -125,7 +202,15 @@ class _AkunPetugasState extends State<AkunPetugas>
     );
   }
 
-  Widget _buildProfileHeader() {
+
+Widget _buildProfileHeader() {
+    ImageProvider? imageProvider;
+    if (_image != null) {
+      imageProvider = FileImage(File(_image!.path));
+    } else if (fotoUrl != null && fotoUrl!.isNotEmpty) {
+      imageProvider = NetworkImage(fotoUrl!);
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
@@ -151,26 +236,57 @@ class _AkunPetugasState extends State<AkunPetugas>
       ),
       child: Column(
         children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.2),
-              border: Border.all(color: Colors.white, width: 3),
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/images/logo.png',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.person,
-                    size: 50,
-                    color: Colors.white,
-                  );
-                },
-              ),
+          GestureDetector(
+            onTap: () => _getImage(ImageSource.gallery),
+            child: Stack(
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.2),
+                    border: Border.all(color: Colors.white, width: 3),
+                  ),
+                  child: ClipOval(
+                    child: imageProvider != null
+                        ? Image(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
+                            width: 94,
+                            height: 94,
+                          )
+                        : const Icon(
+                            Icons.person,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Color(0xFFFF6B35),
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 15),
@@ -204,86 +320,89 @@ class _AkunPetugasState extends State<AkunPetugas>
   }
 
   Widget _buildStatusCard() {
-  bool isReady = _status == "ready"; // Tetap sama
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(15),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          spreadRadius: 0,
-          blurRadius: 10,
-          offset: const Offset(0, 5),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: isReady ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+    bool isReady = _status == "ready"; // Tetap sama
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
-          child: Icon(
-            isReady ? Icons.check_circle : Icons.cancel,
-            color: isReady ? Colors.green : Colors.red,
-            size: 30,
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: isReady
+                  ? Colors.green.withOpacity(0.1)
+                  : Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isReady ? Icons.check_circle : Icons.cancel,
+              color: isReady ? Colors.green : Colors.red,
+              size: 30,
+            ),
           ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Status Ketersediaan',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2C3E50),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Status Ketersediaan',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                isReady ? 'Siap Menerima Tugas' : 'Tidak Tersedia',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isReady ? Colors.green : Colors.red,
-                  fontWeight: FontWeight.w500,
+                const SizedBox(height: 5),
+                Text(
+                  isReady ? 'Siap Menerima Tugas' : 'Tidak Tersedia',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isReady ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        Transform.scale(
-          scale: 1.2,
-          child: Switch(
-            value: isReady,
-            onChanged: (bool newValue) async {
-              String newStatus = newValue ? "ready" : "tidak_ready"; // Dengan underscore
-              setState(() {
-                _status = newStatus;
-              });
+          Transform.scale(
+            scale: 1.2,
+            child: Switch(
+              value: isReady,
+              onChanged: (bool newValue) async {
+                String newStatus =
+                    newValue ? "ready" : "tidak_ready"; // Dengan underscore
+                setState(() {
+                  _status = newStatus;
+                });
 
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              await prefs.setString('user_status', newStatus);
-              _updateUserStatus(newStatus);
-            },
-            activeColor: Colors.white,
-            activeTrackColor: Colors.green,
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: Colors.red,
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.setString('user_status', newStatus);
+                _updateUserStatus(newStatus);
+              },
+              activeColor: Colors.white,
+              activeTrackColor: Colors.green,
+              inactiveThumbColor: Colors.white,
+              inactiveTrackColor: Colors.red,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildInfoCards() {
     return Column(
@@ -459,240 +578,263 @@ class _AkunPetugasState extends State<AkunPetugas>
     );
   }
 
+// REPLACE _showEditAllDialog method dengan kode ini:
   void _showEditAllDialog() {
     TextEditingController usernameController =
         TextEditingController(text: userName);
     TextEditingController phoneController =
         TextEditingController(text: userPhone);
+    bool _isLoading = false;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Container(
-            padding: const EdgeInsets.all(25),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, Color(0xFFF8F9FA)],
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B35).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: const Icon(
-                    Icons.edit,
-                    color: Color(0xFFFF6B35),
-                    size: 30,
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              child: Container(
+                padding: const EdgeInsets.all(25),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.white, Color(0xFFF8F9FA)],
                   ),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Edit Data Profil',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2C3E50),
-                  ),
-                ),
-                const SizedBox(height: 25),
-                TextField(
-                  controller: usernameController,
-                  decoration: InputDecoration(
-                    labelText: 'Nama Lengkap',
-                    prefixIcon: const Icon(Icons.person_outline,
-                        color: Color(0xFFFF6B35)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE1E8ED)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFFFF6B35), width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: phoneController,
-                  decoration: InputDecoration(
-                    labelText: 'No. HP (Awali dengan 62)',
-                    prefixIcon: const Icon(Icons.phone_outlined,
-                        color: Color(0xFFFF6B35)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE1E8ED)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFFFF6B35), width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: Color(0xFFE1E8ED)),
-                          ),
-                        ),
-                        child: const Text(
-                          'Batal',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF7F8C8D),
-                          ),
-                        ),
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF6B35).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: Color(0xFFFF6B35),
+                        size: 30,
                       ),
                     ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          final userNameInput = usernameController.text;
-                          final userPhoneInput = phoneController.text;
-
-                          if (userNameInput.length < 8) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                    'Nama harus memiliki minimal 8 karakter!'),
-                                backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-
-                          SharedPreferences prefs =
-                              await SharedPreferences.getInstance();
-                          final idUser = prefs.getInt('user_id') ?? 0;
-                          final String apiUrl =
-                              '$baseipapi/api/user/update/$idUser?_method=PUT';
-                          final String? token = prefs.getString('token');
-
-                          final Map<String, String> headers = {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer $token',
-                          };
-
-                          final Map<String, dynamic> body = {
-                            'nama': userNameInput,
-                            'no_hp': userPhoneInput,
-                          };
-
-                          try {
-                            final response = await http.put(
-                              Uri.parse(apiUrl),
-                              headers: headers,
-                              body: jsonEncode(body),
-                            );
-
-                            if (response.statusCode == 200) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content:
-                                      const Text('Data berhasil diperbarui!'),
-                                  backgroundColor: Colors.green,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              );
-
-                              await prefs.setString('user_name', userNameInput);
-                              await prefs.setString(
-                                  'user_phone', userPhoneInput);
-
-                              setState(() {
-                                userName = userNameInput;
-                                userPhone = userPhoneInput;
-                              });
-                            } else {
-                              final errorMessage = jsonDecode(
-                                      response.body)['message'] ??
-                                  'Error: ${response.statusCode} - ${response.reasonPhrase}';
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      'Gagal memperbarui data: $errorMessage'),
-                                  backgroundColor: Colors.red,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error: $e'),
-                                backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            );
-                          }
-
-                          Navigator.of(context).pop();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B35),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                        ),
-                        child: const Text(
-                          'Simpan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Edit Data Profil',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2C3E50),
                       ),
+                    ),
+                    const SizedBox(height: 25),
+                    TextField(
+                      controller: usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Nama Lengkap',
+                        prefixIcon: const Icon(Icons.person_outline,
+                            color: Color(0xFFFF6B35)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE1E8ED)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: Color(0xFFFF6B35), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: phoneController,
+                      decoration: InputDecoration(
+                        labelText: 'No. HP (Awali dengan 62)',
+                        prefixIcon: const Icon(Icons.phone_outlined,
+                            color: Color(0xFFFF6B35)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE1E8ED)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: Color(0xFFFF6B35), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side:
+                                    const BorderSide(color: Color(0xFFE1E8ED)),
+                              ),
+                            ),
+                            child: const Text(
+                              'Batal',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF7F8C8D),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () async {
+                                    final userNameInput =
+                                        usernameController.text.trim();
+                                    final userPhoneInput =
+                                        phoneController.text.trim();
+
+                                    if (userNameInput.length < 8) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: const Text(
+                                              'Nama harus memiliki minimal 8 karakter!'),
+                                          backgroundColor: Colors.red,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    setDialogState(() => _isLoading = true);
+
+                                    try {
+                                      await _updateUserDataWithPhoto(
+                                          userNameInput, userPhoneInput);
+                                      if (_photoSelected) {
+                                        await _uploadProfilePhoto();
+                                      }
+
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: const Text(
+                                                'Profil berhasil diperbarui'),
+                                            backgroundColor: Colors.green,
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text('Gagal: $e'),
+                                          backgroundColor: Colors.red,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      );
+                                    } finally {
+                                      if (mounted)
+                                        setDialogState(
+                                            () => _isLoading = false);
+                                    }
+
+                                    Navigator.of(context).pop();
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF6B35),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Simpan',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
+  }
+
+// TAMBAHAN BARU - Method untuk update data dengan dukungan foto
+  Future<void> _updateUserDataWithPhoto(String name, String phone) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
+    final token = prefs.getString('token');
+
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse("$baseipapi/api/user/update/$userId"),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['nama'] = name;
+    request.fields['no_hp'] = phone;
+    request.fields['_method'] = 'PUT';
+
+    final response = await request.send();
+    if (response.statusCode == 200) {
+      await prefs.setString('user_name', name);
+      await prefs.setString('user_phone', phone);
+
+      setState(() {
+        userName = name;
+        userPhone = phone;
+      });
+    } else {
+      throw Exception('Gagal update data. Status: ${response.statusCode}');
+    }
   }
 
   Future<void> _updateUserData(String name, String phone) async {

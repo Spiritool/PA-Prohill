@@ -521,9 +521,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
+        return const Center(child: CircularProgressIndicator());
       },
     );
 
@@ -544,15 +542,22 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
       var file = await http.MultipartFile.fromPath('foto_sampah', _image!.path);
       request.files.add(file);
 
-      var response = await request.send();
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      Navigator.of(context, rootNavigator: true).pop(); // Tutup dialog loading
 
       if (response.statusCode == 201) {
         _showSuccessDialog('Data berhasil dikirim');
       } else {
+        debugPrint('Status: ${response.statusCode}');
+        debugPrint('Body: ${response.body}');
         _showErrorDialog(
-            'Gagal mengirimkan Data. Status: ${response.statusCode}');
+            'Gagal mengirimkan data.\nStatus: ${response.statusCode}\n\nBody: ${response.body}');
       }
     } catch (e) {
+      Navigator.of(context, rootNavigator: true).pop(); // Tutup dialog loading
+      debugPrint('Exception: $e');
       _showErrorDialog('Error: $e');
     }
   }

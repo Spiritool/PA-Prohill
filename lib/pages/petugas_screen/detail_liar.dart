@@ -16,6 +16,14 @@ class DetailSampahLiarPage extends StatelessWidget {
 
   const DetailSampahLiarPage({super.key, required this.sampah});
 
+  // Color theme constants
+  static const Color primaryOrange = Color(0xFFFF6B35);
+  static const Color secondaryOrange = Color(0xFFFF8A50);
+  static const Color lightOrange = Color(0xFFFFF4E6);
+  static const Color darkOrange = Color(0xFFE55A2B);
+  static const Color accentOrange = Color(0xFFFFB084);
+  static const Color backgroundGrey = Color(0xFFF8F9FA);
+
   Future<void> updateStatusSampahLiar(
       int idSampah, int idUserPetugas, String action) async {
     final prefs = await SharedPreferences.getInstance();
@@ -34,12 +42,6 @@ class DetailSampahLiarPage extends StatelessWidget {
     };
 
     try {
-      // Debugging: Print request details
-      // print('Request URL: $apiUrl');
-      // print('Request Headers: $headers');
-      // print('Request Body: ${json.encode(body)}');
-
-      // Send the POST request
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: headers,
@@ -49,24 +51,20 @@ class DetailSampahLiarPage extends StatelessWidget {
       if (response.statusCode == 200) {
         print('Status updated successfully.');
       } else {
-        // Debugging: Print URL, status code, and response body when an error occurs
         print('Error: API URL: $apiUrl');
         print('Error status code: ${response.statusCode}');
         print('Error response body: ${response.body}');
 
-        // Check if the response is JSON before decoding
         try {
           final errorMessage =
               jsonDecode(response.body)['message'] ?? 'Unknown error';
           throw Exception('Failed to update status: $errorMessage');
         } catch (e) {
-          // If response is not in JSON format, log the raw response
           throw Exception(
               'Failed to update status, received non-JSON response: ${response.body}');
         }
       }
     } catch (e) {
-      // Handle any exceptions
       print('Error updating status: $e');
       throw Exception('Error updating status: $e');
     }
@@ -78,7 +76,7 @@ class DetailSampahLiarPage extends StatelessWidget {
     final String? token = prefs.getString('token');
 
     final String apiUrl =
-        '$baseipapi/api/pengangkutan-sampah-liar/failed/$idSampah';
+        '$baseipapi/api/pengangkatan-sampah-liar/failed/$idSampah';
 
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -127,419 +125,763 @@ class DetailSampahLiarPage extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Detail Laporan Pending Sampah Liar"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'proses':
+        return Colors.blue;
+      case 'done':
+      case 'selesai':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getButtonText() {
+    switch (sampah.status) {
+      case "pending":
+        return "Proses";
+      case "proses":
+        return "Konfirmasi";
+      default:
+        return "Selesai";
+    }
+  }
+
+  Widget _buildCard({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Nama dan UPT
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/detail/email_detail.png',
-                      width: 32,
-                      height: 32,
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Email",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(sampah.email ?? "-"),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+      child: child,
+    );
+  }
 
-            // No HP dan tombol chat WA
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/detail/nomor_detail.png',
-                      width: 32,
-                      height: 32,
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("No. HP",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(sampah.noHp ?? "-"),
-                      ],
-                    ),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _launchWhatsApp(sampah.noHp ?? ""),
-                  icon: Image.asset(
-                    'assets/detail/wa_detail.png',
-                    width: 32,
-                    height: 32,
-                  ),
-                  label: const Text("Chat via WA"),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 86, 229, 91)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+  Widget _buildSectionTitle(String title) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: primaryOrange,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
 
-            // Lokasi dan tombol Maps
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Tanggal
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Image.asset(
-                      'assets/detail/tanggal_detail.png',
-                      width: 32,
-                      height: 32,
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Tanggal",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(DateFormat('dd-MM-yyyy').format(sampah.tanggal)),
-                      ],
-                    ),
-                  ],
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String title,
+    required String content,
+    required Color iconColor,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 16),
-
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Kirim data ke halaman MapSingle
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MapSingle(
-                          sampah: sampah,
-                          isDaurUlang: false, // Mengirim objek sampah lengkap
-                        ),
-                      ),
-                    );
-                  },
-                  icon: Image.asset(
-                    'assets/detail/map_detail.png',
-                    width: 32,
-                    height: 32,
-                  ),
-                  label: const Text("Cek Lokasi"),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 86, 229, 91)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Status dan tanggal
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/detail/status_detail.png',
-                      width: 32,
-                      height: 32,
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Status",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(sampah.status ?? "-"),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Deskripsi
-            Row(
-              children: [
-                Image.asset(
-                  'assets/detail/deskripsi_detail.png',
-                  width: 32,
-                  height: 32,
-                ),
-                SizedBox(width: 8),
-                Text("Deskripsi",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(sampah.deskripsi),
-            const SizedBox(height: 16),
-
-            // Foto bukti
-            Row(
-              children: [
-                Image.asset(
-                  'assets/detail/foto_detail.png',
-                  width: 32,
-                  height: 32,
-                ),
-                SizedBox(width: 8),
-                Text("Foto", style: TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildBuktiFoto([sampah.fotoSampah]),
-            const SizedBox(height: 24),
-            if ((sampah.status?.toLowerCase() ?? "") == "done") ...[
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/detail/foto_detail.png',
-                    width: 32,
-                    height: 32,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Foto Bukti",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
               ),
-              const SizedBox(height: 8),
-              _buildBuktiFoto([sampah.fotoPengangkutan ?? ""]),
-              // pastikan variabel ini ada ya
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
+              Text(
+                content,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
             ],
-          ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 20),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
-
-      // Tombol Batalkan dan Proses/Konfirmasi
-      bottomNavigationBar: sampah.status == "done"
-          ? null
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  // Tombol Batalkan
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: (sampah.status == "done")
-                          ? null
-                          : () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text("Konfirmasi"),
-                                  content: const Text(
-                                      "Apakah kamu yakin ingin membatalkan laporan ini?"),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text("Batal"),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text("Ya"),
-                                    ),
-                                  ],
-                                ),
-                              );
-
-                              if (confirm != true) return;
-
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              final idUserPetugas =
-                                  prefs.getInt('user_id') ?? 0;
-
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) => const Center(
-                                    child: CircularProgressIndicator()),
-                              );
-
-                              await updateStatusFailedSampahLiar(
-                                  sampah.id, idUserPetugas);
-
-                              Navigator.pop(context); // Close loading
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content:
-                                        Text('Laporan berhasil dibatalkan')),
-                              );
-                              Navigator.pop(context, true); // Back to previous
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFE4E1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text("Batalkan",
-                          style: TextStyle(fontSize: 16, color: Colors.black)),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Tombol Proses/Konfirmasi
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: (sampah.status == "selesai")
-                          ? null
-                          : () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text("Konfirmasi"),
-                                  content: Text(
-                                    (sampah.status == "pending")
-                                        ? "Apakah kamu yakin ingin memproses laporan ini?"
-                                        : "Apakah kamu yakin ingin mengonfirmasi laporan ini sebagai selesai?",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text("Batal"),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text("Ya"),
-                                    ),
-                                  ],
-                                ),
-                              );
-
-                              if (confirm != true) return;
-
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              final idUserPetugas =
-                                  prefs.getInt('user_id') ?? 0;
-
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) => const Center(
-                                    child: CircularProgressIndicator()),
-                              );
-
-                              if (sampah.status == "pending") {
-                                await updateStatusSampahLiar(
-                                    sampah.id, idUserPetugas, 'proses');
-                                Navigator.pop(context); // close loading
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'Status berubah menjadi Proses')),
-                                );
-                                Navigator.pop(context, true);
-                              } else if (sampah.status == "proses") {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        InputFotoSampah(idSampah: sampah.id),
-                                  ),
-                                );
-                                if (result != null && result) {
-                                  await updateStatusSampahLiar(
-                                      sampah.id, idUserPetugas, 'selesai');
-                                  Navigator.pop(context); // close loading
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Status berhasil diperbarui menjadi Selesai')),
-                                  );
-                                  Navigator.pop(context, true);
-                                } else {
-                                  Navigator.pop(context); // cancel upload
-                                }
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD8F5E0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Text(
-                        (sampah.status == "pending")
-                            ? "Proses"
-                            : (sampah.status == "proses")
-                                ? "Konfirmasi"
-                                : "Selesai",
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.black),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
     );
   }
 
   Widget _buildBuktiFoto(List<String> fotoUrls) {
     final baseUrl = '$baseipapi/storage/foto-sampah/';
+    
+    // Filter out empty or null URLs
+    final validUrls = fotoUrls.where((url) => url.isNotEmpty).toList();
+    
+    if (validUrls.isEmpty) {
+      return Container(
+        height: 150,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: lightOrange,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: accentOrange.withOpacity(0.3)),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.image_not_supported_outlined,
+                color: primaryOrange,
+                size: 48,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Tidak ada foto bukti',
+                style: TextStyle(
+                  color: primaryOrange,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
-      itemCount: fotoUrls.length,
+      itemCount: validUrls.length,
       itemBuilder: (context, index) {
-        final fullUrl = baseUrl + fotoUrls[index];
-        print('Full URL: $fullUrl');
-        return Image.network(
-          fullUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey[300],
-              child: const Center(
-                child: Icon(Icons.broken_image, color: Colors.grey, size: 48),
+        final fullUrl = baseUrl + validUrls[index];
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            );
-          },
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              fullUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('Gagal memuat gambar: $fullUrl');
+                debugPrint('Error: $error');
+                if (stackTrace != null) {
+                  debugPrint('StackTrace: $stackTrace');
+                }
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: lightOrange,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          color: primaryOrange,
+                          size: 48,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Gambar tidak dapat dimuat',
+                          style: TextStyle(
+                            color: primaryOrange,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         );
       },
+    );
+  }
+
+  void _handleCancelAction(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          "Konfirmasi",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          "Apakah kamu yakin ingin membatalkan laporan ini?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              "Batal",
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              "Ya",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final idUser = prefs.getInt('user_id') ?? 0;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(primaryOrange),
+        ),
+      ),
+    );
+
+    try {
+      await updateStatusFailedSampahLiar(sampah.id, idUser);
+      Navigator.pop(context); // Tutup loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Laporan berhasil dibatalkan'),
+          backgroundColor: Colors.green,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+      Navigator.pop(context, true); // Kembali dan refresh
+    } catch (e) {
+      Navigator.pop(context); // Tutup loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal membatalkan laporan: $e'),
+          backgroundColor: Colors.red,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _handleProcessAction(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          "Konfirmasi",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          (sampah.status == "pending")
+              ? "Apakah kamu yakin ingin memproses laporan ini?"
+              : "Apakah kamu yakin ingin mengonfirmasi laporan ini sebagai selesai?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              "Batal",
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryOrange,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              "Ya",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final idUser = prefs.getInt('user_id') ?? 0;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(primaryOrange),
+        ),
+      ),
+    );
+
+    if (sampah.status == "pending") {
+      try {
+        await updateStatusSampahLiar(sampah.id, idUser, 'proses');
+        Navigator.pop(context); // Tutup loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Status berubah menjadi Proses'),
+            backgroundColor: primaryOrange,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+        Navigator.pop(context, true); // Refresh halaman sebelumnya
+      } catch (e) {
+        Navigator.pop(context); // Tutup loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memproses laporan: $e'),
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } else if (sampah.status == "proses") {
+      Navigator.pop(context); // Tutup loading
+      
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InputFotoSampah(idSampah: sampah.id),
+        ),
+      );
+      
+      if (result != null && result) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(primaryOrange),
+            ),
+          ),
+        );
+        
+        try {
+          await updateStatusSampahLiar(sampah.id, idUser, 'selesai');
+          Navigator.pop(context); // Tutup loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Status berhasil diperbarui menjadi Selesai'),
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+          Navigator.pop(context, true); // Refresh list
+        } catch (e) {
+          Navigator.pop(context); // Tutup loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal memperbarui status: $e'),
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        }
+      }
+    }
+  } // <- This closing brace was missing!
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: backgroundGrey,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: primaryOrange,
+        foregroundColor: Colors.white,
+        title: const Text(
+          "Detail Laporan Sampah Liar",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [primaryOrange, secondaryOrange],
+            ),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header Card with gradient
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [secondaryOrange, Colors.transparent],
+                ),
+              ),
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryOrange.withOpacity(0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Status Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(sampah.status ?? ""),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        sampah.status?.toUpperCase() ?? "-",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Email
+                    _buildInfoRow(
+                      icon: Icons.email,
+                      title: "Email Pelapor",
+                      content: sampah.email ?? "-",
+                      iconColor: primaryOrange,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Tanggal
+                    _buildInfoRow(
+                      icon: Icons.calendar_today,
+                      title: "Tanggal Laporan",
+                      content: DateFormat('dd MMMM yyyy').format(sampah.tanggal),
+                      iconColor: primaryOrange,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Main Content
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Contact Card
+                  _buildCard(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle("Informasi Kontak"),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          icon: Icons.phone,
+                          title: "No. HP",
+                          content: sampah.noHp ?? "-",
+                          iconColor: primaryOrange,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildActionButton(
+                          onPressed: () => _launchWhatsApp(sampah.noHp ?? ""),
+                          icon: Icons.chat,
+                          label: "Chat via WhatsApp",
+                          color: const Color(0xFF25D366),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Location Card
+                  _buildCard(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle("Lokasi"),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          icon: Icons.location_on,
+                          title: "Alamat",
+                          content: "Lokasi Sampah Liar", // Sesuaikan dengan data yang tersedia
+                          iconColor: primaryOrange,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildActionButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MapSingle(
+                                  sampah: sampah,
+                                  isDaurUlang: false,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: Icons.map,
+                          label: "Cek Lokasi",
+                          color: primaryOrange,
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Description Card
+                  _buildCard(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle("Deskripsi"),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: lightOrange,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: accentOrange.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            sampah.deskripsi,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.5,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Photo Card
+                  _buildCard(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle("Foto Bukti"),
+                        const SizedBox(height: 16),
+                        _buildBuktiFoto([sampah.fotoSampah]),
+                      ],
+                    ),
+                  ),
+                  
+                  // Foto Pengangkutan (hanya jika status done)
+                  if ((sampah.status?.toLowerCase() ?? "") == "done" && 
+                      sampah.fotoPengangkutan != null && 
+                      sampah.fotoPengangkutan!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildCard(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle("Foto Bukti Pengangkutan"),
+                          const SizedBox(height: 16),
+                          _buildBuktiFoto([sampah.fotoPengangkutan!]),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
+                  const SizedBox(height: 100), // Space for bottom buttons
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      // Bottom Action Buttons
+      bottomNavigationBar: (sampah.status != "done")
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Cancel Button
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _handleCancelAction(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade50,
+                        foregroundColor: Colors.red.shade700,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: Colors.red.shade200),
+                        ),
+                      ),
+                      child: const Text(
+                        "Batalkan",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 12),
+                  
+                  // Process Button
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _handleProcessAction(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryOrange,
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        _getButtonText(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : null,
     );
   }
 }

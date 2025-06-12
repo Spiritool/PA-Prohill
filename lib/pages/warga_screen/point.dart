@@ -14,24 +14,67 @@ final baseipapi = dotenv.env['LOCAL_IP'];
 
 // Fungsi untuk mengambil data user points
 Future<int> fetchUserPoints() async {
-  final prefs = await SharedPreferences.getInstance();
-  final poin = prefs.getInt('poin');
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id');
 
-  // DEBUG: Print semua data dari SharedPreferences
-  print('=== DEBUG SharedPreferences ===');
-  final keys = prefs.getKeys();
-  for (var key in keys) {
-    print('$key: ${prefs.get(key)}');
+    if (userId == null) {
+      print('WARNING: user_id tidak ditemukan di SharedPreferences');
+      return 0;
+    }
+
+    print('Mengambil poin dari API untuk user ID: $userId');
+
+    final response = await http.get(
+      Uri.parse('$baseipapi/api/user/$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    print('=== FETCH USER POINTS FROM API ===');
+    print('Status Code: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+    print('=== END FETCH USER POINTS FROM API ===');
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+
+      // Sesuaikan dengan struktur response API Anda
+      int poin = 0;
+      if (responseData is Map) {
+        // Jika response berbentuk {"data": {"poin": 100}} atau {"poin": 100}
+        if (responseData.containsKey('data') && responseData['data'] is Map) {
+          poin = responseData['data']['poin'] ?? 0;
+        } else if (responseData.containsKey('poin')) {
+          poin = responseData['poin'] ?? 0;
+        }
+        // Bisa juga struktur lain seperti {"user": {"poin": 100}}
+        else if (responseData.containsKey('user') &&
+            responseData['user'] is Map) {
+          poin = responseData['user']['poin'] ?? 0;
+        }
+      }
+
+      print('Poin dari API: $poin');
+
+      // Update SharedPreferences dengan poin terbaru dari API
+      await prefs.setInt('poin', poin);
+
+      return poin;
+    } else {
+      print(
+          'ERROR: Failed to load user points - Status: ${response.statusCode}');
+      // Fallback ke SharedPreferences jika API gagal
+      return prefs.getInt('poin') ?? 0;
+    }
+  } catch (e) {
+    print('ERROR saat fetch user points dari API: $e');
+    // Fallback ke SharedPreferences jika terjadi error
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('poin') ?? 0;
   }
-  print('=== END DEBUG ===');
-
-  if (poin == null) {
-    print('WARNING: user_poin belum diset di SharedPreferences');
-    return 0;
-  }
-
-  print('User poin diambil dari SharedPreferences: $poin');
-  return poin;
 }
 
 // Fungsi untuk fetch data rewards dari backend
@@ -106,14 +149,14 @@ Future<Map<String, dynamic>> tukarPoin({
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
 
-      // Update poin di SharedPreferences jika berhasil
-      if (responseData['success'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        final currentPoin = prefs.getInt('poin') ?? 0;
-        final newPoin = currentPoin - poin_tukar;
-        await prefs.setInt('poin', newPoin);
-        print('Poin berhasil diupdate: $currentPoin -> $newPoin');
-      }
+      // // Update poin di SharedPreferences jika berhasil
+      // if (responseData['success'] == true) {
+      //   final prefs = await SharedPreferences.getInstance();
+      //   final currentPoin = prefs.getInt('poin') ?? 0;
+      //   final newPoin = currentPoin - poin_tukar;
+      //   await prefs.setInt('poin', newPoin);
+      //   print('Poin berhasil diupdate: $currentPoin -> $newPoin');
+      // }
 
       return responseData;
     } else {
@@ -170,7 +213,8 @@ Future<List<SampahData>> fetchSampahData() async {
     print('Fetching data for user ID: $userId'); // Debug log
 
     final response = await http.get(
-      Uri.parse('$baseipapi/api/pengangkutan-sampah/history/$userId/done'),
+      Uri.parse(
+          '$baseipapi/api/pengangkutan-sampah/history/$userId/done'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -331,29 +375,44 @@ class _PointScreenState extends State<PointScreen> {
   // Fungsi untuk load data user
   void _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id');
+
     setState(() {
-      currentUserId = prefs.getInt('user_id');
-      currentUserPoints = prefs.getInt('poin') ?? 0;
+      currentUserId = userId;
     });
 
-    // Refresh penukaran history setelah user data loaded
-    if (currentUserId != null) {
+    // Refresh poin dari API
+    if (userId != null) {
+      final latestPoints = await fetchUserPoints();
       setState(() {
-        futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
+        currentUserPoints = latestPoints;
+      });
+
+      // Refresh penukaran history
+      setState(() {
+        futurePenukaranHistory = fetchPenukaranHistory(userId);
       });
     }
   }
 
   // Fungsi untuk refresh data
-  void _refreshData() {
+  void _refreshData() async {
+  setState(() {
+    futureSampahData = fetchSampahData();
+    futureUserPoints = fetchUserPoints(); // Ini akan ambil dari API
+    if (currentUserId != null) {
+      futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
+    }
+  });
+  
+  // Update currentUserPoints juga
+  if (currentUserId != null) {
+    final latestPoints = await fetchUserPoints();
     setState(() {
-      futureSampahData = fetchSampahData();
-      futureUserPoints = fetchUserPoints();
-      if (currentUserId != null) {
-        futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
-      }
+      currentUserPoints = latestPoints;
     });
   }
+}
 
   // Fungsi untuk log semua data di SharedPreferences
   void _logSharedPreferences() async {
@@ -530,7 +589,6 @@ class _PointScreenState extends State<PointScreen> {
       return;
     }
 
-    // Pastikan semua field ada nilai default
     final String title = item['nama_barang']?.toString() ?? 'Reward';
     final int pointTukar = item['poin_tukar'] ?? 0;
     final int itemId = item['id'] ?? 0;
@@ -556,7 +614,7 @@ class _PointScreenState extends State<PointScreen> {
       final result = await tukarPoin(
         userId: currentUserId!,
         poin_tukar: pointTukar,
-        jenisReward: 'hadiah', // Default jenis reward
+        jenisReward: 'hadiah',
         namaReward: title,
         hadiahId: itemId,
       );
@@ -565,10 +623,16 @@ class _PointScreenState extends State<PointScreen> {
       Navigator.of(context).pop();
 
       if (result['success'] == true) {
-        // Update current user points
+        // Refresh poin dari API (bukan mengurangi manual)
+        final latestPoints = await fetchUserPoints();
+
         setState(() {
-          currentUserPoints -= pointTukar;
+          currentUserPoints = latestPoints;
           futureUserPoints = fetchUserPoints(); // Refresh future
+          // Refresh history penukaran juga
+          if (currentUserId != null) {
+            futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
+          }
         });
 
         _showSuccessDialog(item);
@@ -579,7 +643,6 @@ class _PointScreenState extends State<PointScreen> {
         );
       }
     } catch (e) {
-      // Tutup loading dialog
       Navigator.of(context).pop();
       _showSnackbar('Terjadi kesalahan: $e', isError: true);
     }
