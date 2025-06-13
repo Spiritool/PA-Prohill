@@ -770,27 +770,27 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
                     ],
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 15),
 
                   // Kecamatan Dropdown
-                  _buildModernDropdown(
-                    value: _pilihKecamatan,
-                    hint: 'Pilih Kecamatan',
-                    icon: Icons.location_city,
-                    items: _kecamatanList.map<DropdownMenuItem<String>>(
-                      (Map<String, dynamic> item) {
-                        return DropdownMenuItem<String>(
-                          value: item['id'].toString(),
-                          child: Text(item['nama_kecamatan'].toString()),
-                        );
-                      },
-                    ).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _pilihKecamatan = newValue;
-                      });
-                    },
-                  ),
+                  // _buildModernDropdown(
+                  //   value: _pilihKecamatan,
+                  //   hint: 'Pilih Kecamatan',
+                  //   icon: Icons.location_city,
+                  //   items: _kecamatanList.map<DropdownMenuItem<String>>(
+                  //     (Map<String, dynamic> item) {
+                  //       return DropdownMenuItem<String>(
+                  //         value: item['id'].toString(),
+                  //         child: Text(item['nama_kecamatan'].toString()),
+                  //       );
+                  //     },
+                  //   ).toList(),
+                  //   onChanged: (String? newValue) {
+                  //     setState(() {
+                  //       _pilihKecamatan = newValue;
+                  //     });
+                  //   },
+                  // ),
 
                   const SizedBox(height: 20),
 
@@ -813,6 +813,51 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
                     onChanged: (String? newValue) {
                       setState(() {
                         _pilihAlamat = newValue;
+
+                        // Auto select kecamatan berdasarkan alamat yang dipilih
+                        if (newValue != null) {
+                          // Method 1: Menggunakan try-catch (Recommended)
+                          try {
+                            var selectedAlamat = _alamatList.firstWhere(
+                              (alamat) => alamat['id'].toString() == newValue,
+                            );
+
+                            // Jika ada field id_kecamatan langsung
+                            if (selectedAlamat.containsKey('id_kecamatan') &&
+                                selectedAlamat['id_kecamatan'] != null) {
+                              _pilihKecamatan =
+                                  selectedAlamat['id_kecamatan'].toString();
+                            }
+                            // Cari berdasarkan nama kecamatan
+                            else if (selectedAlamat.containsKey('kecamatan')) {
+                              try {
+                                var matchingKecamatan =
+                                    _kecamatanList.firstWhere(
+                                  (kecamatan) =>
+                                      kecamatan['nama_kecamatan']
+                                          .toString()
+                                          .toLowerCase()
+                                          .trim() ==
+                                      selectedAlamat['kecamatan']
+                                          .toString()
+                                          .toLowerCase()
+                                          .trim(),
+                                );
+                                _pilihKecamatan =
+                                    matchingKecamatan['id'].toString();
+                              } catch (e) {
+                                debugPrint(
+                                    'Kecamatan tidak ditemukan: ${selectedAlamat['kecamatan']}');
+                              }
+                            }
+                          } catch (e) {
+                            debugPrint(
+                                'Alamat tidak ditemukan dengan id: $newValue');
+                          }
+                        } else {
+                          // Reset kecamatan jika alamat dikosongkan
+                          _pilihKecamatan = null;
+                        }
                       });
                     },
                   ),

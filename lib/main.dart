@@ -14,7 +14,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     // Initialize Firebase first
-    await Firebase.initializeApp( 
+    await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     log('✅ Firebase initialized');

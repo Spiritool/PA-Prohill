@@ -67,91 +67,6 @@ class _ContactSupportPageState extends State<ContactSupportPage>
     super.dispose();
   }
 
-  Future<void> _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Tidak dapat membuka $url'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
-  }
-
-  Future<void> _launchEmail(String email) async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: email,
-      query:
-          'subject=Dukungan%20Teknis&body=Halo,%20saya%20membutuhkan%20bantuan...',
-    );
-    await _launchURL(emailUri.toString());
-  }
-
-  Future<void> _launchPhone(String phone) async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: phone);
-    await _launchURL(phoneUri.toString());
-  }
-
-  void _copyToClipboard(String text, String label) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 20),
-            SizedBox(width: 10),
-            Text('$label berhasil disalin'),
-          ],
-        ),
-        backgroundColor: Color(0xFFFF6B35),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Row(
-              children: [
-                Icon(Icons.check_circle, color: Color(0xFFFF6B35)),
-                SizedBox(width: 10),
-                Text('Berhasil'),
-              ],
-            ),
-            content: Text(
-                'Pesan Anda telah berhasil dikirim. Kami akan menghubungi Anda segera.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _nameController.clear();
-                  _emailController.clear();
-                  _messageController.clear();
-                },
-                child: Text('OK', style: TextStyle(color: Color(0xFFFF6B35))),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -192,8 +107,6 @@ class _ContactSupportPageState extends State<ContactSupportPage>
                         _buildHeader(),
                         SizedBox(height: 30),
                         _buildContactInfo(),
-                        SizedBox(height: 30),
-                        _buildQuickActions(),
                         SizedBox(height: 30),
                         _buildFooter(),
                       ],
@@ -273,7 +186,7 @@ class _ContactSupportPageState extends State<ContactSupportPage>
               ),
               SizedBox(height: 5),
               Text(
-                'Siap melayani Anda 24/7',
+                'Siap melayani Anda dengan cepat dan responsif',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.white.withOpacity(0.8),
@@ -323,36 +236,24 @@ class _ContactSupportPageState extends State<ContactSupportPage>
             icon: Icons.email_outlined,
             title: 'Email',
             content: 'dlh@cilegon.go.id',
-            onTap: () => _launchEmail('dlh@cilegon.go.id'),
-            onLongPress: () => _copyToClipboard('dlh@cilegon.go.id', 'Email'),
           ),
           SizedBox(height: 15),
           _buildContactItem(
             icon: Icons.phone_outlined,
             title: 'Telepon',
             content: '(0254) 7850313',
-            onTap: () => _launchPhone('(0254) 7850313'),
-            onLongPress: () =>
-                _copyToClipboard('(0254) 7850313', 'Nomor telepon'),
           ),
           SizedBox(height: 15),
           _buildContactItem(
             icon: Icons.location_on_outlined,
             title: 'Alamat',
             content: 'Kedaleman, Kec. Cibeber, Kota Cilegon, Banten 42412',
-            onTap: () => _launchURL(
-                'https://maps.google.com/?q=Kedaleman, Kec. Cibeber, Kota Cilegon, Banten 42412'),
-            onLongPress: () => _copyToClipboard(
-                'Kedaleman, Kec. Cibeber, Kota Cilegon, Banten 42412',
-                'Alamat'),
           ),
           SizedBox(height: 15),
           _buildContactItem(
             icon: Icons.language_outlined,
             title: 'Website',
             content: 'dlh.cilegon.go.id',
-            onTap: () => _launchURL('https://dlh.cilegon.go.id'),
-            onLongPress: () => _copyToClipboard('dlh.cilegon.go.id', 'Website'),
           ),
         ],
       ),
@@ -363,12 +264,8 @@ class _ContactSupportPageState extends State<ContactSupportPage>
     required IconData icon,
     required String title,
     required String content,
-    required VoidCallback onTap,
-    required VoidCallback onLongPress,
   }) {
     return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
       borderRadius: BorderRadius.circular(15),
       child: Container(
         padding: EdgeInsets.all(15),
@@ -426,65 +323,8 @@ class _ContactSupportPageState extends State<ContactSupportPage>
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Container(
-      padding: EdgeInsets.all(25),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 25,
-            offset: Offset(0, 15),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.flash_on, color: Color(0xFFFF6B35), size: 28),
-              SizedBox(width: 10),
-              Text(
-                'Aksi Cepat',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF6B35),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.phone,
-                  label: 'Telepon',
-                  onTap: () => _launchPhone('(0254) 7850313'),
-                ),
-              ),
-              SizedBox(width: 15),
-              Expanded(
-                child: _buildQuickActionButton(
-                  icon: Icons.email,
-                  label: 'Email',
-                  onTap: () => _launchEmail('dlh@cilegon.go.id'),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -492,10 +332,8 @@ class _ContactSupportPageState extends State<ContactSupportPage>
   Widget _buildQuickActionButton({
     required IconData icon,
     required String label,
-    required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
       borderRadius: BorderRadius.circular(15),
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),

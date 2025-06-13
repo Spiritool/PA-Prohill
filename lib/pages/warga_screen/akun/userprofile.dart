@@ -1,4 +1,5 @@
 import 'package:dlh_project/pages/form_opening/login.dart';
+import 'package:dlh_project/pages/warga_screen/about.dart';
 import 'package:dlh_project/pages/warga_screen/akun/akun.dart';
 import 'package:dlh_project/pages/warga_screen/contactus.dart';
 import 'package:dlh_project/pages/warga_screen/qna.dart';
@@ -512,6 +513,12 @@ class _UserProfileState extends State<UserProfile> {
                 text: 'About',
                 subtitle: 'Tentang aplikasi',
                 color: Colors.cyan,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => JempolinHomePage()),
+                  );
+                },
               ),
               // _buildEnhancedProfileTile(
               //   icon: Icons.location_on_rounded,

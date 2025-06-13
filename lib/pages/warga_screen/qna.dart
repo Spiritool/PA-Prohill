@@ -26,7 +26,7 @@ class _QnAPageState extends State<QnAPage> {
 
   Future<void> fetchFAQ() async {
     try {
-      final response = await http.get(Uri.parse('$baseipapi/qna/show-all'));
+      final response = await http.get(Uri.parse('$baseipapi/api/qna'));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
 
