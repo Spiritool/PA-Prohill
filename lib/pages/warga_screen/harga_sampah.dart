@@ -631,30 +631,7 @@ class _HargaSampahState extends State<HargaSampah> {
                             ),
                           ],
                         ),
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            // Add checkout logic here
-                          },
-                          icon: const Icon(Icons.check_circle_outline,
-                              color: Colors.white),
-                          label: const Text(
-                            'Lanjutkan Penjualan',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

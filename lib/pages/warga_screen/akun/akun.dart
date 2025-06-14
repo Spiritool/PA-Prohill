@@ -538,7 +538,7 @@ class _AkunState extends State<Akun> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Email and phone number details',
+                    'Email and Alamat details',
                     style: TextStyle(
                       fontSize: 12,
                       color: Color(0xFF718096),
@@ -647,7 +647,8 @@ class _AkunState extends State<Akun> {
   Widget _buildDeleteAccountField() {
     return GestureDetector(
       onTap: () {
-        launchUrl(Uri.parse("$baseipapi/request_delete_users"));
+        launchUrl(
+            Uri.parse("https://prohildlhcilegon.id/request_delete_users"));
       },
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -717,7 +718,7 @@ class _AkunState extends State<Akun> {
         ),
       ),
     );
-  } 
+  }
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();

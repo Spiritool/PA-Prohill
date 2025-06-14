@@ -213,8 +213,7 @@ Future<List<SampahData>> fetchSampahData() async {
     print('Fetching data for user ID: $userId'); // Debug log
 
     final response = await http.get(
-      Uri.parse(
-          '$baseipapi/api/pengangkutan-sampah/history/$userId/done'),
+      Uri.parse('$baseipapi/api/pengangkutan-sampah/history/$userId/done'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -372,6 +371,108 @@ class _PointScreenState extends State<PointScreen> {
     return [];
   }
 
+// Function untuk update status penukaran
+  Future<void> _updateStatusPenukaran(String penukaranId) async {
+    print('========== UPDATE STATUS PENUKARAN ==========');
+    print('Penukaran ID: $penukaranId');
+    print('Timestamp: ${DateTime.now()}');
+
+    try {
+      final String apiUrl = '$baseipapi/api/penukaran/$penukaranId/status';
+      final Map<String, dynamic> requestBody = {
+        'status': 'terkirim',
+      };
+
+      print('API URL: $apiUrl');
+      print('Request Body: ${json.encode(requestBody)}');
+      print('Headers: Content-Type: application/json');
+
+      print('Mengirim request ke server...');
+      final response = await http.put(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          // Jika menggunakan authentication
+        },
+        body: json.encode(requestBody),
+      );
+
+      print('Response diterima:');
+      print('Status Code: ${response.statusCode}');
+      print('Response Headers: ${response.headers}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        print('✅ UPDATE BERHASIL');
+        print(
+            'Status penukaran ID $penukaranId berhasil diubah menjadi "terkirim"');
+
+        // Berhasil update status
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Status berhasil diupdate menjadi terkirim'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        print('Memanggil _refreshData() untuk refresh UI...');
+        // Refresh data untuk menampilkan perubahan
+        _refreshData();
+      } else {
+        print('❌ UPDATE GAGAL');
+        print('Status code tidak 200: ${response.statusCode}');
+        print('Error response body: ${response.body}');
+        throw Exception(
+            'Gagal mengupdate status - Status Code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ EXCEPTION OCCURRED');
+      print('Error Type: ${e.runtimeType}');
+      print('Error Message: ${e.toString()}');
+      print('Stack trace: ${StackTrace.current}');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+
+    print('========== END UPDATE STATUS ==========\n');
+  }
+
+  // Function untuk konfirmasi update status
+  void _showConfirmUpdateStatus(String penukaranId, String namaReward) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi'),
+          content: Text(
+            'Apakah Anda yakin ingin mengkonfirmasi bahwa reward "$namaReward" telah diterima?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _updateStatusPenukaran(penukaranId);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+              ),
+              child: const Text('Ya, Sudah Diterima'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Fungsi untuk load data user
   void _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -397,22 +498,22 @@ class _PointScreenState extends State<PointScreen> {
 
   // Fungsi untuk refresh data
   void _refreshData() async {
-  setState(() {
-    futureSampahData = fetchSampahData();
-    futureUserPoints = fetchUserPoints(); // Ini akan ambil dari API
-    if (currentUserId != null) {
-      futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
-    }
-  });
-  
-  // Update currentUserPoints juga
-  if (currentUserId != null) {
-    final latestPoints = await fetchUserPoints();
     setState(() {
-      currentUserPoints = latestPoints;
+      futureSampahData = fetchSampahData();
+      futureUserPoints = fetchUserPoints(); // Ini akan ambil dari API
+      if (currentUserId != null) {
+        futurePenukaranHistory = fetchPenukaranHistory(currentUserId!);
+      }
     });
+
+    // Update currentUserPoints juga
+    if (currentUserId != null) {
+      final latestPoints = await fetchUserPoints();
+      setState(() {
+        currentUserPoints = latestPoints;
+      });
+    }
   }
-}
 
   // Fungsi untuk log semua data di SharedPreferences
   void _logSharedPreferences() async {
@@ -1112,7 +1213,7 @@ class _PointScreenState extends State<PointScreen> {
     );
   }
 
-  // Widget untuk menampilkan history penukaran
+// Widget untuk menampilkan history penukaran
   Widget _buildPenukaranHistoryList() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: futurePenukaranHistory,
@@ -1210,6 +1311,7 @@ class _PointScreenState extends State<PointScreen> {
     final String jenisReward = penukaran['nama_hadiah']?.toString() ?? 'hadiah';
     final String createdAt = penukaran['created_at']?.toString() ?? '';
     final String status = penukaran['status']?.toString() ?? 'pending';
+    final String penukaranId = penukaran['id']?.toString() ?? '';
 
     // Format tanggal
     String formattedDate = '';
@@ -1225,15 +1327,23 @@ class _PointScreenState extends State<PointScreen> {
     // Warna berdasarkan status
     Color statusColor;
     String statusText;
+    bool canConfirmDelivery = false;
+
     switch (status.toLowerCase()) {
       case 'completed':
       case 'selesai':
+      case 'terkirim':
         statusColor = Colors.green;
-        statusText = 'Selesai';
+        statusText = 'Terkirim';
         break;
       case 'pending':
         statusColor = Colors.orange;
         statusText = 'Pending';
+        break;
+      case 'diantar':
+        statusColor = Colors.blue;
+        statusText = 'Diantar';
+        canConfirmDelivery = true;
         break;
       case 'cancelled':
       case 'dibatalkan':
@@ -1371,7 +1481,8 @@ class _PointScreenState extends State<PointScreen> {
 
             // Pesan tambahan berdasarkan status
             if (status.toLowerCase() == 'completed' ||
-                status.toLowerCase() == 'selesai')
+                status.toLowerCase() == 'selesai' ||
+                status.toLowerCase() == 'terkirim')
               Container(
                 margin: const EdgeInsets.only(top: 12),
                 padding: const EdgeInsets.all(12),
@@ -1390,7 +1501,7 @@ class _PointScreenState extends State<PointScreen> {
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
-                        'Reward telah dikirim ke alamat Anda',
+                        'Reward telah diterima',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.black87,
@@ -1423,6 +1534,62 @@ class _PointScreenState extends State<PointScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (status.toLowerCase() == 'diantar')
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_shipping,
+                          color: Colors.blue[600],
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Reward sedang dalam perjalanan',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: canConfirmDelivery
+                            ? () => _showConfirmUpdateStatus(
+                                penukaranId, namaReward)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        child: const Text(
+                          'Konfirmasi Sudah Diterima',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
