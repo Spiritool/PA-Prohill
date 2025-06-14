@@ -1,4 +1,4 @@
-import 'package:dlh_project/pages/warga_screen/historySampah.dart';
+import 'package:dlh_project/pages/petugas_screen/Sampah.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -46,34 +46,34 @@ Future<int> fetchUserPoints() async {
       if (responseData is Map) {
         // Jika response berbentuk {"data": {"poin": 100}} atau {"poin": 100}
         if (responseData.containsKey('data') && responseData['data'] is Map) {
-          poin = responseData['data']['poin2'] ?? 0;
-        } else if (responseData.containsKey('poin2')) {
-          poin = responseData['poin2'] ?? 0;
+          poin = responseData['data']['poin'] ?? 0;
+        } else if (responseData.containsKey('poin')) {
+          poin = responseData['poin'] ?? 0;
         }
         // Bisa juga struktur lain seperti {"user": {"poin": 100}}
         else if (responseData.containsKey('user') &&
             responseData['user'] is Map) {
-          poin = responseData['user']['poin2'] ?? 0;
+          poin = responseData['user']['poin'] ?? 0;
         }
       }
 
       print('Poin dari API: $poin');
 
       // Update SharedPreferences dengan poin terbaru dari API
-      await prefs.setInt('poin2', poin);
+      await prefs.setInt('poin', poin);
 
       return poin;
     } else {
       print(
           'ERROR: Failed to load user points - Status: ${response.statusCode}');
       // Fallback ke SharedPreferences jika API gagal
-      return prefs.getInt('poin2') ?? 0;
+      return prefs.getInt('poin') ?? 0;
     }
   } catch (e) {
     print('ERROR saat fetch user points dari API: $e');
     // Fallback ke SharedPreferences jika terjadi error
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('poin2') ?? 0;
+    return prefs.getInt('poin') ?? 0;
   }
 }
 
@@ -318,9 +318,8 @@ class PointScreenPetugas extends StatefulWidget {
 class _PointScreenPetugasState extends State<PointScreenPetugas> {
   late Future<List<SampahData>> futureSampahData;
   late Future<int> futureUserPoints;
-  late Future<List<Map<String, dynamic>>> futureRewards; // Tambahkan ini
-  late Future<List<Map<String, dynamic>>>
-      futurePenukaranHistory; // Tambahkan ini
+  late Future<List<Map<String, dynamic>>> futureRewards;
+  late Future<List<Map<String, dynamic>>> futurePenukaranHistory;
   int prosesCount = 0;
   DateTime? startDate;
   DateTime? endDate;
@@ -330,23 +329,16 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
   int currentUserPoints = 0;
   int? currentUserId;
   int selectedTabIndex = 0;
-  // Tambahkan variabel untuk toggle antara sampah history dan penukaran history
   bool showSampahHistory = true;
 
-  // Fungsi untuk menghitung poin berdasarkan status sampah
-  int calculatePoints(String status) {
-    switch (status.toLowerCase()) {
-      case 'done':
-        return 5; // Status selesai mendapat 5 poin
-      case 'pending':
-      case 'proses':
-      case 'failed':
-        return 0; // Status pending, proses, atau failed mendapat 0 poin
-      default:
-        return 0; // Default 0 poin untuk status tidak dikenal
-    }
-  }
 
+  // Fungsi untuk menghitung poin berdasarkan status sampah
+  int calculatePoints(SampahData data) {
+    if (data.status.toLowerCase() == 'done' && data.ratingBintang != null) {
+      return data.ratingBintang! * 3; // Rating dikali 3
+    }
+    return 0;
+  }
   @override
   void initState() {
     super.initState();
@@ -487,7 +479,6 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
     final String description =
         item['deskripsi']?.toString() ?? 'Tidak ada deskripsi';
     final int pointTukar = item['poin_tukar'] ?? 0;
-    final int itemId = item['id'] ?? 0;
 
     showDialog(
       context: context,
@@ -720,6 +711,8 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
     );
   }
 
+  
+
   // Tampilkan snackbar
   void _showSnackbar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -767,66 +760,6 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                 color: const Color(0xFFF2F2F2),
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          isMyPointActive = true;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isMyPointActive
-                              ? Colors.orange
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'My Point',
-                          style: TextStyle(
-                            color: isMyPointActive
-                                ? Colors.white
-                                : Colors.grey[600],
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          isMyPointActive = false;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isMyPointActive
-                              ? Colors.transparent
-                              : Colors.orange,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Redeem',
-                          style: TextStyle(
-                            color: isMyPointActive
-                                ? Colors.grey[600]
-                                : Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
           Expanded(
@@ -839,6 +772,106 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                   : CrossFadeState.showSecond,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+   Widget _buildRatingDisplay(int? ratingBintang, String? ratingDeskripsi) {
+    if (ratingBintang == null) {
+      return Row(
+        children: [
+          Icon(Icons.star_border, size: 16, color: Colors.grey),
+          SizedBox(width: 4),
+          Text('Belum ada rating', style: TextStyle(color: Colors.grey, fontSize: 12)),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            // Tampilkan bintang
+            Row(
+              children: List.generate(5, (index) {
+                return Icon(
+                  index < ratingBintang ? Icons.star : Icons.star_border,
+                  size: 16,
+                  color: index < ratingBintang ? Colors.amber : Colors.grey,
+                );
+              }),
+            ),
+            SizedBox(width: 8),
+            Text(
+              '$ratingBintang/5',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.amber[700],
+              ),
+            ),
+          ],
+        ),
+        if (ratingDeskripsi != null && ratingDeskripsi.isNotEmpty) ...[
+          SizedBox(height: 4),
+          Text(
+            '"$ratingDeskripsi"',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ],
+    );
+  }
+
+  _buildPointDisplay(SampahData data) {
+    final points = calculatePoints(data);
+    
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: points > 0 ? Colors.green[50] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: points > 0 ? Colors.green[300]! : Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            'assets/icons/money 4.png',
+            width: 16,
+            height: 16,
+            color: points > 0 ? Colors.green[600] : Colors.grey[500],
+          ),
+          SizedBox(width: 4),
+          Text(
+            '$points',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: points > 0 ? Colors.green[700] : Colors.grey[600],
+            ),
+          ),
+          if (data.ratingBintang != null) ...[
+            SizedBox(width: 4),
+            Text(
+              '(${data.ratingBintang}★×3)',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -924,65 +957,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                   color: const Color(0xFFF2F2F2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          showSampahHistory = true;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: showSampahHistory
-                              ? Colors.orange
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Sampah',
-                          style: TextStyle(
-                            color: showSampahHistory
-                                ? Colors.white
-                                : Colors.grey[600],
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          showSampahHistory = false;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: !showSampahHistory
-                              ? Colors.orange
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Penukaran',
-                          style: TextStyle(
-                            color: !showSampahHistory
-                                ? Colors.white
-                                : Colors.grey[600],
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                
               ),
             ],
           ),
@@ -997,9 +972,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
               children: [
                 const SizedBox(height: 8),
                 Expanded(
-                  child: showSampahHistory
-                      ? _buildSampahHistoryList()
-                      : _buildPenukaranHistoryList(),
+                  child:  _buildSampahHistoryList(),
                 ),
               ],
             ),
@@ -1089,7 +1062,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
               },
               child: _buildSampahCard(
                 index: index + 1,
-                name: data.nama,
+                name: data.name,
                 FotoSampah: data.fotoSampah,
                 phone: data.noHp,
                 status: data.status,
@@ -1101,8 +1074,8 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                 idSampah: data.id,
                 statusColor: statusColor,
                 tanggalFormatted: formattedDate,
-                // ratingPetugas: data.ratingPetugas,
-                catatanPetugas: data.catatanPetugas,
+                ratingBintang: data.ratingBintang,
+                ratingDeskripsi: data.ratingDeskripsi,
                 isExpanded: isExpanded,
               ),
             );
@@ -1112,538 +1085,305 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
     );
   }
 
-  // Widget untuk menampilkan history penukaran
-  Widget _buildPenukaranHistoryList() {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: futurePenukaranHistory,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red[300],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Gagal memuat riwayat penukaran',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.red[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _refreshData,
-                  child: const Text('Coba Lagi'),
-                ),
-              ],
-            ),
-          );
-        }
 
-        final penukaranList = snapshot.data ?? [];
-
-        if (penukaranList.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.history,
-                  size: 64,
-                  color: Colors.grey,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Belum ada riwayat penukaran',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Tukar poin Anda dengan reward menarik!',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        // Urutkan berdasarkan tanggal terbaru
-        penukaranList.sort((a, b) {
-          final dateA = DateTime.tryParse(a['created_at']?.toString() ?? '') ??
-              DateTime.now();
-          final dateB = DateTime.tryParse(b['created_at']?.toString() ?? '') ??
-              DateTime.now();
-          return dateB.compareTo(dateA);
-        });
-
-        return ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: penukaranList.length,
-          itemBuilder: (context, index) {
-            final penukaran = penukaranList[index];
-            return _buildPenukaranCard(penukaran, index);
-          },
-        );
-      },
-    );
-  }
-
-  // Widget untuk card penukaran
-  Widget _buildPenukaranCard(Map<String, dynamic> penukaran, int index) {
-    final String namaReward = penukaran['nama_hadiah']?.toString() ?? 'Reward';
-    final int jumlahPoin = penukaran['poin_hadiah'] ?? 0;
-    final String jenisReward = penukaran['nama_hadiah']?.toString() ?? 'hadiah';
-    final String createdAt = penukaran['created_at']?.toString() ?? '';
-    final String status = penukaran['status']?.toString() ?? 'pending';
-
-    // Format tanggal
-    String formattedDate = '';
-    if (createdAt.isNotEmpty) {
-      try {
-        final DateTime date = DateTime.parse(createdAt);
-        formattedDate = DateFormat('dd-MM-yyyy').format(date);
-      } catch (e) {
-        formattedDate = createdAt;
-      }
-    }
-
-    // Warna berdasarkan status
-    Color statusColor;
-    String statusText;
-    switch (status.toLowerCase()) {
-      case 'completed':
-      case 'selesai':
-        statusColor = Colors.green;
-        statusText = 'Selesai';
-        break;
-      case 'pending':
-        statusColor = Colors.orange;
-        statusText = 'Pending';
-        break;
-      case 'cancelled':
-      case 'dibatalkan':
-        statusColor = Colors.red;
-        statusText = 'Dibatalkan';
-        break;
-      default:
-        statusColor = Colors.blue;
-        statusText = status;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            )
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                // Icon reward
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.card_giftcard,
-                    color: Colors.orange[600],
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Info reward
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        namaReward,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        formattedDate,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Status badge
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    statusText,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Poin yang ditukar
-            Row(
-              children: [
-                const Text(
-                  'Poin ditukar: ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-                Image.asset(
-                  'assets/icons/money 4.png',
-                  width: 16,
-                  height: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '$jumlahPoin',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-
-            // Jenis reward
-            const SizedBox(height: 4),
-            Text(
-              'Jenis: ${jenisReward.toUpperCase()}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-
-            // Pesan tambahan berdasarkan status
-            if (status.toLowerCase() == 'completed' ||
-                status.toLowerCase() == 'selesai')
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: Colors.green[600],
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Reward telah dikirim ke alamat Anda',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (status.toLowerCase() == 'pending')
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      color: Colors.orange[600],
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Penukaran sedang diproses',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // Rename fungsi _buildOuterCard menjadi _buildSampahCard
-  Widget _buildSampahCard({
-    required int index,
-    required String name,
-    required String FotoSampah,
-    required String phone,
-    required String status,
-    required String namaUpt,
-    required String location,
-    required String description,
-    required String mapUrl,
-    required int idSampah,
-    required Color statusColor,
-    required String tanggalFormatted,
-    // required double? ratingPetugas,
-    required String? catatanPetugas,
-    required bool isExpanded,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: _buildInnerCard(
-        name: name,
-        phone: phone,
-        fotoSampah: FotoSampah,
-        status: status,
-        namaUpt: namaUpt,
-        location: location,
-        description: description,
-        mapUrl: mapUrl,
-        idSampah: idSampah,
-        statusColor: statusColor,
-        tanggalFormatted: tanggalFormatted,
-        // ratingPetugas: ratingPetugas,
-        catatanPetugas: catatanPetugas,
-        isExpanded: isExpanded,
-      ),
-    );
-  }
-
-  Widget _buildInnerCard({
-    required String name,
-    required String phone,
-    required String fotoSampah,
-    required String status,
-    required String namaUpt,
-    required String location,
-    required String description,
-    required String mapUrl,
-    required int idSampah,
-    required Color statusColor,
-    required String tanggalFormatted,
-    // required double? ratingPetugas,
-    required String? catatanPetugas,
-    required bool isExpanded,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Baris atas: Deskripsi + Point + Expand Icon
-          Row(
+Widget _buildSampahCard({
+  required int index,
+  required String name,
+  required String FotoSampah,
+  required String phone,
+  required String status,
+  required String namaUpt,
+  required String location,
+  required String description,
+  required String mapUrl,
+  required int idSampah,
+  required Color statusColor,
+  required String tanggalFormatted,
+  required int? ratingBintang,
+  required String? ratingDeskripsi,
+  required bool isExpanded,
+}) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 1,
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+      border: Border.all(color: Colors.grey[200]!),
+    ),
+    child: Column(
+      children: [
+        // Header Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Kiri: informasi
-              Expanded(
+              // Baris pertama: Nama dan Status
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: statusColor.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      status.toUpperCase(),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Informasi dasar
+              Row(
+                children: [
+                  Icon(Icons.phone, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    phone,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  const SizedBox(width: 16),
+                  Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    tanggalFormatted,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // RATING DISPLAY - Tampilkan rating bintang dan deskripsi
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '⭐ Sampah Terpilah',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    Row(
+                      children: [
+                        Icon(Icons.star, size: 16, color: Colors.amber[600]),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Rating Layanan:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const Spacer(),
+                        _buildPointDisplay(SampahData(
+                          id: idSampah,
+                          name: name,
+                          noHp: phone,
+                          deskripsi: description,
+                          status: status,
+                          namaUpt: namaUpt,
+                          tanggal: DateTime.now(), // Placeholder
+                          alamat: Alamat( // Placeholder
+                            kelurahan: '',
+                            kecamatan: '',
+                            deskripsi: '',
+                            kordinat: '',
+                          ),
+                          list: '',
+                          namaHadiah: '',
+                          pendapatan: 0,
+
+                          fotoSampah: FotoSampah,
+                          ratingBintang: ratingBintang,
+                          ratingDeskripsi: ratingDeskripsi,
+                        )),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      tanggalFormatted,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                    ),
+                    const SizedBox(height: 8),
+                    _buildRatingDisplay(ratingBintang, ratingDeskripsi),
                   ],
                 ),
               ),
-
-              // Coin dan expand icon
+              
+              const SizedBox(height: 12),
+              
+              // Indikator expand/collapse
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4F4F4),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Image.asset(
-                          'assets/icons/money 4.png',
-                          width: 20,
-                          height: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          calculatePoints(status).toString(),
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        )
-                      ],
+                  Text(
+                    isExpanded ? 'Tutup Detail' : 'Lihat Detail',
+                    style: TextStyle(
+                      color: Colors.blue[600],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
+                  Icon(
+                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Colors.blue[600],
+                    size: 16,
+                  ),
                 ],
-              )
+              ),
             ],
           ),
-
-          // Detail isi ketika expanded
-          if (isExpanded) ...[
-            const SizedBox(height: 16),
-            Text('Nama      : $name'),
-            Row(
-              children: [
-                const Text('Status     : '),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    status == 'failed' ? 'Dibatalkan' : status,
-                    style: const TextStyle(color: Colors.black),
-                  ),
-                ),
-              ],
+        ),
+        
+        // Detail yang dapat diperluas
+        if (isExpanded) ...[
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
             ),
-            Text('UPT         : $namaUpt'),
-            Text('Alamat    : $location'),
-            if (catatanPetugas != null) Text('Catatan   : $catatanPetugas'),
-            const SizedBox(height: 12),
-            if (fotoSampah.isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  '$baseipapi/storage/foto-sampah/$fotoSampah',
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Text('Gambar tidak dapat ditampilkan'),
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                ),
-              )
-            else
-              const Text('Tidak ada foto tersedia.'),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ElevatedButton(
-                  onPressed: () => _openMap(mapUrl),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
+                // Foto Sampah
+                if (FotoSampah.isNotEmpty) ...[
+                  const Text(
+                    'Foto Sampah:',
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 120,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        FotoSampah,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(Icons.image_not_supported, 
+                                  color: Colors.grey, size: 40),
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                  child: const Text('Lihat Lokasi'),
-                ),
-                // Column(
-                //   crossAxisAlignment: CrossAxisAlignment.start,
-                //   children: [
-                //     if (status == 'done' && ratingPetugas == null)
-                //       ElevatedButton(
-                //         onPressed: () {
-                //           // Tampilkan dialog rating
-                //         },
-                //         child: const Text('Rating Petugas'),
-                //       ),
-                //     if (status == 'done' && ratingPetugas != null)
-                //       Text('Rating: $ratingPetugas ⭐️'),
-                //   ],
-                // ),
+                  const SizedBox(height: 12),
+                ],
+                
+                // UPT
+                _buildDetailRow('UPT:', namaUpt),
+                const SizedBox(height: 8),
+                
+                // Lokasi
+                _buildDetailRow('Lokasi:', location),
+                const SizedBox(height: 8),
+                
+                // Deskripsi
+                _buildDetailRow('Deskripsi:', description),
+                const SizedBox(height: 12),
+                
+                // Tombol Buka Maps
+                if (mapUrl.isNotEmpty)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openMap(mapUrl),
+                      icon: const Icon(Icons.map, size: 16),
+                      label: const Text('Buka Maps'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[600],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
               ],
             ),
-          ],
+          ),
         ],
+      ],
+    ),
+  );
+}
+
+// Helper method untuk menampilkan detail row
+Widget _buildDetailRow(String label, String value) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SizedBox(
+        width: 80,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[700],
+            fontSize: 12,
+          ),
+        ),
       ),
-    );
-  }
+      Expanded(
+        child: Text(
+          value,
+          style: const TextStyle(fontSize: 12),
+        ),
+      ),
+    ],
+  );
+}
 
 // Perbaiki bagian GridView.builder dalam _buildRedeemSection
   Widget _buildRedeemSection() {
@@ -1807,7 +1547,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                     final int pointTukar = reward['poin_tukar'] ?? 0;
                     final String namaBarang =
                         reward['nama_barang']?.toString() ?? 'Reward';
-                    final String gambar = reward['gambar']?.toString() ?? '';
+                    final String fotoSampah = reward['fotoSampah']?.toString() ?? '';
                     final String createdAt =
                         reward['created_at']?.toString() ?? '';
                     final bool canAfford = currentUserPoints >= pointTukar;
@@ -1836,9 +1576,9 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
                                   borderRadius: const BorderRadius.vertical(
                                     top: Radius.circular(20),
                                   ),
-                                  child: gambar.isNotEmpty
+                                  child: fotoSampah.isNotEmpty
                                       ? Image.network(
-                                          gambar,
+                                          fotoSampah,
                                           fit: BoxFit.cover,
                                           width: double.infinity,
                                           height: double.infinity,
@@ -2005,7 +1745,7 @@ class _PointScreenPetugasState extends State<PointScreenPetugas> {
     );
   }
 
-  // Widget untuk placeholder gambar
+  // Widget untuk placeholder fotoSampah
   Widget _buildImagePlaceholder() {
     return Container(
       color: Colors.grey[300],

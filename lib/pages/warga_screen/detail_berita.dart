@@ -243,7 +243,7 @@ class DetailBerita extends StatelessWidget {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  berita['penulis'] ?? 'Nama Penulis',
+                                  berita['penulis'] ?? 'Admin',
                                   style: const TextStyle(
                                     color: Colors.black87,
                                     fontWeight: FontWeight.w500,

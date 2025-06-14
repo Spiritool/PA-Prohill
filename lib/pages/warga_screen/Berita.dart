@@ -481,7 +481,7 @@ class Berita extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        berita['penulis'] ?? 'Unknown',
+                        berita['penulis'] ?? 'Admin',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
