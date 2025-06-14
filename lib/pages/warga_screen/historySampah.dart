@@ -12,6 +12,7 @@ class SampahData {
   final String fotoSampah;
   final String deskripsi;
   final Alamat alamat;
+  final String list;
   final DateTime tanggal;
   final DateTime tanggalFormatted;
   final double? ratingPetugas;
@@ -30,6 +31,7 @@ class SampahData {
     required this.fotoSampah,
     required this.deskripsi,
     required this.alamat,
+    required this.list,
     required this.tanggal,
     required this.tanggalFormatted,
     required this.ratingPetugas,
@@ -84,6 +86,7 @@ class SampahData {
         fotoSampah: json['foto_sampah']?.toString() ?? '',
         deskripsi: json['deskripsi']?.toString() ?? 'No Description',
         alamat: Alamat.fromJson(alamatJson),
+        list: json['list']?.toString() ?? '[]',
         tanggal: parsedDate,
         tanggalFormatted: parsedDate,
         ratingPetugas: _parseDouble(json['rating_petugas']),

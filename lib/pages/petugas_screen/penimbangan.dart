@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:dlh_project/pages/petugas_screen/home.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/intl.dart';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
 
@@ -19,6 +20,13 @@ class _PenimbanganState extends State<Penimbangan> {
   List<dynamic> _hargaBarang = [];
   List<Map<String, dynamic>> _selectedItems = [];
   double _totalPendapatan = 0.0;
+  
+  // Format rupiah
+  final NumberFormat currencyFormat = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -34,7 +42,10 @@ class _PenimbanganState extends State<Penimbangan> {
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal memuat data harga barang')),
+        SnackBar(
+          content: const Text('Gagal memuat data harga barang'),
+          backgroundColor: Colors.red.shade600,
+        ),
       );
     }
   }
@@ -44,7 +55,16 @@ class _PenimbanganState extends State<Penimbangan> {
       context: context,
       builder: (_) {
         return AlertDialog(
-          title: const Text('Pilih Barang'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Pilih Barang',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.deepOrange,
+            ),
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -52,22 +72,58 @@ class _PenimbanganState extends State<Penimbangan> {
               itemCount: _hargaBarang.length,
               itemBuilder: (context, index) {
                 final barang = _hargaBarang[index];
-                return ListTile(
-                  title: Text(barang['Nama_Barang']),
-                  subtitle: Text('Rp${barang['Harga_Beli']} / kg'),
-                  onTap: () {
-                    final sudahDipilih = _selectedItems.any((e) => e['ID'] == barang['ID']);
-                    if (!sudahDipilih) {
+                final sudahDipilih = _selectedItems.any((e) => e['ID'] == barang['ID']);
+                
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: sudahDipilih ? Colors.green : Colors.deepOrange,
+                      child: Icon(
+                        sudahDipilih ? Icons.check : Icons.inventory_2,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      barang['Nama_Barang'],
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: sudahDipilih ? Colors.grey : Colors.black87,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${currencyFormat.format(double.tryParse(barang['Harga_Beli'].toString()) ?? 0)} / kg',
+                      style: TextStyle(
+                        color: Colors.deepOrange.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    trailing: Icon(
+                      sudahDipilih ? Icons.check_circle : Icons.add_circle_outline,
+                      color: sudahDipilih ? Colors.green : Colors.deepOrange,
+                    ),
+                    onTap: sudahDipilih ? null : () {
                       setState(() {
                         _selectedItems.add({...barang, 'jumlah': 0.0});
                       });
-                    }
-                    Navigator.pop(context);
-                  },
+                      Navigator.pop(context);
+                    },
+                  ),
                 );
               },
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Tutup',
+                style: TextStyle(color: Colors.deepOrange.shade700),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -91,7 +147,18 @@ class _PenimbanganState extends State<Penimbangan> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
+      builder: (_) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrange),
+            ),
+            const SizedBox(height: 16),
+            const Text('Menyimpan data...'),
+          ],
+        ),
+      ),
     );
 
     try {
@@ -108,7 +175,11 @@ class _PenimbanganState extends State<Penimbangan> {
         Navigator.of(context, rootNavigator: true).pop();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Data berhasil disimpan')),
+          SnackBar(
+            content: const Text('Data berhasil disimpan'),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
 
         Navigator.pushAndRemoveUntil(
@@ -119,13 +190,21 @@ class _PenimbanganState extends State<Penimbangan> {
       } else {
         Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal submit: ${response.reasonPhrase}')),
+          SnackBar(
+            content: Text('Gagal submit: ${response.reasonPhrase}'),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
+        SnackBar(
+          content: Text('Terjadi kesalahan: ${e.toString()}'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -133,93 +212,282 @@ class _PenimbanganState extends State<Penimbangan> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text("Data Penimbangan"),
+        title: const Text(
+          "Data Penimbangan",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.deepOrange,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Barang yang Dipilih:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ..._selectedItems.map((item) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Row(
-                  children: [
-                    Expanded(flex: 2, child: Text(item['Nama_Barang'])),
-                    Expanded(
-                      child: TextField(
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'kg'),
-                        onChanged: (value) {
-                          setState(() {
-                            item['jumlah'] = double.tryParse(value) ?? 0.0;
-                            _hitungTotalPendapatan();
-                          });
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                                               'Rp${((item['jumlah'] ?? 1.0) * (double.tryParse(item['Harga_Beli'].toString()) ?? 0.0)).toStringAsFixed(0)}',
-
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        setState(() {
-                          _selectedItems.remove(item);
-                          _hitungTotalPendapatan();
-                        });
-                      },
-                    )
-                  ],
+            // Header Section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.deepOrange.shade400, Colors.deepOrange.shade600],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              );
-            }).toList(),
-            const SizedBox(height: 16),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.deepOrange.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.scale,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Total Pendapatan',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    currencyFormat.format(_totalPendapatan),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Items Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                const Text(
+                  'Barang Terpilih',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add, size: 20),
                   label: const Text('Tambah Barang'),
                   onPressed: _showPilihBarangDialog,
-                ),
-                Text(
-                  'Total: Rp${_totalPendapatan.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepOrange,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            
+            // Selected Items List
+            if (_selectedItems.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 48,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Belum ada barang yang dipilih',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap "Tambah Barang" untuk memulai',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ..._selectedItems.map((item) {
+                final hargaPerKg = double.tryParse(item['Harga_Beli'].toString()) ?? 0.0;
+                final jumlah = item['jumlah'] ?? 0.0;
+                final total = jumlah * hargaPerKg;
+                
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item['Nama_Barang'],
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              onPressed: () {
+                                setState(() {
+                                  _selectedItems.remove(item);
+                                  _hitungTotalPendapatan();
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Harga: ${currencyFormat.format(hargaPerKg)} / kg',
+                          style: TextStyle(
+                            color: Colors.deepOrange.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextField(
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                decoration: InputDecoration(
+                                  labelText: 'Berat (kg)',
+                                  labelStyle: TextStyle(color: Colors.deepOrange.shade700),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.deepOrange.shade700, width: 2),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    item['jumlah'] = double.tryParse(value) ?? 0.0;
+                                    _hitungTotalPendapatan();
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.deepOrange.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.deepOrange.shade200),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Subtotal',
+                                      style: TextStyle(
+                                        color: Colors.deepOrange.shade700,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      currencyFormat.format(total),
+                                      style: TextStyle(
+                                        color: Colors.deepOrange.shade800,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            
             const SizedBox(height: 24),
-            Center(
+            
+            // Submit Button
+            SizedBox(
+              width: double.infinity,
               child: ElevatedButton(
                 onPressed: _selectedItems.isEmpty ? null : _submitData,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  backgroundColor: Colors.deepOrange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 3,
                 ),
                 child: const Text(
                   'Simpan Data Penimbangan',
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 }
-

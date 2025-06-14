@@ -24,6 +24,51 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
   static const Color accentOrange = Color(0xFFFFB084);
   static const Color backgroundGrey = Color(0xFFF8F9FA);
 
+  Future<void> updateStatusPengirimanHadiah(int idHadiah) async {
+  final prefs = await SharedPreferences.getInstance();
+  final String? token = prefs.getString('token');
+
+  final String apiUrl = '$baseipapi/api/penukaran/$idHadiah/status';
+
+  final Map<String, String> headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
+
+  final Map<String, dynamic> body = {
+    'status': 'diantar',
+  };
+
+  try {
+    // Debugging: Print request details
+    print('Request URL: $apiUrl');
+    print('Request Headers: $headers');
+    print('Request Body: ${json.encode(body)}');
+
+    // Send the POST request
+    final response = await http.put(
+      Uri.parse(apiUrl),
+      headers: headers,
+      body: json.encode(body),
+    );
+
+    if (response.statusCode == 200) {
+      print('Status hadiah berhasil diupdate ke "diantar"');
+    } else {
+      print('Error: API URL: $apiUrl');
+      print('Error status code: ${response.statusCode}');
+      print('Error response body: ${response.body}');
+      // Handle the error
+      final errorMessage =
+          jsonDecode(response.body)['message'] ?? 'Unknown error';
+      throw Exception('Failed to update status hadiah: $errorMessage');
+    }
+  } catch (e) {
+    // Handle any exceptions
+    throw Exception('Error updating status hadiah: $e');
+  }
+}
+
   Future<void> updateStatusSampahDaurUlang(
       int idSampah, int idUserPetugas, String action) async {
     final prefs = await SharedPreferences.getInstance();
@@ -322,6 +367,91 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                       ],
                     ),
                   ),
+
+                  // Tambahkan bagian ini setelah Description Card dan sebelum Waste Collection Card
+
+                  const SizedBox(height: 16),
+                  
+                  // Hadiah Card (conditional) - tampilkan jika ada hadiah
+                  if (sampah.namaHadiah.isNotEmpty)
+                    _buildCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle("Hadiah Tukar Poin"),
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  primaryOrange.withOpacity(0.1),
+                                  accentOrange.withOpacity(0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: primaryOrange.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                // Icon hadiah
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: primaryOrange,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.card_giftcard,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                // Info hadiah
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "Hadiah yang Dipilih",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        sampah.namaHadiah,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      // if (sampah.hadiahId != null) ...[
+                                      //   const SizedBox(height: 4),
+                                      //   Text(
+                                      //     "ID: ${sampah.hadiahId}",
+                                      //     style: TextStyle(
+                                      //       fontSize: 11,
+                                      //       color: Colors.grey.shade600,
+                                      //     ),
+                                      //   ),
+                                      // ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   
                   const SizedBox(height: 16),
                   
@@ -665,74 +795,86 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
     }
   }
 
-  void _handleProcessAction(BuildContext context) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+void _handleProcessAction(BuildContext context) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: const Text(
+        "Konfirmasi",
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      content: Text(
+        (sampah.status == "pending")
+            ? "Apakah kamu yakin ingin memproses laporan ini?"
+            : "Apakah kamu yakin ingin melanjutkan ke proses penimbangan?",
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(
+            "Batal",
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
         ),
-        title: const Text(
-          "Konfirmasi",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          (sampah.status == "pending")
-              ? "Apakah kamu yakin ingin memproses laporan ini?"
-              : "Apakah kamu yakin ingin melanjutkan ke proses penimbangan?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              "Batal",
-              style: TextStyle(color: Colors.grey.shade600),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryOrange,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryOrange,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              "Ya",
-              style: TextStyle(color: Colors.white),
-            ),
+          child: const Text(
+            "Ya",
+            style: TextStyle(color: Colors.white),
           ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    final idUser = prefs.getInt('user_id') ?? 0;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(primaryOrange),
         ),
-      ),
-    );
+      ],
+    ),
+  );
 
-    if (sampah.status == "pending") {
+  if (confirm != true) return;
+
+  final prefs = await SharedPreferences.getInstance();
+  final idUser = prefs.getInt('user_id') ?? 0;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(primaryOrange),
+      ),
+    ),
+  );
+
+  if (sampah.status == "pending") {
+    try {
+      // Update status sampah terlebih dahulu
       await updateStatusSampahDaurUlang(
         sampah.id,
         idUser,
         "proses",
       );
 
+      // Jika ada hadiah, update status pengiriman hadiah
+      if (sampah.hadiahId != null && sampah.namaHadiah.isNotEmpty) {
+        await updateStatusPengirimanHadiah(sampah.hadiahId!);
+        print('Status hadiah berhasil diupdate');
+      }
+
       Navigator.pop(context); // Tutup loading
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Status berubah menjadi Proses'),
+          content: Text(
+            sampah.hadiahId != null && sampah.namaHadiah.isNotEmpty
+                ? 'Status berubah menjadi Proses dan hadiah akan diantar'
+                : 'Status berubah menjadi Proses',
+          ),
           backgroundColor: primaryOrange,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -741,24 +883,35 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
       );
 
       Navigator.pop(context, true); // Refresh halaman sebelumnya
-    } else if (sampah.status == "proses") {
+    } catch (e) {
       Navigator.pop(context); // Tutup loading
-
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Penimbangan(
-            idSampah: sampah.id,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memproses: $e'),
+          backgroundColor: Colors.red,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       );
+    }
+  } else if (sampah.status == "proses") {
+    Navigator.pop(context); // Tutup loading
 
-      if (result != null && result) {
-        Navigator.pop(context, true); // Refresh list
-      }
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Penimbangan(
+          idSampah: sampah.id,
+        ),
+      ),
+    );
+
+    if (result != null && result) {
+      Navigator.pop(context, true); // Refresh list
     }
   }
-
+}
   // Method untuk membuat widget list sampah yang dikumpulkan
   List<Widget> _buildWasteList(String wasteListString) {
     List<Widget> widgets = [];
@@ -853,7 +1006,7 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
   }
 
   Widget _buildBuktiFoto(List<String> fotoUrls) {
-    const baseUrl = 'https://prohildlhcilegon.id/storage/foto-sampah/';
+    var baseUrl = '$baseipapi/storage/foto-sampah/';
 
     return GridView.builder(
       shrinkWrap: true,

@@ -46,34 +46,34 @@ Future<int> fetchUserPoints() async {
       if (responseData is Map) {
         // Jika response berbentuk {"data": {"poin": 100}} atau {"poin": 100}
         if (responseData.containsKey('data') && responseData['data'] is Map) {
-          poin = responseData['data']['poin'] ?? 0;
-        } else if (responseData.containsKey('poin')) {
-          poin = responseData['poin'] ?? 0;
+          poin = responseData['data']['poin2'] ?? 0;
+        } else if (responseData.containsKey('poin2')) {
+          poin = responseData['poin2'] ?? 0;
         }
         // Bisa juga struktur lain seperti {"user": {"poin": 100}}
         else if (responseData.containsKey('user') &&
             responseData['user'] is Map) {
-          poin = responseData['user']['poin'] ?? 0;
+          poin = responseData['user']['poin2'] ?? 0;
         }
       }
 
       print('Poin dari API: $poin');
 
       // Update SharedPreferences dengan poin terbaru dari API
-      await prefs.setInt('poin', poin);
+      await prefs.setInt('poin2', poin);
 
       return poin;
     } else {
       print(
           'ERROR: Failed to load user points - Status: ${response.statusCode}');
       // Fallback ke SharedPreferences jika API gagal
-      return prefs.getInt('poin') ?? 0;
+      return prefs.getInt('poin2') ?? 0;
     }
   } catch (e) {
     print('ERROR saat fetch user points dari API: $e');
     // Fallback ke SharedPreferences jika terjadi error
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('poin') ?? 0;
+    return prefs.getInt('poin2') ?? 0;
   }
 }
 

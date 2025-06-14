@@ -5,10 +5,12 @@ class SampahData {
   final String noHp;
   final String status;
   final String fotoSampah;
-  final String list; 
+  final String list;
+  final String namaHadiah;
+  final int? hadiahId; // ID dari poin_tukar
   final String deskripsi;
   final Alamat alamat;
-  final DateTime tanggal; // Menggunakan DateTime
+  final DateTime tanggal;
 
   SampahData({
     required this.id,
@@ -18,12 +20,23 @@ class SampahData {
     required this.status,
     required this.fotoSampah,
     required this.list,
+    required this.namaHadiah,
+    this.hadiahId,
     required this.deskripsi,
     required this.alamat,
     required this.tanggal,
   });
 
   factory SampahData.fromJson(Map<String, dynamic> json) {
+    // Ambil data dari poin_tukar array (jika ada)
+    String namaHadiah = '';
+    int? hadiahId;
+
+    if (json['poin_tukar'] != null && json['poin_tukar'].isNotEmpty) {
+      namaHadiah = json['poin_tukar'][0]['nama_hadiah'] ?? '';
+      hadiahId = json['poin_tukar'][0]['id'];
+    }
+
     return SampahData(
       id: json['id'],
       namaUpt: json['upt']['nama_upt'],
@@ -31,14 +44,48 @@ class SampahData {
       noHp: json['warga']['no_hp'],
       status: json['status'],
       fotoSampah: json['foto_sampah'],
-      list: json['list'] ?? '', 
+      namaHadiah: namaHadiah,
+      hadiahId: hadiahId,
+      list: json['list'] ?? '',
       deskripsi: json['deskripsi'],
       alamat: Alamat.fromJson(json['warga']['alamat'][0]),
-      tanggal: DateTime.parse(json['created_at']), // Parsing tanggal
+      tanggal: DateTime.parse(json['created_at']),
     );
   }
 }
 
+// Jika Anda ingin membuat model terpisah untuk PoinTukar
+class PoinTukar {
+  final int id;
+  final int userId;
+  final int hadiahId;
+  final String createdAt;
+  final String? updatedAt;
+  final String status;
+  final String namaHadiah;
+
+  PoinTukar({
+    required this.id,
+    required this.userId,
+    required this.hadiahId,
+    required this.createdAt,
+    this.updatedAt,
+    required this.status,
+    required this.namaHadiah,
+  });
+
+  factory PoinTukar.fromJson(Map<String, dynamic> json) {
+    return PoinTukar(
+      id: json['id'],
+      userId: json['user_id'],
+      hadiahId: json['hadiah_id'],
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
+      status: json['status'],
+      namaHadiah: json['nama_hadiah'],
+    );
+  }
+}
 
 class Alamat {
   final String kelurahan;
@@ -62,8 +109,6 @@ class Alamat {
     );
   }
 }
-
-
 
 class SampahLiarData {
   final int id;
@@ -106,9 +151,9 @@ class SampahLiarData {
       idUserPetugas: json['id_user_petugas'] != null
           ? int.tryParse(json['id_user_petugas'].toString())
           : null, // Parse if needed
-       idKecamatan: json['id_kecamatan'] != null
-        ? json['id_kecamatan'].toString() // Ubah int menjadi String
-        : '', // Default ke string kosong jika null
+      idKecamatan: json['id_kecamatan'] != null
+          ? json['id_kecamatan'].toString() // Ubah int menjadi String
+          : '', // Default ke string kosong jika null
       noHp: json['no_hp'] ?? '',
       email: json['email'] ?? '',
       namaUpt: json['petugas'] != null ? json['petugas']['nama'] : '',

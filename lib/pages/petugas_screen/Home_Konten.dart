@@ -27,20 +27,22 @@ class HomeKontenPetugas extends StatefulWidget {
 
 class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
   String? userName;
+  String? userProfilePhoto;
   String? _logoUrl;
   final List<String> _imageUrls = [];
 
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadUserData();
     fetchSettings();
   }
 
-  Future<void> _loadUserName() async {
+  Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       userName = prefs.getString('user_name') ?? 'Guest';
+      userProfilePhoto = prefs.getString('user_profile_photo');
     });
   }
 
@@ -226,11 +228,9 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                                     ),
                                   ]),
                               Material(
-                                color: Colors
-                                    .transparent, // Biar gak kelihatan, cuma buat detect gesture
+                                color: Colors.transparent,
                                 child: InkWell(
-                                  customBorder:
-                                      CircleBorder(), // Biar pas kena radius avatar
+                                  customBorder: CircleBorder(),
                                   onTap: () {
                                     showDialog(
                                       context: context,
@@ -307,10 +307,66 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                                     );
                                   },
                                   child: CircleAvatar(
-                                    backgroundImage: NetworkImage(
-                                      'https://randomuser.me/api/portraits/men/1.jpg',
-                                    ),
                                     radius: 24,
+                                    backgroundColor: Colors.grey[300],
+                                    child: userProfilePhoto != null &&
+                                            userProfilePhoto!.isNotEmpty
+                                        ? ClipOval(
+                                            child: Image.network(
+                                              userProfilePhoto!,
+                                              width: 48,
+                                              height: 48,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Image.network(
+                                                  'https://randomuser.me/api/portraits/men/1.jpg',
+                                                  width: 48,
+                                                  height: 48,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Icon(
+                                                      Icons.person,
+                                                      size: 24,
+                                                      color: Colors.grey[600],
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              loadingBuilder: (context, child,
+                                                  loadingProgress) {
+                                                if (loadingProgress == null)
+                                                  return child;
+                                                return Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                                Color>(
+                                                            Color(0xFFFF6600)),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          )
+                                        : ClipOval(
+                                            child: Image.network(
+                                              'https://randomuser.me/api/portraits/men/1.jpg',
+                                              width: 48,
+                                              height: 48,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Icon(
+                                                  Icons.person,
+                                                  size: 24,
+                                                  color: Colors.grey[600],
+                                                );
+                                              },
+                                            ),
+                                          ),
                                   ),
                                 ),
                               )
