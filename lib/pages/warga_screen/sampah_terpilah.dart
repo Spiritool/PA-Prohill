@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:dlh_project/pages/warga_screen/home.dart';
+import 'package:dlh_project/pages/warga_screen/akun/contact_info.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
@@ -321,16 +322,9 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () {
-                                Navigator.of(context).pop();
-                                Navigator.of(context).pop();
-                                // Navigasi ke halaman contact info/alamat
-                                // Ganti dengan route yang sesuai dengan aplikasi Anda
-                                // Navigator.pushNamed(context, '/contact-info');
-
-                                // Atau jika ada navigator spesifik untuk alamat:
-                                // Navigator.push(context, MaterialPageRoute(
-                                //   builder: (context) => ContactInfoPage(),
-                                // ));
+                                Navigator.push(context, MaterialPageRoute(
+                                  builder: (context) => ContactInfo(),
+                                ));
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4CAF50),

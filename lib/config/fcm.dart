@@ -96,7 +96,7 @@ Future<void> saveTokenToServer(String token) async {
     }
 
     final response = await http.post(
-      Uri.parse('$baseipapi/user/update-fcm-token'),
+      Uri.parse('$baseipapi/api/user/update-fcm-token'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -109,6 +109,7 @@ Future<void> saveTokenToServer(String token) async {
     if (response.statusCode == 200) {
       log('✅ Token berhasil dikirim ke server');
     } else {
+      log('❌ code response ke server: ${response.statusCode}');
       log('❌ Gagal kirim token ke server: ${response.body}');
     }
   } catch (e) {

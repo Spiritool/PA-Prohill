@@ -357,7 +357,7 @@ class DetailSampahLiarPage extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Gambar tidak dapat dimuat',
+                          'Gambar tidak ada',
                           style: TextStyle(
                             color: primaryOrange,
                             fontSize: 12,

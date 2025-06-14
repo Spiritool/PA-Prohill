@@ -12,7 +12,6 @@ import 'dart:io';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
 
-
 class AkunPetugas extends StatefulWidget {
   const AkunPetugas({super.key});
 
@@ -202,8 +201,7 @@ class _AkunPetugasState extends State<AkunPetugas>
     );
   }
 
-
-Widget _buildProfileHeader() {
+  Widget _buildProfileHeader() {
     ImageProvider? imageProvider;
     if (_image != null) {
       imageProvider = FileImage(File(_image!.path));
@@ -236,57 +234,45 @@ Widget _buildProfileHeader() {
       ),
       child: Column(
         children: [
-          GestureDetector(
-            onTap: () => _getImage(ImageSource.gallery),
-            child: Stack(
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.2),
-                    border: Border.all(color: Colors.white, width: 3),
-                  ),
-                  child: ClipOval(
-                    child: imageProvider != null
-                        ? Image(
-                            image: imageProvider,
-                            fit: BoxFit.cover,
-                            width: 94,
-                            height: 94,
-                          )
-                        : const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: Colors.white,
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.2),
+              border: Border.all(color: Colors.white, width: 3),
+            ),
+            child: ClipOval(
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: imageProvider != null
+                    ? Image(
+                        image: imageProvider,
+                        fit: BoxFit.cover,
+                        width: 200,
+                        height: 200,
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFFF6600).withOpacity(0.1),
+                              Color(0xFFFF8C42).withOpacity(0.05),
+                            ],
                           ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
                         ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(6),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      color: Color(0xFFFF6B35),
-                      size: 16,
-                    ),
-                  ),
-                ),
-              ],
+                        child: Icon(
+                          Icons.person_outline,
+                          size: 80,
+                          color: Color(0xFFFF6600),
+                        ),
+                      ),
+              ),
             ),
           ),
           const SizedBox(height: 15),
@@ -591,6 +577,14 @@ Widget _buildProfileHeader() {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            // Tentukan image provider untuk preview di dialog
+            ImageProvider? dialogImageProvider;
+            if (_image != null) {
+              dialogImageProvider = FileImage(File(_image!.path));
+            } else if (fotoUrl != null && fotoUrl!.isNotEmpty) {
+              dialogImageProvider = NetworkImage(fotoUrl!);
+            }
+
             return Dialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
@@ -607,17 +601,101 @@ Widget _buildProfileHeader() {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF6B35).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(15),
+                    // TAMBAHAN BARU - Photo picker di dalam dialog
+                    GestureDetector(
+                      onTap: () {
+                        // Show photo picker options
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return SafeArea(
+                              child: Wrap(
+                                children: [
+                                  ListTile(
+                                    leading: const Icon(Icons.photo_library),
+                                    title: const Text('Pilih dari Galeri'),
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      _getImage(ImageSource.gallery).then((_) {
+                                        setDialogState(() {}); // Refresh dialog
+                                      });
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.photo_camera),
+                                    title: const Text('Ambil Foto'),
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      _getImage(ImageSource.camera).then((_) {
+                                        setDialogState(() {}); // Refresh dialog
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFFFF6B35).withOpacity(0.1),
+                              border: Border.all(
+                                  color: const Color(0xFFFF6B35), width: 2),
+                            ),
+                            child: ClipOval(
+                              child: dialogImageProvider != null
+                                  ? AspectRatio(
+                                      aspectRatio: 1.0,
+                                      child: Image(
+                                        image: dialogImageProvider,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color: Color(0xFFFF6B35),
+                                    ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF6B35),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              padding: const EdgeInsets.all(6),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.edit,
-                        color: Color(0xFFFF6B35),
-                        size: 30,
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Tap untuk mengubah foto',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF7F8C8D),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -676,7 +754,14 @@ Widget _buildProfileHeader() {
                       children: [
                         Expanded(
                           child: TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () {
+                              // Reset image selection jika cancel
+                              setState(() {
+                                _image = null;
+                                _photoSelected = false;
+                              });
+                              Navigator.of(context).pop();
+                            },
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 15),
                               shape: RoundedRectangleBorder(
