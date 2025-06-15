@@ -387,7 +387,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('My Services',
+                          Text('Layanaan Petugas',
                               style: GoogleFonts.poppins(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),
@@ -588,7 +588,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                             ],
                           ),
                           const SizedBox(height: 25),
-                          Text('Latest News',
+                          Text('Berit Peduli Lingkungan',
                               style: GoogleFonts.poppins(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 5),

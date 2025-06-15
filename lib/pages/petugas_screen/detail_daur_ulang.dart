@@ -25,49 +25,49 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
   static const Color backgroundGrey = Color(0xFFF8F9FA);
 
   Future<void> updateStatusPengirimanHadiah(int idHadiah) async {
-  final prefs = await SharedPreferences.getInstance();
-  final String? token = prefs.getString('token');
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('token');
 
-  final String apiUrl = '$baseipapi/api/penukaran/$idHadiah/status';
+    final String apiUrl = '$baseipapi/api/penukaran/$idHadiah/status';
 
-  final Map<String, String> headers = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer $token',
-  };
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
 
-  final Map<String, dynamic> body = {
-    'status': 'diantar',
-  };
+    final Map<String, dynamic> body = {
+      'status': 'diantar',
+    };
 
-  try {
-    // Debugging: Print request details
-    print('Request URL: $apiUrl');
-    print('Request Headers: $headers');
-    print('Request Body: ${json.encode(body)}');
+    try {
+      // Debugging: Print request details
+      print('Request URL: $apiUrl');
+      print('Request Headers: $headers');
+      print('Request Body: ${json.encode(body)}');
 
-    // Send the POST request
-    final response = await http.put(
-      Uri.parse(apiUrl),
-      headers: headers,
-      body: json.encode(body),
-    );
+      // Send the POST request
+      final response = await http.put(
+        Uri.parse(apiUrl),
+        headers: headers,
+        body: json.encode(body),
+      );
 
-    if (response.statusCode == 200) {
-      print('Status hadiah berhasil diupdate ke "diantar"');
-    } else {
-      print('Error: API URL: $apiUrl');
-      print('Error status code: ${response.statusCode}');
-      print('Error response body: ${response.body}');
-      // Handle the error
-      final errorMessage =
-          jsonDecode(response.body)['message'] ?? 'Unknown error';
-      throw Exception('Failed to update status hadiah: $errorMessage');
+      if (response.statusCode == 200) {
+        print('Status hadiah berhasil diupdate ke "diantar"');
+      } else {
+        print('Error: API URL: $apiUrl');
+        print('Error status code: ${response.statusCode}');
+        print('Error response body: ${response.body}');
+        // Handle the error
+        final errorMessage =
+            jsonDecode(response.body)['message'] ?? 'Unknown error';
+        throw Exception('Failed to update status hadiah: $errorMessage');
+      }
+    } catch (e) {
+      // Handle any exceptions
+      throw Exception('Error updating status hadiah: $e');
     }
-  } catch (e) {
-    // Handle any exceptions
-    throw Exception('Error updating status hadiah: $e');
   }
-}
 
   Future<void> updateStatusSampahDaurUlang(
       int idSampah, int idUserPetugas, String action) async {
@@ -122,7 +122,7 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
     final String? token = prefs.getString('token');
 
     final String apiUrl =
-        'https://prohildlhcilegon.id/api/pengangkutan-sampah/failed/$idSampah';
+        '$baseipapi/api/pengangkutan-sampah/failed/$idSampah';
 
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -134,6 +134,11 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
     };
 
     try {
+      // DEBUG: Print URL, headers, and body
+      print('🔁 Sending POST to: $apiUrl');
+      print('📦 Headers: $headers');
+      print('📤 Body: ${jsonEncode(body)}');
+
       // Send the POST request
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -141,16 +146,20 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
         body: json.encode(body),
       );
 
+      // DEBUG: Print status code and response body
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
       if (response.statusCode == 200) {
-        print('Status updated successfully.');
+        print('✅ Status updated successfully.');
       } else {
-        // Handle the error
-        final errorMessage =
-            jsonDecode(response.body)['message'] ?? 'Unknown error';
+        final responseData = jsonDecode(response.body);
+        final errorMessage = responseData['message'] ?? 'Unknown error';
+        print('❌ Failed to update status: $errorMessage');
         throw Exception('Failed to update status: $errorMessage');
       }
     } catch (e) {
-      // Handle any exceptions
+      print('🛑 Exception occurred: $e');
       throw Exception('Error updating status: $e');
     }
   }
@@ -234,7 +243,8 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                   children: [
                     // Status Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: _getStatusColor(sampah.status ?? ""),
                         borderRadius: BorderRadius.circular(20),
@@ -249,7 +259,7 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Nama
                     _buildInfoRow(
                       icon: Icons.person,
@@ -258,12 +268,13 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                       iconColor: primaryOrange,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Tanggal
                     _buildInfoRow(
                       icon: Icons.calendar_today,
                       title: "Tanggal Laporan",
-                      content: DateFormat('dd MMMM yyyy').format(sampah.tanggal),
+                      content:
+                          DateFormat('dd MMMM yyyy').format(sampah.tanggal),
                       iconColor: primaryOrange,
                     ),
                   ],
@@ -299,9 +310,9 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Location Card
                   _buildCard(
                     child: Column(
@@ -337,9 +348,9 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Description Card
                   _buildCard(
                     child: Column(
@@ -353,7 +364,8 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: lightOrange,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: accentOrange.withOpacity(0.3)),
+                            border: Border.all(
+                                color: accentOrange.withOpacity(0.3)),
                           ),
                           child: Text(
                             sampah.deskripsi,
@@ -371,7 +383,7 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                   // Tambahkan bagian ini setelah Description Card dan sebelum Waste Collection Card
 
                   const SizedBox(height: 16),
-                  
+
                   // Hadiah Card (conditional) - tampilkan jika ada hadiah
                   if (sampah.namaHadiah.isNotEmpty)
                     _buildCard(
@@ -393,7 +405,8 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: primaryOrange.withOpacity(0.3)),
+                              border: Border.all(
+                                  color: primaryOrange.withOpacity(0.3)),
                             ),
                             child: Row(
                               children: [
@@ -414,7 +427,8 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                                 // Info hadiah
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "Hadiah yang Dipilih",
@@ -452,11 +466,14 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Waste Collection Card (conditional)
-                  if (sampah.status == "done" && sampah.list != null && sampah.list!.isNotEmpty && sampah.list!.trim().isNotEmpty)
+                  if (sampah.status == "done" &&
+                      sampah.list != null &&
+                      sampah.list!.isNotEmpty &&
+                      sampah.list!.trim().isNotEmpty)
                     _buildCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,7 +486,8 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: lightOrange,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: accentOrange.withOpacity(0.3)),
+                              border: Border.all(
+                                  color: accentOrange.withOpacity(0.3)),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,9 +497,9 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Photo Card
                   _buildCard(
                     child: Column(
@@ -493,7 +511,7 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 100), // Space for bottom buttons
                 ],
               ),
@@ -540,9 +558,9 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 12),
-                  
+
                   // Process Button
                   Expanded(
                     child: ElevatedButton(
@@ -795,127 +813,128 @@ class DetailSampahDaurUlangPage extends StatelessWidget {
     }
   }
 
-void _handleProcessAction(BuildContext context) async {
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      title: const Text(
-        "Konfirmasi",
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      content: Text(
-        (sampah.status == "pending")
-            ? "Apakah kamu yakin ingin memproses laporan ini?"
-            : "Apakah kamu yakin ingin melanjutkan ke proses penimbangan?",
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(
-            "Batal",
-            style: TextStyle(color: Colors.grey.shade600),
-          ),
+  void _handleProcessAction(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: ElevatedButton.styleFrom(
+        title: const Text(
+          "Konfirmasi",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          (sampah.status == "pending")
+              ? "Apakah kamu yakin ingin memproses laporan ini?"
+              : "Apakah kamu yakin ingin melanjutkan ke proses penimbangan?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              "Batal",
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryOrange,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              "Ya",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final idUser = prefs.getInt('user_id') ?? 0;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(primaryOrange),
+        ),
+      ),
+    );
+
+    if (sampah.status == "pending") {
+      try {
+        // Update status sampah terlebih dahulu
+        await updateStatusSampahDaurUlang(
+          sampah.id,
+          idUser,
+          "proses",
+        );
+
+        // Jika ada hadiah, update status pengiriman hadiah
+        if (sampah.hadiahId != null && sampah.namaHadiah.isNotEmpty) {
+          await updateStatusPengirimanHadiah(sampah.hadiahId!);
+          print('Status hadiah berhasil diupdate');
+        }
+
+        Navigator.pop(context); // Tutup loading
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              sampah.hadiahId != null && sampah.namaHadiah.isNotEmpty
+                  ? 'Status berubah menjadi Proses dan hadiah akan diantar'
+                  : 'Status berubah menjadi Proses',
+            ),
             backgroundColor: primaryOrange,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: const Text(
-            "Ya",
-            style: TextStyle(color: Colors.white),
+        );
+
+        Navigator.pop(context, true); // Refresh halaman sebelumnya
+      } catch (e) {
+        Navigator.pop(context); // Tutup loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memproses: $e'),
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-
-  if (confirm != true) return;
-
-  final prefs = await SharedPreferences.getInstance();
-  final idUser = prefs.getInt('user_id') ?? 0;
-
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => const Center(
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(primaryOrange),
-      ),
-    ),
-  );
-
-  if (sampah.status == "pending") {
-    try {
-      // Update status sampah terlebih dahulu
-      await updateStatusSampahDaurUlang(
-        sampah.id,
-        idUser,
-        "proses",
-      );
-
-      // Jika ada hadiah, update status pengiriman hadiah
-      if (sampah.hadiahId != null && sampah.namaHadiah.isNotEmpty) {
-        await updateStatusPengirimanHadiah(sampah.hadiahId!);
-        print('Status hadiah berhasil diupdate');
+        );
       }
-
+    } else if (sampah.status == "proses") {
       Navigator.pop(context); // Tutup loading
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            sampah.hadiahId != null && sampah.namaHadiah.isNotEmpty
-                ? 'Status berubah menjadi Proses dan hadiah akan diantar'
-                : 'Status berubah menjadi Proses',
-          ),
-          backgroundColor: primaryOrange,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Penimbangan(
+            idSampah: sampah.id,
           ),
         ),
       );
 
-      Navigator.pop(context, true); // Refresh halaman sebelumnya
-    } catch (e) {
-      Navigator.pop(context); // Tutup loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal memproses: $e'),
-          backgroundColor: Colors.red,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
-    }
-  } else if (sampah.status == "proses") {
-    Navigator.pop(context); // Tutup loading
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Penimbangan(
-          idSampah: sampah.id,
-        ),
-      ),
-    );
-
-    if (result != null && result) {
-      Navigator.pop(context, true); // Refresh list
+      if (result != null && result) {
+        Navigator.pop(context, true); // Refresh list
+      }
     }
   }
-}
+
   // Method untuk membuat widget list sampah yang dikumpulkan
   List<Widget> _buildWasteList(String wasteListString) {
     List<Widget> widgets = [];
-    
+
     // Cek jika string kosong atau null
     if (wasteListString.isEmpty) {
       return [
@@ -929,22 +948,22 @@ void _handleProcessAction(BuildContext context) async {
         ),
       ];
     }
-    
+
     // Split string berdasarkan koma
     List<String> wasteItems = wasteListString.split(', ');
-    
+
     for (String item in wasteItems) {
       if (item.trim().isEmpty) continue;
-      
+
       // Split setiap item berdasarkan titik dua untuk memisahkan nama dan berat
       List<String> parts = item.split(': ');
       if (parts.length == 2) {
         String wasteName = parts[0].trim();
         String weight = parts[1].trim();
-        
+
         // Skip jika nama atau berat kosong
         if (wasteName.isEmpty || weight.isEmpty) continue;
-        
+
         widgets.add(
           Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -967,7 +986,8 @@ void _handleProcessAction(BuildContext context) async {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: primaryOrange,
                     borderRadius: BorderRadius.circular(12),
@@ -987,7 +1007,7 @@ void _handleProcessAction(BuildContext context) async {
         );
       }
     }
-    
+
     // Jika tidak ada item valid yang berhasil di-parse
     if (widgets.isEmpty) {
       return [
@@ -1001,7 +1021,7 @@ void _handleProcessAction(BuildContext context) async {
         ),
       ];
     }
-    
+
     return widgets;
   }
 

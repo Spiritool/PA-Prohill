@@ -73,8 +73,14 @@ class _GantiEmailState extends State<GantiEmail> {
           SnackBar(content: Text(responseData['message'])),
         );
       }
+    } else if (response.statusCode == 422) {
+      // Tangani kasus email sama dengan sebelumnya
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email sama dengan sebelumnya")),
+      );
     } else {
       final responseData = jsonDecode(response.body);
+      print('Error: ${response.statusCode} - ${responseData['message']}');
       String errorMessage = 'Terjadi kesalahan';
       if (responseData.containsKey('message')) {
         errorMessage = responseData['message'];

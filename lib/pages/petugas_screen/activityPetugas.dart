@@ -61,8 +61,10 @@ Future<Map<String, List<SampahData>>> fetchSampahData() async {
   }
 
   final urls = {
-    'riwayat': [
-      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/done',
+    'riwayat_done': [
+      '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/done'
+    ],
+    'riwayat_failed': [
       '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/failed'
     ],
     'proses': [
@@ -81,25 +83,38 @@ Future<Map<String, List<SampahData>>> fetchSampahData() async {
 
   for (var category in urls.keys) {
     for (var url in urls[category]!) {
-      await Future.delayed(
-          const Duration(seconds: 2)); // Tambahkan delay sebelum request
+      await Future.delayed(const Duration(seconds: 2));
 
       final response = await http.get(Uri.parse(url));
 
-      print('Fetching: $url');
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}'); // Debugging response
-
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body)['data'];
-        List<SampahData> sampahList =
-            data.map((item) => SampahData.fromJson(item)).toList();
-        categorizedData[category]!.addAll(sampahList);
+        List<SampahData> sampahList = data.map((item) {
+          // Tentukan status berdasarkan kategori URL
+          String status;
+          if (category == 'riwayat_done') {
+            status = 'done';
+          } else if (category == 'riwayat_failed') {
+            status = 'failed';
+          } else {
+            status = category; // 'proses' atau 'pending'
+          }
+          
+          // Tambahkan status ke JSON sebelum parsing
+          item['status'] = status;
+          return SampahData.fromJson(item);
+        }).toList();
+        
+        // Gabungkan riwayat_done dan riwayat_failed ke dalam 'riwayat'
+        if (category == 'riwayat_done' || category == 'riwayat_failed') {
+          categorizedData['riwayat']!.addAll(sampahList);
+        } else {
+          categorizedData[category]!.addAll(sampahList);
+        }
       } else if (response.statusCode == 429) {
         print('⚠️ Too Many Requests! Menunggu 5 detik sebelum mencoba lagi...');
-        await Future.delayed(
-            const Duration(seconds: 5)); // Tunggu sebelum mencoba lagi
-        continue; // Lewati loop, jangan langsung throw error
+        await Future.delayed(const Duration(seconds: 5));
+        continue;
       } else {
         throw Exception('Failed to load data from $url');
       }
@@ -108,7 +123,6 @@ Future<Map<String, List<SampahData>>> fetchSampahData() async {
 
   return categorizedData;
 }
-
 Future<Map<String, List<SampahLiarData>>> fetchSampahLiarData() async {
   final prefs = await SharedPreferences.getInstance();
   final userId = prefs.getInt('user_id') ?? 0;
@@ -118,8 +132,10 @@ Future<Map<String, List<SampahLiarData>>> fetchSampahLiarData() async {
   }
 
   final urls = {
-    'riwayat': [
-      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/done',
+    'riwayat_done': [
+      '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/done'
+    ],
+    'riwayat_failed': [
       '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/failed'
     ],
     'proses': [
@@ -138,15 +154,32 @@ Future<Map<String, List<SampahLiarData>>> fetchSampahLiarData() async {
 
   for (var category in urls.keys) {
     for (var url in urls[category]!) {
-      print("Fetching: $url"); // Debugging URL
       final response = await http.get(Uri.parse(url));
-      print("Response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body)['data'];
-        List<SampahLiarData> sampahList =
-            data.map((item) => SampahLiarData.fromJson(item)).toList();
-        categorizedData[category]!.addAll(sampahList);
+        List<SampahLiarData> sampahList = data.map((item) {
+          // Tentukan status berdasarkan kategori URL
+          String status;
+          if (category == 'riwayat_done') {
+            status = 'done';
+          } else if (category == 'riwayat_failed') {
+            status = 'failed';
+          } else {
+            status = category; // 'proses' atau 'pending'
+          }
+          
+          // Tambahkan status ke JSON sebelum parsing
+          item['status'] = status;
+          return SampahLiarData.fromJson(item);
+        }).toList();
+        
+        // Gabungkan riwayat_done dan riwayat_failed ke dalam 'riwayat'
+        if (category == 'riwayat_done' || category == 'riwayat_failed') {
+          categorizedData['riwayat']!.addAll(sampahList);
+        } else {
+          categorizedData[category]!.addAll(sampahList);
+        }
       } else {
         print("Error fetching $url: ${response.body}");
         throw Exception('Failed to load data from $url');
@@ -154,10 +187,8 @@ Future<Map<String, List<SampahLiarData>>> fetchSampahLiarData() async {
     }
   }
 
-  print("Final Sampah Liar Data: $categorizedData"); // Debugging output akhir
   return categorizedData;
 }
-
 // Fungsi untuk memisahkan sampah liar dan sampah kontainer
 Map<String, List<SampahLiarData>> separateSampahLiarAndKontainer(
     Map<String, List<SampahLiarData>> originalData) {
@@ -680,233 +711,237 @@ class _ActivityPetugasPageState extends State<ActivityPetugasPage>
     );
   }
 
-  Widget _buildSampahCard(dynamic item, int selectedTab, int index) {
-    // Determine card colors based on tab and type with orange theme
-    Color cardColor;
-    Color shadowColor;
-    IconData cardIcon;
+// 5. Ubah fungsi _buildSampahCard untuk menampilkan status yang benar
+Widget _buildSampahCard(dynamic item, int selectedTab, int index) {
+  // Determine card colors based on tab, type, and status
+  Color cardColor;
+  Color shadowColor;
+  IconData cardIcon;
+  String statusText;
 
-    if (selectedTab == 0) {
-      // Riwayat - Success with different orange shades
-      if (selectedDataType == 0) {
-        cardColor = primaryOrange;
-      } else if (selectedDataType == 1) {
-        cardColor = deepOrange;
-      } else {
-        cardColor = containerOrange;
-      }
-      shadowColor = cardColor.withOpacity(0.3);
-      cardIcon = Icons.check_circle;
-    } else if (selectedTab == 1) {
-      // Dalam Proses - Orange
-      cardColor = lightOrange;
-      shadowColor = cardColor.withOpacity(0.3);
-      cardIcon = Icons.hourglass_empty;
+  if (selectedTab == 0) {
+    // Riwayat - Cek status untuk menentukan warna dan icon
+    if (item.status == 'failed') {
+      // Status Failed - Warna merah
+      cardColor = Colors.red;
+      cardIcon = Icons.cancel;
+      statusText = 'Dibatalkan';
     } else {
-      // Pending - Light Orange
-      cardColor = const Color(0xFFFFB366);
-      shadowColor = cardColor.withOpacity(0.3);
-      cardIcon = Icons.pending_actions;
+      // Status Done - Warna hijau atau orange sesuai tipe
+      if (selectedDataType == 0) {
+        cardColor = Colors.green; // Atau bisa tetap primaryOrange
+      } else if (selectedDataType == 1) {
+        cardColor = Colors.green; // Atau bisa tetap deepOrange
+      } else {
+        cardColor = Colors.green; // Atau bisa tetap containerOrange
+      }
+      cardIcon = Icons.check_circle;
+      statusText = 'Selesai';
     }
+    shadowColor = cardColor.withOpacity(0.3);
+  } else if (selectedTab == 1) {
+    // Dalam Proses
+    cardColor = lightOrange;
+    shadowColor = cardColor.withOpacity(0.3);
+    cardIcon = Icons.hourglass_empty;
+    statusText = 'Proses';
+  } else {
+    // Pending
+    cardColor = const Color(0xFFFFB366);
+    shadowColor = cardColor.withOpacity(0.3);
+    cardIcon = Icons.pending_actions;
+    statusText = 'Menunggu';
+  }
 
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 200 + (index * 50)),
-      curve: Curves.easeOutBack,
-      child: GestureDetector(
-        onTap: () async {
-          bool? updated = false;
+  return AnimatedContainer(
+    duration: Duration(milliseconds: 200 + (index * 50)),
+    curve: Curves.easeOutBack,
+    child: GestureDetector(
+      onTap: () async {
+        bool? updated = false;
 
-          // Navigasi ke halaman detail berdasarkan jenis sampah
-          if (selectedDataType == 0) {
-            // Sampah Daur Ulang
-            updated = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DetailSampahDaurUlangPage(
-                  sampah: item as SampahData,
+        if (selectedDataType == 0) {
+          updated = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailSampahDaurUlangPage(
+                sampah: item as SampahData,
+              ),
+            ),
+          );
+        } else {
+          updated = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailSampahLiarPage(
+                sampah: item as SampahLiarData,
+              ),
+            ),
+          );
+        }
+
+        if (updated == true) {
+          setState(() {
+            futureSampahData = fetchSampahData();
+            futureSampahLiarData = fetchSampahLiarData();
+          });
+          _updateCounts();
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor,
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: cardColor,
+                  width: 5,
                 ),
               ),
-            );
-          } else {
-            // Sampah Liar atau Kontainer
-            updated = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DetailSampahLiarPage(
-                  sampah: item as SampahLiarData,
-                ),
-              ),
-            );
-          }
-
-          // Jika status diperbarui, lakukan refresh pada daftar dan counts
-          if (updated == true) {
-            setState(() {
-              futureSampahData = fetchSampahData();
-              futureSampahLiarData = fetchSampahLiarData();
-            });
-            _updateCounts(); // Tambahkan ini untuk update badge counts
-          }
-        },
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: shadowColor,
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: cardColor,
-                    width: 5,
-                  ),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: cardColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            cardIcon,
-                            color: cardColor,
-                            size: 20,
-                          ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: cardColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
+                        child: Icon(
+                          cardIcon,
+                          color: cardColor,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              selectedDataType == 0
+                                  ? (item as SampahData).name
+                                  : (item as SampahLiarData).email,
+                              style: const TextStyle(
+                                color: Color(0xFF2C3E50),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: cardColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
                                 selectedDataType == 0
-                                    ? (item as SampahData).name
-                                    : (item as SampahLiarData).email,
-                                style: const TextStyle(
-                                  color: Color(0xFF2C3E50),
-                                  fontSize: 16,
+                                    ? 'Daur Ulang'
+                                    : selectedDataType == 1
+                                        ? 'Sampah Liar'
+                                        : 'Sampah Kontainer',
+                                style: TextStyle(
+                                  color: cardColor,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: cardColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  selectedDataType == 0
-                                      ? 'Daur Ulang'
-                                      : selectedDataType == 1
-                                          ? 'Sampah Liar'
-                                          : 'Sampah Kontainer',
-                                  style: TextStyle(
-                                    color: cardColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          color: const Color(0xFF95A5A6),
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      item.deskripsi,
-                      style: const TextStyle(
-                        color: Color(0xFF5D6D7E),
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              color: const Color(0xFF95A5A6),
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              DateFormat('dd MMM yyyy').format(item.tanggal),
-                              style: const TextStyle(
-                                color: Color(0xFF95A5A6),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: const Color(0xFF95A5A6),
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    item.deskripsi,
+                    style: const TextStyle(
+                      color: Color(0xFF5D6D7E),
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            color: const Color(0xFF95A5A6),
+                            size: 14,
                           ),
-                          decoration: BoxDecoration(
-                            color: cardColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            selectedTab == 0
-                                ? 'Selesai'
-                                : selectedTab == 1
-                                    ? 'Proses'
-                                    : 'Menunggu',
-                            style: TextStyle(
-                              color: cardColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                          const SizedBox(width: 4),
+                          Text(
+                            DateFormat('dd MMM yyyy').format(item.tanggal),
+                            style: const TextStyle(
+                              color: Color(0xFF95A5A6),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                        decoration: BoxDecoration(
+                          color: cardColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          statusText, // Menggunakan statusText yang sudah disesuaikan
+                          style: TextStyle(
+                            color: cardColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   Future<void> _loadUserStatus() async {
     final prefs = await SharedPreferences.getInstance();
     _status = prefs.getString('status') ?? 'tidak_ready';

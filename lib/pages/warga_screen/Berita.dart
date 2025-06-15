@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:dlh_project/pages/warga_screen/detail_berita.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/intl.dart';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
 
@@ -374,13 +375,15 @@ class Berita extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '5h ago',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: const Color(0xFFFF6600),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+  berita['created_at'] != null 
+    ? DateFormat('dd/MM/yyyy').format(DateTime.parse(berita['created_at']))
+    : 'Unknown',
+  style: TextStyle(
+    fontSize: 10,
+    color: const Color(0xFFFF6600),
+    fontWeight: FontWeight.w500,
+  ),
+),
                         ),
                       ],
                     ),

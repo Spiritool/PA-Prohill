@@ -400,8 +400,7 @@ class _mapPetugasState extends State<mapPetugas> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                DetailSampahDaurUlangPage(sampah: sampahData),
+            builder: (context) => DetailSampahDaurUlangPage(sampah: sampahData),
           ),
         );
       } catch (e) {
@@ -415,8 +414,7 @@ class _mapPetugasState extends State<mapPetugas> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                DetailSampahLiarPage(sampah: sampahLiarData),
+            builder: (context) => DetailSampahLiarPage(sampah: sampahLiarData),
           ),
         );
       } catch (e) {
@@ -429,14 +427,14 @@ class _mapPetugasState extends State<mapPetugas> {
   }
 
   void _showErrorSnackBar(String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red,
-      duration: const Duration(seconds: 3),
-    ),
-  );
-}
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   void _showDetail(LocationData location) {
     showModalBottomSheet(
@@ -911,6 +909,98 @@ class _mapPetugasState extends State<mapPetugas> {
     );
   }
 
+  void _showTPADetail() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.green.shade400, Colors.green.shade700],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.recycling,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Tempat Pemrosesan Akhir (TPA)',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildDetailRow(Icons.location_on, 'Lokasi', 'TPA Kota'),
+              _buildDetailRow(Icons.info, 'Status', 'Aktif'),
+              _buildDetailRow(
+                  Icons.schedule, 'Jam Operasional', '06:00 - 18:00'),
+              if (currentPosition != null)
+                _buildDetailRow(
+                    Icons.straighten,
+                    'Jarak dari lokasi Anda',
+                    _formatDistance(
+                        calculateDistanceInKm(currentPosition!, lokasiTPA))),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _mapController.move(lokasiTPA, 18.0);
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.navigation),
+                  label: const Text('Navigasi ke TPA'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildEnhancedLegendItem(Color color, IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1021,13 +1111,83 @@ class _mapPetugasState extends State<mapPetugas> {
                         size: const Size(40, 40),
                         markers: [
                           Marker(
-                            width: 40,
-                            height: 40,
+                            width: 60,
+                            height: 60,
                             point: lokasiTPA,
-                            child: const FaIcon(
-                              FontAwesomeIcons.dumpster,
-                              color: Colors.brown,
-                              size: 30,
+                            child: GestureDetector(
+                              onTap: () => _showTPADetail(),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Outer glow effect
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.green.withOpacity(0.3),
+                                          blurRadius: 20,
+                                          spreadRadius: 5,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Main container
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.green.shade400,
+                                          Colors.green.shade700
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.white, width: 3),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.recycling,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                  ),
+                                  // Label badge
+                                  Positioned(
+                                    bottom: -5,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade800,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: Colors.white, width: 1),
+                                      ),
+                                      child: const Text(
+                                        'TPA',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           ...processedLocations.map((location) {
@@ -1143,13 +1303,83 @@ class _mapPetugasState extends State<mapPetugas> {
                           );
                         }),
                         Marker(
-                          width: 40,
-                          height: 40,
+                          width: 60,
+                          height: 60,
                           point: lokasiTPA,
-                          child: const FaIcon(
-                            FontAwesomeIcons.dumpster,
-                            color: Colors.brown,
-                            size: 30,
+                          child: GestureDetector(
+                            onTap: () => _showTPADetail(),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Outer glow effect
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.green.withOpacity(0.3),
+                                        blurRadius: 20,
+                                        spreadRadius: 5,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Main container
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.green.shade400,
+                                        Colors.green.shade700
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.white, width: 3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.recycling,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                                // Label badge
+                                Positioned(
+                                  bottom: -5,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade800,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                          color: Colors.white, width: 1),
+                                    ),
+                                    child: const Text(
+                                      'TPA',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

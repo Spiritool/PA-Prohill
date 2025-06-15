@@ -27,10 +27,10 @@ Future<List<SampahData>> fetchSampahData() async {
   }
 
   final urls = [
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/proses',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/done',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/pending',
-    '$baseipapi/api/pengangkutan-sampah/history/$userId/failed',
+    '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
+    '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/done',
+    '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/pending',
+    '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/failed',
   ];
 
   print('URLs yang akan diakses:');

@@ -76,7 +76,7 @@ class DetailSampahLiarPage extends StatelessWidget {
     final String? token = prefs.getString('token');
 
     final String apiUrl =
-        '$baseipapi/api/pengangkatan-sampah-liar/failed/$idSampah';
+        '$baseipapi/api/pengangkutan-sampah-liar/failed/$idSampah';
 
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ class DetailSampahLiarPage extends StatelessWidget {
     };
 
     final Map<String, dynamic> body = {
-      'id_user_petugas': idUserPetugas,
+      // Tambahkan isi body jika diperlukan
     };
 
     try {
@@ -95,13 +95,19 @@ class DetailSampahLiarPage extends StatelessWidget {
       );
 
       if (response.statusCode == 200) {
-        print('Status updated successfully.');
+        print('✅ Status updated successfully.');
       } else {
+        // Cetak response body saat gagal
+        print('❌ Gagal update status. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+
         final errorMessage =
             jsonDecode(response.body)['message'] ?? 'Unknown error';
         throw Exception('Failed to update status: $errorMessage');
       }
     } catch (e) {
+      print('🛑 Exception caught: $e');
+      // Jika ingin melempar ulang error agar ditangani di UI, tetap lempar
       throw Exception('Error updating status: $e');
     }
   }
@@ -270,10 +276,10 @@ class DetailSampahLiarPage extends StatelessWidget {
 
   Widget _buildBuktiFoto(List<String> fotoUrls) {
     final baseUrl = '$baseipapi/storage/foto-sampah/';
-    
+
     // Filter out empty or null URLs
     final validUrls = fotoUrls.where((url) => url.isNotEmpty).toList();
-    
+
     if (validUrls.isEmpty) {
       return Container(
         height: 150,
@@ -541,14 +547,14 @@ class DetailSampahLiarPage extends StatelessWidget {
       }
     } else if (sampah.status == "proses") {
       Navigator.pop(context); // Tutup loading
-      
+
       final result = await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => InputFotoSampah(idSampah: sampah.id),
         ),
       );
-      
+
       if (result != null && result) {
         showDialog(
           context: context,
@@ -559,7 +565,7 @@ class DetailSampahLiarPage extends StatelessWidget {
             ),
           ),
         );
-        
+
         try {
           await updateStatusSampahLiar(sampah.id, idUser, 'selesai');
           Navigator.pop(context); // Tutup loading
@@ -649,7 +655,8 @@ class DetailSampahLiarPage extends StatelessWidget {
                   children: [
                     // Status Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: _getStatusColor(sampah.status ?? ""),
                         borderRadius: BorderRadius.circular(20),
@@ -664,7 +671,7 @@ class DetailSampahLiarPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Email
                     _buildInfoRow(
                       icon: Icons.email,
@@ -673,12 +680,13 @@ class DetailSampahLiarPage extends StatelessWidget {
                       iconColor: primaryOrange,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Tanggal
                     _buildInfoRow(
                       icon: Icons.calendar_today,
                       title: "Tanggal Laporan",
-                      content: DateFormat('dd MMMM yyyy').format(sampah.tanggal),
+                      content:
+                          DateFormat('dd MMMM yyyy').format(sampah.tanggal),
                       iconColor: primaryOrange,
                     ),
                   ],
@@ -692,7 +700,8 @@ class DetailSampahLiarPage extends StatelessWidget {
               child: Column(
                 children: [
                   // Contact Card
-                  _buildCard(child: Column(
+                  _buildCard(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionTitle("Informasi Kontak"),
@@ -713,11 +722,12 @@ class DetailSampahLiarPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Location Card
-                  _buildCard(child: Column(
+                  _buildCard(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionTitle("Lokasi"),
@@ -725,7 +735,8 @@ class DetailSampahLiarPage extends StatelessWidget {
                         _buildInfoRow(
                           icon: Icons.location_on,
                           title: "Alamat",
-                          content: "Lokasi Sampah Liar", // Sesuaikan dengan data yang tersedia
+                          content:
+                              "Lokasi Sampah Liar", // Sesuaikan dengan data yang tersedia
                           iconColor: primaryOrange,
                         ),
                         const SizedBox(height: 12),
@@ -748,11 +759,12 @@ class DetailSampahLiarPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Description Card
-                  _buildCard(child: Column(
+                  _buildCard(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionTitle("Deskripsi"),
@@ -763,7 +775,8 @@ class DetailSampahLiarPage extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: lightOrange,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: accentOrange.withOpacity(0.3)),
+                            border: Border.all(
+                                color: accentOrange.withOpacity(0.3)),
                           ),
                           child: Text(
                             sampah.deskripsi,
@@ -777,11 +790,12 @@ class DetailSampahLiarPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Photo Card
-                  _buildCard(child: Column(
+                  _buildCard(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionTitle("Foto Bukti"),
@@ -790,13 +804,14 @@ class DetailSampahLiarPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   // Foto Pengangkutan (hanya jika status done)
-                  if ((sampah.status?.toLowerCase() ?? "") == "done" && 
-                      sampah.fotoPengangkutan != null && 
+                  if ((sampah.status?.toLowerCase() ?? "") == "done" &&
+                      sampah.fotoPengangkutan != null &&
                       sampah.fotoPengangkutan!.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    _buildCard(child: Column(
+                    _buildCard(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionTitle("Foto Bukti Pengangkutan"),
@@ -806,7 +821,7 @@ class DetailSampahLiarPage extends StatelessWidget {
                       ),
                     ),
                   ],
-                  
+
                   const SizedBox(height: 100), // Space for bottom buttons
                 ],
               ),
@@ -853,9 +868,9 @@ class DetailSampahLiarPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 12),
-                  
+
                   // Process Button
                   Expanded(
                     child: ElevatedButton(
