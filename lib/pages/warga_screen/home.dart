@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage> {
         userRole == 'petugas' ? const HistoryPetugas() : const History(),
       const Berita(),
       const Uptd(),
-      const UserProfile(selectedIndex: 2,),
+      const UserProfile(),
     ];
 
     return Scaffold(

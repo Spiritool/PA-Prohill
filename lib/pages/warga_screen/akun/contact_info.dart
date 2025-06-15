@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:dlh_project/pages/warga_screen/akun/akun.dart';
 import 'package:dlh_project/pages/warga_screen/akun/tambah_alamat.dart';
 import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart';
 import 'package:dlh_project/pages/form_opening/login.dart';
@@ -106,15 +105,7 @@ class _ContactInfoState extends State<ContactInfo> {
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new,
                     color: Color(0xFFFF6600), size: 20),
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            Akun(selectedIndex: 2)), // atau tujuan final kamu
-                    (route) => false,
-                  );
-                },
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
             const SizedBox(width: 16),
@@ -392,9 +383,15 @@ class _ContactInfoState extends State<ContactInfo> {
                   child: IconButton(
                     icon: const Icon(Icons.add, color: Colors.white, size: 20),
                     onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const TambahAlamat())),
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const TambahAlamat()))
+                        .then((result) {
+                      // Refresh data setelah kembali dari TambahAlamat
+                      if (result == true) {
+                        _fetchAlamatData();
+                      }
+                    }),
                   ),
                 ),
               ],

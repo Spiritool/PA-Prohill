@@ -40,6 +40,7 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
   void initState() {
     super.initState();
     fetchData();
+    _refreshData();
   }
 
   Future<void> _getImage(ImageSource source) async {
@@ -50,6 +51,16 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
         _photoSelected = true;
       });
     }
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      _alamatList.clear();
+      _kecamatanList.clear();
+      _pilihKecamatan = null;
+      _pilihAlamat = null;
+    });
+    await fetchData();
   }
 
   void _showImageSourceSelection() {
@@ -321,13 +332,22 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
+                              onPressed: () async {
+                                Navigator.of(context)
+                                    .pop(); // Tutup dialog dulu
+
+                                // Navigate dengan await untuk tunggu return
+                                final result = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => ContactInfo(),
                                   ),
                                 );
+
+                                // Refresh data setelah kembali dari ContactInfo
+                                if (result != null || mounted) {
+                                  _refreshData();
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4CAF50),
