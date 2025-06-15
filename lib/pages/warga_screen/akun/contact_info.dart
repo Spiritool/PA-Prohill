@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dlh_project/pages/warga_screen/akun/akun.dart';
 import 'package:dlh_project/pages/warga_screen/akun/tambah_alamat.dart';
 import 'package:dlh_project/pages/warga_screen/akun/ganti_email.dart';
 import 'package:dlh_project/pages/form_opening/login.dart';
@@ -105,7 +106,15 @@ class _ContactInfoState extends State<ContactInfo> {
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new,
                     color: Color(0xFFFF6600), size: 20),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            Akun(selectedIndex: 2)), // atau tujuan final kamu
+                    (route) => false,
+                  );
+                },
               ),
             ),
             const SizedBox(width: 16),

@@ -8,20 +8,8 @@ import 'package:dlh_project/pages/warga_screen/syarat.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class UserProfileApp extends StatelessWidget {
-  const UserProfileApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: UserProfile(),
-    );
-  }
-}
-
 class UserProfile extends StatefulWidget {
-  const UserProfile({super.key});
+  const UserProfile({super.key, required int selectedIndex});
 
   @override
   State<UserProfile> createState() => _UserProfileState();
@@ -442,7 +430,10 @@ class _UserProfileState extends State<UserProfile> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const Akun()),
+                          MaterialPageRoute(
+                              builder: (context) => const Akun(
+                                    selectedIndex: 1,
+                                  )),
                         );
                       },
                     )

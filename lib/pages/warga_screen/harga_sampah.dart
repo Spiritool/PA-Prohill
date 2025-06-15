@@ -165,7 +165,7 @@ class _HargaSampahState extends State<HargaSampah> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Rp ${formatHarga(item['Harga_Beli'] ?? '0')}/kg',
+                      'Rp. ${formatHarga(item['Harga_Beli'] ?? '0')},- /kg',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -528,7 +528,7 @@ class _HargaSampahState extends State<HargaSampah> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '${selected.quantity} kg × Rp ${formatHarga(harga.toString())}',
+                                        '${selected.quantity} kg × Rp. ${formatHarga(harga.toString())},-',
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: Colors.grey[600],
@@ -536,7 +536,7 @@ class _HargaSampahState extends State<HargaSampah> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Rp ${formatHarga((harga * selected.quantity).toString())}',
+                                        'Rp. ${formatHarga((harga * selected.quantity).toString())},-',
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -602,7 +602,7 @@ class _HargaSampahState extends State<HargaSampah> {
                             ),
                           ),
                           Text(
-                            'Rp ${formatHarga(totalHarga.toString())}',
+                            'Rp. ${formatHarga(totalHarga.toString())},-',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -612,26 +612,26 @@ class _HargaSampahState extends State<HargaSampah> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Container(
-                        width: double.infinity,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.green.shade400,
-                              Colors.green.shade600
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.green.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        ),
+                      // Container(
+                      //   width: double.infinity,
+                      //   height: 56,
+                      //   decoration: BoxDecoration(
+                      //     gradient: LinearGradient(
+                      //       colors: [
+                      //         Colors.green.shade400,
+                      //         Colors.green.shade600
+                      //       ],
+                      //     ),
+                      //     borderRadius: BorderRadius.circular(28),
+                      //     boxShadow: [
+                      //       BoxShadow(
+                      //         color: Colors.green.withOpacity(0.3),
+                      //         blurRadius: 10,
+                      //         offset: const Offset(0, 5),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -845,7 +845,7 @@ class _HargaSampahState extends State<HargaSampah> {
                                       borderRadius: BorderRadius.circular(15),
                                     ),
                                     child: Text(
-                                      'Rp ${formatHarga(hargaBeli)}/kg',
+                                      'Rp. ${formatHarga(hargaBeli)},- /kg',
                                       style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,

@@ -322,9 +322,12 @@ class _SampahTerpilahState extends State<SampahTerpilah> {
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) => ContactInfo(),
-                                ));
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ContactInfo(),
+                                  ),
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4CAF50),

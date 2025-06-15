@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dlh_project/pages/warga_screen/akun/contact_info.dart';
 import 'package:dlh_project/pages/warga_screen/akun/general_info.dart';
+import 'package:dlh_project/pages/warga_screen/akun/userprofile.dart';
 import 'package:dlh_project/pages/warga_screen/qna.dart';
 import 'package:dlh_project/pages/warga_screen/akun/tambah_alamat.dart';
 import 'package:dlh_project/widget/edit_alamat.dart';
@@ -46,7 +47,7 @@ class AlamatService {
 }
 
 class Akun extends StatefulWidget {
-  const Akun({super.key});
+  const Akun({super.key, required int selectedIndex});
 
   @override
   _AkunState createState() => _AkunState();
@@ -123,7 +124,13 @@ class _AkunState extends State<Akun> {
               child: IconButton(
                 icon: const Icon(Icons.chevron_left, color: Color(0xFFFF6600)),
                 onPressed: () {
-                  Navigator.pop(context);
+Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            UserProfile(selectedIndex: 2)), // atau tujuan final kamu
+                    (route) => false,
+                  );
                 },
               ),
             ),
