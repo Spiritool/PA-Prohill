@@ -33,6 +33,7 @@ class LocationData {
   final int estimatedTime;
   final Map<String, dynamic>
       originalData; // TAMBAHKAN INI untuk menyimpan data original
+  final bool isKontainer;
 
   LocationData({
     required this.position,
@@ -41,7 +42,8 @@ class LocationData {
     required this.status,
     required this.distance,
     required this.estimatedTime,
-    required this.originalData, // TAMBAHKAN INI
+    required this.originalData,
+    this.isKontainer = false,
   });
 }
 
@@ -114,7 +116,8 @@ class _mapPetugasState extends State<mapPetugas> {
           status: item['status'] ?? 'unknown',
           distance: distance,
           estimatedTime: estimatedTime,
-          originalData: item, // TAMBAHKAN INI untuk menyimpan data asli
+          originalData: item,
+          isKontainer: item['is_kontainer'] ?? false, // TAMBAH INI
         ));
       }
     }
@@ -153,6 +156,18 @@ class _mapPetugasState extends State<mapPetugas> {
   }
 
   Color _getMarkerColor(LocationData location) {
+    // Jika ini adalah sampah kontainer, beri warna khusus
+    if (location.isKontainer) {
+      if (nearestLocation != null &&
+          location.position.latitude == nearestLocation!.position.latitude &&
+          location.position.longitude == nearestLocation!.position.longitude) {
+        return Colors.purple; // Kontainer terdekat = ungu
+      } else {
+        return Colors.deepPurple; // Kontainer lainnya = ungu tua
+      }
+    }
+
+    // Logic warna yang sudah ada
     if (nearestLocation != null &&
         location.position.latitude == nearestLocation!.position.latitude &&
         location.position.longitude == nearestLocation!.position.longitude) {
@@ -167,7 +182,9 @@ class _mapPetugasState extends State<mapPetugas> {
   }
 
   IconData _getMarkerIcon(String jenisSampah) {
-    if (jenisSampah.contains('Liar')) {
+    if (jenisSampah.contains('Kontainer')) {
+      return Icons.delete_outline; // Icon khusus untuk kontainer
+    } else if (jenisSampah.contains('Liar')) {
       return Icons.delete_forever;
     } else if (jenisSampah.contains('Daur Ulang')) {
       return Icons.recycling;
@@ -193,6 +210,7 @@ class _mapPetugasState extends State<mapPetugas> {
     }
   }
 
+// 2. UPDATE METHOD _fetchKoordinatFromApi - Tambah pengecekan email
   Future<void> _fetchKoordinatFromApi(int userId) async {
     final urls = [
       '$baseipapi/api/pengangkutan-sampah-liar/history/by-petugas/$userId/proses',
@@ -220,7 +238,9 @@ class _mapPetugasState extends State<mapPetugas> {
           if (dataList is List) {
             for (final item in dataList) {
               String? koordinat;
+              bool isKontainer = false; // TAMBAH VARIABLE INI
 
+              // Cek koordinat seperti biasa
               if (item['kordinat'] != null && item['kordinat'] is String) {
                 koordinat = item['kordinat'];
               } else if (item['alamat'] != null &&
@@ -240,15 +260,47 @@ class _mapPetugasState extends State<mapPetugas> {
                 }
               }
 
+              // TAMBAH PENGECEKAN EMAIL UNTUK SAMPAH LIAR
+              if (url.contains('sampah-liar')) {
+                // Cek email dari berbagai kemungkinan struktur data
+                String? email;
+
+                // Cek langsung di item
+                if (item['email'] != null) {
+                  email = item['email'].toString();
+                }
+                // Cek di warga
+                else if (item['warga'] != null &&
+                    item['warga']['email'] != null) {
+                  email = item['warga']['email'].toString();
+                }
+                // Cek di user
+                else if (item['user'] != null &&
+                    item['user']['email'] != null) {
+                  email = item['user']['email'].toString();
+                }
+                // Cek di pelapor jika ada
+                else if (item['pelapor'] != null &&
+                    item['pelapor']['email'] != null) {
+                  email = item['pelapor']['email'].toString();
+                }
+
+                // Jika email adalah admin@gmail.com, ubah jadi kontainer
+                if (email != null && email.toLowerCase() == 'admin@gmail.com') {
+                  jenisSampah = 'Sampah Kontainer';
+                  isKontainer = true;
+                }
+              }
+
               if (koordinat != null && koordinat.contains('query=')) {
-                // TAMBAHKAN SEMUA DATA YANG DIPERLUKAN
                 result.add({
                   'kordinat': koordinat,
                   'jenis_sampah': jenisSampah,
                   'item_id': item['id'],
                   'status': item['status'],
-                  'full_data': item, // SIMPAN SEMUA DATA ASLI
-                  'api_source': url, // UNTUK TAHU DARI API MANA
+                  'full_data': item,
+                  'api_source': url,
+                  'is_kontainer': isKontainer, // TAMBAH INI
                 });
               }
             }
@@ -390,41 +442,120 @@ class _mapPetugasState extends State<mapPetugas> {
     }
   }
 
-  void _navigateToDetailPage(LocationData location) {
-    final fullData = location.originalData['full_data'];
+void _navigateToDetailPage(LocationData location) async {
+  final fullData = location.originalData['full_data'];
 
-    if (location.jenisSampah.contains('Daur Ulang')) {
-      // Untuk sampah daur ulang, convert ke SampahData
-      try {
-        final sampahData = SampahData.fromJson(fullData);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailSampahDaurUlangPage(sampah: sampahData),
-          ),
-        );
-      } catch (e) {
-        debugPrint('Error parsing SampahData: $e');
-        _showErrorSnackBar('Gagal memuat detail laporan sampah daur ulang');
+  if (location.jenisSampah.contains('Daur Ulang')) {
+    // Untuk sampah daur ulang
+    try {
+      final sampahData = SampahData.fromJson(fullData);
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DetailSampahDaurUlangPage(sampah: sampahData),
+        ),
+      );
+      
+      // Jika ada perubahan status, refresh data
+      if (result == true) {
+        _refreshMapData();
       }
-    } else if (location.jenisSampah.contains('Liar')) {
-      // Untuk sampah liar, convert ke SampahLiarData
-      try {
-        final sampahLiarData = SampahLiarData.fromJson(fullData);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailSampahLiarPage(sampah: sampahLiarData),
-          ),
-        );
-      } catch (e) {
-        debugPrint('Error parsing SampahLiarData: $e');
-        _showErrorSnackBar('Gagal memuat detail laporan sampah liar');
-      }
-    } else {
-      _showErrorSnackBar('Jenis sampah tidak dikenali');
+    } catch (e) {
+      debugPrint('Error parsing SampahData: $e');
+      _showErrorSnackBar('Gagal memuat detail laporan sampah daur ulang');
     }
+  } else if (location.jenisSampah.contains('Liar') ||
+      location.jenisSampah.contains('Kontainer')) {
+    // Untuk sampah liar DAN kontainer
+    try {
+      final sampahLiarData = SampahLiarData.fromJson(fullData);
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DetailSampahLiarPage(sampah: sampahLiarData),
+        ),
+      );
+      
+      // Jika ada perubahan status, refresh data
+      if (result == true) {
+        _refreshMapData();
+      }
+    } catch (e) {
+      debugPrint('Error parsing SampahLiarData: $e');
+      _showErrorSnackBar(
+          'Gagal memuat detail laporan ${location.jenisSampah.toLowerCase()}');
+    }
+  } else {
+    _showErrorSnackBar('Jenis sampah tidak dikenali');
   }
+}
+
+Future<void> _refreshMapData() async {
+  // Tampilkan loading indicator
+  _showLoadingSnackBar('Memperbarui data...');
+  
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id') ?? 0;
+
+    // Fetch ulang data dari API
+    await _fetchKoordinatFromApi(userId);
+    await _processLocationData();
+
+    // Generate ulang route jika ada koordinat
+    if (koordinatList.isNotEmpty) {
+      await _generateRoute();
+    }
+
+    // Tutup loading dan tampilkan sukses
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    _showSuccessSnackBar('Data berhasil diperbarui');
+    
+  } catch (e) {
+    debugPrint('Error saat refresh: $e');
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    _showErrorSnackBar('Gagal memperbarui data');
+  }
+}
+
+void _showLoadingSnackBar(String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(message),
+        ],
+      ),
+      backgroundColor: Colors.blue,
+      duration: const Duration(seconds: 30), // Lama karena akan di-hide manual
+    ),
+  );
+}
+
+void _showSuccessSnackBar(String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.check_circle, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(message),
+        ],
+      ),
+      backgroundColor: Colors.green,
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -489,40 +620,21 @@ class _mapPetugasState extends State<mapPetugas> {
               const SizedBox(height: 20),
 
               // GANTI BAGIAN TOMBOL DENGAN YANG BARU
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _mapController.move(location.position, 18.0);
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.navigation),
-                      label: const Text('Navigasi'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context); // Tutup modal dulu
+                    _navigateToDetailPage(location);
+                  },
+                  icon: const Icon(Icons.info_outline),
+                  label: const Text('Detail Laporan'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context); // Tutup modal dulu
-                        _navigateToDetailPage(location);
-                      },
-                      icon: const Icon(Icons.info_outline),
-                      label: const Text('Detail Laporan'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 20),
             ],
@@ -602,7 +714,7 @@ class _mapPetugasState extends State<mapPetugas> {
 
   Widget _buildEnhancedLocationsList() {
     return Container(
-      height: _maxBottomSheetHeight, // Langsung maksimum, tidak ada animasi
+      height: _maxBottomSheetHeight,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -617,7 +729,7 @@ class _mapPetugasState extends State<mapPetugas> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header area (tidak bisa di-tap lagi)
+          // Header area
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -672,7 +784,7 @@ class _mapPetugasState extends State<mapPetugas> {
             ),
           ),
 
-          // Legend
+          // Legend - TAMBAH LEGEND KONTAINER
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -687,12 +799,16 @@ class _mapPetugasState extends State<mapPetugas> {
                 const SizedBox(width: 8),
                 _buildEnhancedLegendItem(
                     Colors.grey, Icons.location_off, '> 5km'),
+                const SizedBox(width: 8),
+                // TAMBAH LEGEND KONTAINER
+                _buildEnhancedLegendItem(
+                    Colors.purple, Icons.delete_outline, 'Kontainer'),
               ],
             ),
           ),
           const SizedBox(height: 16),
 
-          // List
+          // List items (tidak perlu diubah, sudah otomatis menggunakan warna dan icon yang baru)
           Flexible(
             child: processedLocations.isEmpty
                 ? const Center(
@@ -1104,119 +1220,118 @@ class _mapPetugasState extends State<mapPetugas> {
               TileLayer(
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
               ),
-               MarkerLayer(
-                      markers: [
-                        ...processedLocations.map((location) {
-                          return Marker(
-                            width: 40,
-                            height: 40,
-                            point: location.position,
-                            child: GestureDetector(
-                              onTap: () => _showDetail(location),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _getMarkerColor(location)
-                                          .withOpacity(0.5),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  _getMarkerIcon(location.jenisSampah),
-                                  color: _getMarkerColor(location),
-                                  size: 30,
-                                ),
+              MarkerLayer(
+                markers: [
+                  ...processedLocations.map((location) {
+                    return Marker(
+                      width: 40,
+                      height: 40,
+                      point: location.position,
+                      child: GestureDetector(
+                        onTap: () => _showDetail(location),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    _getMarkerColor(location).withOpacity(0.5),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                            ),
-                          );
-                        }),
-                        Marker(
-                          width: 60,
-                          height: 60,
-                          point: lokasiTPA,
-                          child: GestureDetector(
-                            onTap: () => _showTPADetail(),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // Outer glow effect
-                                Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.green.withOpacity(0.3),
-                                        blurRadius: 20,
-                                        spreadRadius: 5,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // Main container
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.green.shade400,
-                                        Colors.green.shade700
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: Colors.white, width: 3),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.recycling,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                ),
-                                // Label badge
-                                Positioned(
-                                  bottom: -5,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.shade800,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                          color: Colors.white, width: 1),
-                                    ),
-                                    child: const Text(
-                                      'TPA',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
+                            ],
+                          ),
+                          child: Icon(
+                            _getMarkerIcon(location.jenisSampah),
+                            color: _getMarkerColor(location),
+                            size: 30,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  Marker(
+                    width: 60,
+                    height: 60,
+                    point: lokasiTPA,
+                    child: GestureDetector(
+                      onTap: () => _showTPADetail(),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Outer glow effect
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.3),
+                                  blurRadius: 20,
+                                  spreadRadius: 5,
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
+                          // Main container
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.green.shade400,
+                                  Colors.green.shade700
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.recycling,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                          // Label badge
+                          Positioned(
+                            bottom: -5,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade800,
+                                borderRadius: BorderRadius.circular(12),
+                                border:
+                                    Border.all(color: Colors.white, width: 1),
+                              ),
+                              child: const Text(
+                                'TPA',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
+                ],
+              ),
               if (routePoints.isNotEmpty)
                 PolylineLayer(
                   polylines: [
