@@ -896,23 +896,23 @@ Widget _buildSampahCard(dynamic item, int selectedTab, int index) {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            color: const Color(0xFF95A5A6),
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            DateFormat('dd MMM yyyy').format(item.tanggal),
-                            style: const TextStyle(
-                              color: Color(0xFF95A5A6),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+  children: [
+    Icon(
+      Icons.access_time,
+      color: const Color(0xFF95A5A6),
+      size: 14,
+    ),
+    const SizedBox(width: 4),
+    Text(
+      DateFormat('dd MMM yyyy • HH:mm').format(item.tanggal),
+      style: const TextStyle(
+        color: Color(0xFF95A5A6),
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  ],
+),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,

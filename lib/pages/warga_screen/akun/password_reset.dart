@@ -92,8 +92,8 @@ class _PasswordResetState extends State<PasswordReset>
       return;
     }
 
-    if (newPassword.length < 6) {
-      _showSnackBar('Password baru minimal 6 karakter', isError: true);
+    if (newPassword.length < 8) {
+      _showSnackBar('Password baru minimal 8 karakter', isError: true);
       return;
     }
 
@@ -137,7 +137,7 @@ class _PasswordResetState extends State<PasswordReset>
         await Future.delayed(const Duration(seconds: 1));
         Navigator.pop(context);
       } else {
-        String errorMessage = responseData['message'] ?? 'Terjadi kesalahan';
+        String errorMessage = responseData['message'] ?? 'Terjadi kesalahan pastikan password lama benar';
         if (responseData.containsKey('errors')) {
           final errors = responseData['errors'];
           if (errors is Map) {

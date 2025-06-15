@@ -139,7 +139,52 @@ class _PenimbanganState extends State<Penimbangan> {
     });
   }
 
+  // Validasi apakah semua item memiliki berat yang valid
+  bool _validateWeights() {
+    if (_selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pilih minimal satu barang untuk ditimbang'),
+          backgroundColor: Colors.orange.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return false;
+    }
+
+    List<String> invalidItems = [];
+    for (var item in _selectedItems) {
+      double weight = item['jumlah'] ?? 0.0;
+      if (weight <= 0) {
+        invalidItems.add(item['Nama_Barang']);
+      }
+    }
+
+    if (invalidItems.isNotEmpty) {
+      String itemNames = invalidItems.length > 1 
+        ? invalidItems.take(invalidItems.length - 1).join(', ') + ' dan ' + invalidItems.last
+        : invalidItems.first;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Harap masukkan berat yang valid untuk: $itemNames'),
+          backgroundColor: Colors.orange.shade600,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   Future<void> _submitData() async {
+    // Validasi terlebih dahulu
+    if (!_validateWeights()) {
+      return;
+    }
+
     final listString = _selectedItems
         .map((item) => "${item['Nama_Barang']}: ${item['jumlah']}kg")
         .join(", ");
@@ -207,6 +252,18 @@ class _PenimbanganState extends State<Penimbangan> {
         ),
       );
     }
+  }
+
+  // Fungsi untuk mengecek apakah tombol submit bisa ditekan
+  bool _canSubmit() {
+    if (_selectedItems.isEmpty) return false;
+    
+    for (var item in _selectedItems) {
+      double weight = item['jumlah'] ?? 0.0;
+      if (weight <= 0) return false;
+    }
+    
+    return true;
   }
 
   @override
@@ -349,12 +406,14 @@ class _PenimbanganState extends State<Penimbangan> {
                 final hargaPerKg = double.tryParse(item['Harga_Beli'].toString()) ?? 0.0;
                 final jumlah = item['jumlah'] ?? 0.0;
                 final total = jumlah * hargaPerKg;
+                final hasValidWeight = jumlah > 0;
                 
                 return Card(
                   elevation: 2,
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
+                    side: !hasValidWeight ? BorderSide(color: Colors.orange.shade300, width: 1) : BorderSide.none,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -373,6 +432,24 @@ class _PenimbanganState extends State<Penimbangan> {
                                 ),
                               ),
                             ),
+                            if (!hasValidWeight)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.orange.shade300),
+                                ),
+                                child: Text(
+                                  'Belum diinput',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade700,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(width: 8),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.red),
                               onPressed: () {
@@ -401,15 +478,29 @@ class _PenimbanganState extends State<Penimbangan> {
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 decoration: InputDecoration(
                                   labelText: 'Berat (kg)',
-                                  labelStyle: TextStyle(color: Colors.deepOrange.shade700),
+                                  labelStyle: TextStyle(
+                                    color: !hasValidWeight ? Colors.orange.shade700 : Colors.deepOrange.shade700,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                      color: !hasValidWeight ? Colors.orange.shade300 : Colors.grey.shade400,
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(color: Colors.deepOrange.shade700, width: 2),
+                                    borderSide: BorderSide(
+                                      color: !hasValidWeight ? Colors.orange.shade700 : Colors.deepOrange.shade700,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.orange.shade700, width: 1),
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  hintText: 'Masukkan berat',
+                                  hintStyle: TextStyle(color: Colors.grey.shade500),
                                 ),
                                 onChanged: (value) {
                                   setState(() {
@@ -425,9 +516,11 @@ class _PenimbanganState extends State<Penimbangan> {
                               child: Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.deepOrange.shade50,
+                                  color: hasValidWeight ? Colors.deepOrange.shade50 : Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.deepOrange.shade200),
+                                  border: Border.all(
+                                    color: hasValidWeight ? Colors.deepOrange.shade200 : Colors.grey.shade300,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,7 +528,7 @@ class _PenimbanganState extends State<Penimbangan> {
                                     Text(
                                       'Subtotal',
                                       style: TextStyle(
-                                        color: Colors.deepOrange.shade700,
+                                        color: hasValidWeight ? Colors.deepOrange.shade700 : Colors.grey.shade600,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -443,7 +536,7 @@ class _PenimbanganState extends State<Penimbangan> {
                                     Text(
                                       currencyFormat.format(total),
                                       style: TextStyle(
-                                        color: Colors.deepOrange.shade800,
+                                        color: hasValidWeight ? Colors.deepOrange.shade800 : Colors.grey.shade700,
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -466,19 +559,23 @@ class _PenimbanganState extends State<Penimbangan> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _selectedItems.isEmpty ? null : _submitData,
+                onPressed: _canSubmit() ? _submitData : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepOrange,
+                  backgroundColor: _canSubmit() ? Colors.deepOrange : Colors.grey.shade400,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 3,
+                  elevation: _canSubmit() ? 3 : 0,
                 ),
-                child: const Text(
-                  'Simpan Data Penimbangan',
-                  style: TextStyle(
+                child: Text(
+                  _selectedItems.isEmpty 
+                    ? 'Pilih Barang Terlebih Dahulu'
+                    : !_canSubmit() 
+                      ? 'Lengkapi Berat Semua Barang'
+                      : 'Simpan Data Penimbangan',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),

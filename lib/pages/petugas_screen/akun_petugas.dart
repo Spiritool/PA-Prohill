@@ -1,3 +1,4 @@
+import 'package:dlh_project/pages/form_opening/ganti_email.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
@@ -35,6 +36,7 @@ class _AkunPetugasState extends State<AkunPetugas>
   XFile? _image;
   bool _photoSelected = false;
   String? fotoUrl;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _AkunPetugasState extends State<AkunPetugas>
     );
     _loadUserData().then((_) => _loadUserStatus());
     _loadFotoUrl(); // TAMBAHAN BARU
+    _refreshUserEmail();
   }
 
   // TAMBAHAN BARU - Method untuk load foto URL
@@ -55,6 +58,52 @@ class _AkunPetugasState extends State<AkunPetugas>
     });
   }
 
+// Alternatif: Tambahkan method refresh email jika masih ada masalah
+Future<void> _refreshUserEmail() async {
+  final prefs = await SharedPreferences.getInstance();
+  final email = prefs.getString('user_email') ?? 'Email tidak ditemukan';
+  setState(() {
+    userEmail = email;
+  });
+}
+
+Future<void> _navigateToChangeEmail() async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const GantiEmailPetugas()),
+  );
+
+  if (result != null && result is Map<String, dynamic> && result['success'] == true) {
+    // Update email langsung dan refresh UI
+    final newEmail = result['newEmail'];
+    
+    setState(() {
+      userEmail = newEmail;
+    });
+    
+    // Simpan juga ke SharedPreferences untuk memastikan konsistensi
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_email', newEmail);
+    
+    // Refresh semua data user untuk memastikan sinkronisasi
+    await _loadUserData();
+    
+    // Tampilkan snackbar konfirmasi
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Email berhasil diubah ke $newEmail'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+}
   // TAMBAHAN BARU - Method untuk pilih gambar
   Future<void> _getImage(ImageSource source) async {
     final pickedImage = await _picker.pickImage(source: source);
@@ -414,10 +463,7 @@ class _AkunPetugasState extends State<AkunPetugas>
           color: const Color(0xFFE74C3C),
           hasEditButton: true,
           onEdit: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const GantiEmail()),
-            );
+            _navigateToChangeEmail(); 
           },
         ),
         const SizedBox(height: 15),
@@ -438,86 +484,85 @@ class _AkunPetugasState extends State<AkunPetugas>
     );
   }
 
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-    bool hasEditButton = false,
-    VoidCallback? onEdit,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+Widget _buildInfoCard({
+  required IconData icon,
+  required String title,
+  required String value,
+  required Color color,
+  bool hasEditButton = false,
+  VoidCallback? onEdit,
+}) {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(15),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          spreadRadius: 0,
+          blurRadius: 10,
+          offset: const Offset(0, 5),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 25),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF7F8C8D),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2C3E50),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (hasEditButton)
-            GestureDetector(
-              onTap: onEdit,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B35).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.edit,
-                  color: Color(0xFFFF6B35),
-                  size: 20,
+          child: Icon(icon, color: color, size: 25),
+        ),
+        const SizedBox(width: 15),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF7F8C8D),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(height: 5),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (hasEditButton)
+          GestureDetector(
+            onTap: onEdit,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6B35).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.edit,
+                color: Color(0xFFFF6B35),
+                size: 20,
+              ),
             ),
-        ],
-      ),
-    );
-  }
-
+          ),
+      ],
+    ),
+  );
+}
   Widget _buildActionButtons() {
     return Row(
       children: [

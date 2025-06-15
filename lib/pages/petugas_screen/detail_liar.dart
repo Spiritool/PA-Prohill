@@ -593,7 +593,7 @@ class DetailSampahLiarPage extends StatelessWidget {
         }
       }
     }
-  } // <- This closing brace was missing!
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -681,13 +681,27 @@ class DetailSampahLiarPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Tanggal
-                    _buildInfoRow(
-                      icon: Icons.calendar_today,
-                      title: "Tanggal Laporan",
-                      content:
-                          DateFormat('dd MMMM yyyy').format(sampah.tanggal),
-                      iconColor: primaryOrange,
+                    // Tanggal dan Waktu
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildInfoRow(
+                            icon: Icons.calendar_today,
+                            title: "Tanggal Laporan",
+                            content: DateFormat('dd MMMM yyyy').format(sampah.tanggal),
+                            iconColor: primaryOrange,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildInfoRow(
+                            icon: Icons.access_time,
+                            title: "Waktu Laporan",
+                            content: DateFormat('HH:mm').format(sampah.tanggal),
+                            iconColor: primaryOrange,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

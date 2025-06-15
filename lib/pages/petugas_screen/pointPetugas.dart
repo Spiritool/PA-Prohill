@@ -1242,14 +1242,6 @@ Widget _buildSampahCard({
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    isExpanded ? 'Tutup Detail' : 'Lihat Detail',
-                    style: TextStyle(
-                      color: Colors.blue[600],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
                   const SizedBox(width: 4),
                   Icon(
                     isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
@@ -1261,127 +1253,8 @@ Widget _buildSampahCard({
             ],
           ),
         ),
-        
-        // Detail yang dapat diperluas
-        if (isExpanded) ...[
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Foto Sampah
-                if (FotoSampah.isNotEmpty) ...[
-                  const Text(
-                    'Foto Sampah:',
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 120,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        FotoSampah,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: Icon(Icons.image_not_supported, 
-                                  color: Colors.grey, size: 40),
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                
-                // UPT
-                _buildDetailRow('UPT:', namaUpt),
-                const SizedBox(height: 8),
-                
-                // Lokasi
-                _buildDetailRow('Lokasi:', location),
-                const SizedBox(height: 8),
-                
-                // Deskripsi
-                _buildDetailRow('Deskripsi:', description),
-                const SizedBox(height: 12),
-                
-                // Tombol Buka Maps
-                if (mapUrl.isNotEmpty)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _openMap(mapUrl),
-                      icon: const Icon(Icons.map, size: 16),
-                      label: const Text('Buka Maps'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[600],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ],
+],
     ),
-  );
-}
-
-// Helper method untuk menampilkan detail row
-Widget _buildDetailRow(String label, String value) {
-  return Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      SizedBox(
-        width: 80,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
-            fontSize: 12,
-          ),
-        ),
-      ),
-      Expanded(
-        child: Text(
-          value,
-          style: const TextStyle(fontSize: 12),
-        ),
-      ),
-    ],
   );
 }
 

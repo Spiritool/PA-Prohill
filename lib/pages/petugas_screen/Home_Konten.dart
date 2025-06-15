@@ -387,7 +387,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Layanaan Petugas',
+                          Text('Layanan Petugas',
                               style: GoogleFonts.poppins(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),
@@ -506,7 +506,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                             children: [
                               // Icon buttons yang telah diperbaiki
                               iconButton(context, Icons.attach_money,
-                                  'Hitung\nExchange', () {
+                                  'Katalog\nSampah', () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -529,7 +529,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                                   context,
                                   Icons
                                       .leaderboard_outlined, // Ganti icon untuk lebih sesuai
-                                  'Peringkat', () {
+                                  'Peringkat Petugas', () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -588,7 +588,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                             ],
                           ),
                           const SizedBox(height: 25),
-                          Text('Berit Peduli Lingkungan',
+                          Text('Berita Peduli Lingkungan',
                               style: GoogleFonts.poppins(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 5),
