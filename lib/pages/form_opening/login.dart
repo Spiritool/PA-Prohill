@@ -72,7 +72,7 @@ class _LoginState extends State<Login> {
       prefs.setInt('saldo', saldoValue);  
       await prefs.setString('user_profile_photo', user['foto_profile'] ?? '');
 
-      // await FCM.init();
+      await FCM.init();
 
       if (user['role'] == 'warga') {
         ScaffoldMessenger.of(context).showSnackBar(

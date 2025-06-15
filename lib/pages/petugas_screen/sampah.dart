@@ -1,3 +1,4 @@
+// Updated SampahData model dengan rating langsung (tanpa class terpisah)
 class SampahData {
   final int id;
   final String namaUpt;
@@ -7,10 +8,13 @@ class SampahData {
   final String fotoSampah;
   final String list;
   final String namaHadiah;
-  final int? hadiahId; // ID dari poin_tukar
+  final int? hadiahId;
   final String deskripsi;
   final Alamat alamat;
   final DateTime tanggal;
+  final int? ratingBintang; // Rating bintang (1-5)
+  final String? ratingDeskripsi; // Deskripsi rating
+  final int pendapatan;
 
   SampahData({
     required this.id,
@@ -25,6 +29,9 @@ class SampahData {
     required this.deskripsi,
     required this.alamat,
     required this.tanggal,
+    this.ratingBintang,
+    this.ratingDeskripsi,
+    required this.pendapatan,
   });
 
   factory SampahData.fromJson(Map<String, dynamic> json) {
@@ -35,6 +42,15 @@ class SampahData {
     if (json['poin_tukar'] != null && json['poin_tukar'].isNotEmpty) {
       namaHadiah = json['poin_tukar'][0]['nama_hadiah'] ?? '';
       hadiahId = json['poin_tukar'][0]['id'];
+    }
+
+    // Parse rating langsung (jika ada)
+    int? ratingBintang;
+    String? ratingDeskripsi;
+
+    if (json['rating'] != null) {
+      ratingBintang = json['rating']['bintang'];
+      ratingDeskripsi = json['rating']['deskripsi'];
     }
 
     return SampahData(
@@ -50,6 +66,9 @@ class SampahData {
       deskripsi: json['deskripsi'],
       alamat: Alamat.fromJson(json['warga']['alamat'][0]),
       tanggal: DateTime.parse(json['created_at']),
+      ratingBintang: ratingBintang,
+      ratingDeskripsi: ratingDeskripsi,
+      pendapatan: json['pendapatan'] ?? 0,
     );
   }
 }

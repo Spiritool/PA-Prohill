@@ -387,7 +387,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('My Services',
+                          Text('Layanaan Petugas',
                               style: GoogleFonts.poppins(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),
@@ -588,7 +588,7 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                             ],
                           ),
                           const SizedBox(height: 25),
-                          Text('Latest News',
+                          Text('Berit Peduli Lingkungan',
                               style: GoogleFonts.poppins(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 5),
@@ -701,49 +701,6 @@ class _HomeKontenPetugasState extends State<HomeKontenPetugas> {
                     )
                   ],
                 ),
-              ),
-            ),
-            Positioned(
-              bottom: 20,
-              right: 20,
-              child: FloatingActionButton(
-                onPressed: () {
-                  // if (userName != 'Guest') {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (context) => ChatPage(
-                  //         userId: widget
-                  //             .userId, // Ganti dengan userId yang ada di HomeKonten
-                  //         userName: userName ??
-                  //             'Guest', // Ganti dengan userName yang ada atau default ke 'Guest'
-                  //       ),
-                  //     ),
-                  //   );
-                  // } else {
-                  //   // Tindakan alternatif jika user adalah Guest (misalnya menampilkan dialog atau halaman lain)
-                  //   showDialog(
-                  //     context: context,
-                  //     builder: (BuildContext context) {
-                  //       return AlertDialog(
-                  //         title: Text('Not Authorized'),
-                  //         content:
-                  //             Text('You must be logged in to access the chat.'),
-                  //         actions: <Widget>[
-                  //           TextButton(
-                  //             onPressed: () {
-                  //               Navigator.pop(context);
-                  //             },
-                  //             child: Text('OK'),
-                  //           ),
-                  //         ],
-                  //       );
-                  //     },
-                  //   );
-                  // }
-                },
-                // backgroundColor: Colors.green, // Warna tombol
-                // child: const Icon(Icons.support_agent, color: Colors.white),
               ),
             ),
           ],
