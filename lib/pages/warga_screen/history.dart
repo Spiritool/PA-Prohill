@@ -6,17 +6,18 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:async'; // untuk TimeoutException
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final baseipapi = dotenv.env['LOCAL_IP'];
 
+// Updated fetchSampahData function with corrected rating integration
 Future<List<SampahData>> fetchSampahData() async {
   final prefs = await SharedPreferences.getInstance();
   final userId = prefs.getInt('user_id') ?? 0;
 
-  // LOG: Print user_id untuk sampah data
   print('=== DEBUG LOG fetchSampahData ===');
   print('User ID untuk sampah data: $userId');
 
@@ -25,6 +26,10 @@ Future<List<SampahData>> fetchSampahData() async {
         'ERROR: User ID tidak ditemukan di SharedPreferences untuk sampah data');
     throw Exception('User ID not found in SharedPreferences');
   }
+
+  // First, fetch all rating data once
+  final ratingMap = await _fetchAllRatingData(userId);
+  print('Total rating data loaded: ${ratingMap.length}');
 
   final urls = [
     '$baseipapi/api/pengangkutan-sampah/history/by-petugas/$userId/proses',
@@ -45,22 +50,61 @@ Future<List<SampahData>> fetchSampahData() async {
       print('Status Code untuk $url: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        // Fix: Properly cast the decoded JSON to Map<String, dynamic>
         final decodedResponse = jsonDecode(response.body);
-        
-        // Ensure the response is a Map and has 'data' key
-        if (decodedResponse is Map<String, dynamic> && decodedResponse.containsKey('data')) {
+
+        if (decodedResponse is Map<String, dynamic> &&
+            decodedResponse.containsKey('data')) {
           final dataList = decodedResponse['data'];
-          
-          // Ensure 'data' is a List
+
           if (dataList is List) {
             print('Data diterima dari $url: ${dataList.length} items');
-            
-            // Convert each item to SampahData with proper type casting
+
             for (var item in dataList) {
               if (item is Map) {
-                // Cast to Map<String, dynamic> before passing to fromJson
-                final Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+                final Map<String, dynamic> itemMap =
+                    Map<String, dynamic>.from(item);
+
+                // Match rating data for completed tasks
+                if (itemMap['status']?.toString().toLowerCase() == 'done') {
+                  final sampahId = itemMap['id'];
+
+                  // Try multiple possible keys for rating lookup
+                  final possibleKeys = [
+                    sampahId.toString(), // Direct sampah ID
+                    '${sampahId}_$userId', // sampah_petugas combination
+                    '${sampahId}_${itemMap['idpetugas']}', // sampah_actual_petugas
+                  ];
+
+                  bool ratingFound = false;
+
+                  for (String key in possibleKeys) {
+                    print('Trying rating key: $key');
+
+                    if (ratingMap.containsKey(key)) {
+                      final ratingData = ratingMap[key]!;
+                      itemMap['rating_petugas'] =
+                          ratingData['bintang']?.toDouble();
+                      itemMap['catatan_petugas'] = ratingData['deskripsi'];
+                      print(
+                          '✅ Rating matched for sampah $sampahId with key $key: ${ratingData['bintang']} stars');
+                      ratingFound = true;
+                      break;
+                    }
+                  }
+
+                  if (!ratingFound) {
+                    print(
+                        '❌ No rating found for sampah $sampahId with any key');
+                    print('Available rating keys: ${ratingMap.keys.toList()}');
+                    itemMap['rating_petugas'] = null;
+                    itemMap['catatan_petugas'] = null;
+                  }
+                } else {
+                  // For non-completed tasks, set rating to null
+                  itemMap['rating_petugas'] = null;
+                  itemMap['catatan_petugas'] = null;
+                }
+
                 allData.add(SampahData.fromJson(itemMap));
               }
             }
@@ -82,13 +126,101 @@ Future<List<SampahData>> fetchSampahData() async {
     }
   }
 
-  // Balikkan daftar agar data terbaru tampil di atas
+  // Sort by ID descending (newest first)
   allData.sort((a, b) => b.id.compareTo(a.id));
   print('Total data sampah yang berhasil diambil: ${allData.length}');
+
+  // Debug: Print rating status for each item
+  for (var item in allData) {
+    if (item.status?.toLowerCase() == 'done') {
+      print(
+          'Sampah ID: ${item.id}, Status: ${item.status}, Rating: ${item.ratingPetugas}, Has Rating: ${hasRating(item.ratingPetugas)}');
+    }
+  }
+
   print('=== END DEBUG LOG fetchSampahData ===');
 
   return allData;
 }
+
+// Updated method to fetch all rating data with multiple key strategies
+Future<Map<String, Map<String, dynamic>>> _fetchAllRatingData(
+    int userId) async {
+  Map<String, Map<String, dynamic>> ratingMap = {};
+
+  try {
+    final ratingUrl = '$baseipapi/api/rating/get-by-user/$userId';
+    print('Fetching all rating data from: $ratingUrl');
+
+    final response = await http.get(Uri.parse(ratingUrl));
+    print('Rating API Status Code: ${response.statusCode}');
+    print('Rating API Response: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final ratingResponse = jsonDecode(response.body);
+
+      if (ratingResponse is Map<String, dynamic> &&
+          ratingResponse.containsKey('data')) {
+        final ratingList = ratingResponse['data'];
+
+        if (ratingList is List) {
+          print('Found ${ratingList.length} rating records');
+
+          for (var rating in ratingList) {
+            if (rating is Map<String, dynamic>) {
+              final idlaporan = rating['idlaporan'];
+              final idpetugas = rating['idpetugas'];
+              final bintang = rating['bintang'];
+              final deskripsi = rating['deskripsi'];
+
+              // Create multiple possible keys for better matching
+              final keys = [
+                idlaporan.toString(), // Direct laporan ID
+                '${idlaporan}_$idpetugas', // laporan_petugas combination
+                '${idlaporan}_$userId', // laporan_current_user combination
+              ];
+
+              final ratingData = {
+                'bintang': bintang,
+                'deskripsi': deskripsi,
+                'idlaporan': idlaporan,
+                'idpetugas': idpetugas,
+              };
+
+              // Store rating with multiple keys for better matching
+              for (String key in keys) {
+                ratingMap[key] = ratingData;
+                print(
+                    'Rating mapped - Key: $key, Bintang: $bintang, Deskripsi: $deskripsi');
+              }
+            }
+          }
+        } else {
+          print('Rating data is not a List: ${ratingList.runtimeType}');
+        }
+      } else {
+        print('Invalid rating response structure');
+        print('Response keys: ${ratingResponse.keys.toList()}');
+      }
+    } else {
+      print('Failed to fetch rating data: ${response.statusCode}');
+      print('Error response: ${response.body}');
+    }
+  } catch (e, stackTrace) {
+    print('Error fetching rating data: $e');
+    print('Stack trace: $stackTrace');
+  }
+
+  return ratingMap;
+}
+
+// Top-level helper function to check if a rating exists
+bool hasRating(double? ratingPetugas) {
+  final hasRating = ratingPetugas != null && ratingPetugas > 0;
+  print('Checking rating: $ratingPetugas, has rating: $hasRating');
+  return hasRating;
+}
+
 class History extends StatefulWidget {
   const History({super.key});
 
@@ -115,21 +247,21 @@ class _HistoryState extends State<History> {
   // Fungsi untuk parsing list sampah dari string API
   List<Map<String, dynamic>> parseSampahList(String? listString) {
     if (listString == null || listString.isEmpty) return [];
-    
+
     List<Map<String, dynamic>> sampahItems = [];
-    
+
     // Split berdasarkan koma untuk memisahkan item
     List<String> items = listString.split(',');
-    
+
     for (String item in items) {
       String trimmedItem = item.trim();
-      
+
       // Split berdasarkan ':' untuk memisahkan nama dan berat
       List<String> parts = trimmedItem.split(':');
       if (parts.length == 2) {
         String nama = parts[0].trim();
         String beratStr = parts[1].trim();
-        
+
         // Extract angka dari string berat (misal: "20.0kg" -> 20.0)
         RegExp regExp = RegExp(r'(\d+\.?\d*)');
         Match? match = regExp.firstMatch(beratStr);
@@ -137,15 +269,11 @@ class _HistoryState extends State<History> {
         if (match != null) {
           berat = double.tryParse(match.group(1) ?? '0') ?? 0.0;
         }
-        
-        sampahItems.add({
-          'nama': nama,
-          'berat': berat,
-          'satuan': 'kg'
-        });
+
+        sampahItems.add({'nama': nama, 'berat': berat, 'satuan': 'kg'});
       }
     }
-    
+
     return sampahItems;
   }
 
@@ -177,8 +305,18 @@ class _HistoryState extends State<History> {
   }
 
   List<String> monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mei',
+    'Jun',
+    'Jul',
+    'Agu',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Des'
   ];
 
   Color _getColorByStatus(String status) {
@@ -232,16 +370,19 @@ class _HistoryState extends State<History> {
     });
   }
 
-// Function untuk handle refresh
+// Updated refresh method with better error handling
   Future<void> _refreshData() async {
-    setState(() {
-      // Reset future untuk memuat ulang data
-      futureSampahData =
-          _loadSampahData(); // Ganti dengan function load data Anda
-    });
+    try {
+      setState(() {
+        futureSampahData = fetchSampahData();
+      });
 
-    // Delay singkat untuk menampilkan loading
-    await Future.delayed(Duration(milliseconds: 500));
+      // Small delay to show loading indicator
+      await Future.delayed(const Duration(milliseconds: 500));
+    } catch (e) {
+      print('Error refreshing data: $e');
+      _showErrorSnackBar('Gagal memuat ulang data');
+    }
   }
 
   // Function untuk load data (sesuaikan dengan implementasi Anda)
@@ -254,9 +395,10 @@ class _HistoryState extends State<History> {
     return [];
   }
 
-// Perbaikan method _submitRating untuk memastikan dialog selalu menutup
+// Updated _submitRating method with longer delay for data refresh
   Future<void> _submitRating(
       int idlaporan, int idpetugas, int? bintang, String? deskripsi) async {
+    // Show loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -320,21 +462,7 @@ class _HistoryState extends State<History> {
 
       if (idwarga == 0) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(child: Text('User ID tidak ditemukan')),
-              ],
-            ),
-            backgroundColor: Colors.red[600],
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        _showErrorSnackBar('User ID tidak ditemukan');
         return;
       }
 
@@ -359,35 +487,32 @@ class _HistoryState extends State<History> {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () =>
-                throw Exception('Request timeout - silakan coba lagi'),
+                throw TimeoutException('Request timeout - silakan coba lagi'),
           );
 
+      // Close loading dialog
       Navigator.of(context).pop();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('✅ Rating berhasil dikirim ke API');
 
+        // Show success message immediately
+        _showSuccessSnackBar('Rating berhasil dikirim!');
+
+        // Longer delay to ensure API has processed the rating
+        await Future.delayed(const Duration(seconds: 2));
+
+        // Force refresh data multiple times to ensure rating is loaded
         setState(() {
           futureSampahData = fetchSampahData();
           expandedCards.clear();
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(child: Text('Rating berhasil dikirim!')),
-              ],
-            ),
-            backgroundColor: Colors.green[600],
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        // Additional refresh after another delay
+        await Future.delayed(const Duration(seconds: 1));
+        setState(() {
+          futureSampahData = fetchSampahData();
+        });
       } else {
         String errorMessage = 'Gagal mengirim rating';
         try {
@@ -397,64 +522,140 @@ class _HistoryState extends State<History> {
           }
         } catch (_) {}
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(child: Text('$errorMessage (${response.statusCode})')),
-              ],
-            ),
-            backgroundColor: Colors.red[600],
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        _showErrorSnackBar('$errorMessage (${response.statusCode})');
       }
     } catch (e, stackTrace) {
       print('❌ Exception: $e');
+      print('Stack trace: $stackTrace');
+
+      // Make sure loading dialog is closed
       try {
         Navigator.of(context).pop();
       } catch (_) {}
 
       String userErrorMessage = 'Terjadi kesalahan saat mengirim rating';
-      if (e.toString().contains('timeout')) {
+      if (e is TimeoutException || e.toString().contains('timeout')) {
         userErrorMessage = 'Koneksi timeout - silakan coba lagi';
+      } else if (e.toString().contains('SocketException')) {
+        userErrorMessage = 'Tidak ada koneksi internet';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.wifi_off, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(child: Text(userErrorMessage)),
-            ],
-          ),
-          backgroundColor: Colors.red[600],
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: const Duration(seconds: 3),
-          action: SnackBarAction(
-            label: 'Coba Lagi',
-            textColor: Colors.white,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            onPressed: () {
-              _showRatingDialog(idlaporan, idpetugas);
-            },
-          ),
-        ),
-      );
+      _showErrorSnackBarWithRetry(userErrorMessage, () {
+        _showRatingDialog(idlaporan, idpetugas);
+      });
     }
 
     print('=== END SUBMIT RATING DEBUG ===\n');
   }
 
-// Perbaikan method _showRatingDialog dengan tampilan yang lebih menarik
+// Alternative method to directly fetch rating for specific sampah (use this as backup)
+  Future<Map<String, dynamic>?> _fetchSpecificRating(
+      int idlaporan, int idpetugas) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('user_id') ?? 0;
+
+      final url = '$baseipapi/api/rating/get-by-user/$userId';
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData['data'] is List) {
+          final ratings = responseData['data'] as List;
+
+          // Find rating that matches both idlaporan and idpetugas
+          for (var rating in ratings) {
+            if (rating['idlaporan'] == idlaporan &&
+                rating['idpetugas'] == idpetugas) {
+              return {
+                'bintang': rating['bintang'],
+                'deskripsi': rating['deskripsi'],
+              };
+            }
+          }
+
+          // If not found with exact match, try with just idlaporan
+          for (var rating in ratings) {
+            if (rating['idlaporan'] == idlaporan) {
+              return {
+                'bintang': rating['bintang'],
+                'deskripsi': rating['deskripsi'],
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error fetching specific rating: $e');
+    }
+
+    return null;
+  }
+
+// Helper method to show success snackbar
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+// Helper method to show error snackbar
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+// Helper method to show error snackbar with retry option
+  void _showErrorSnackBarWithRetry(String message, VoidCallback onRetry) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.wifi_off, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'Coba Lagi',
+          textColor: Colors.white,
+          backgroundColor: Colors.white.withOpacity(0.2),
+          onPressed: onRetry,
+        ),
+      ),
+    );
+  }
+
   void _showRatingDialog(int idlaporan, int idpetugas) {
     double selectedRating = 3.0;
     final TextEditingController commentController = TextEditingController();
@@ -760,9 +961,11 @@ class _HistoryState extends State<History> {
     );
   }
 
-// Method untuk mengecek apakah sudah ada rating untuk sampah tertentu
+// Method to check if rating exists (unchanged but with better logging)
   bool _hasRating(double? ratingPetugas) {
-    return ratingPetugas != null && ratingPetugas > 0;
+    final hasRating = ratingPetugas != null && ratingPetugas > 0;
+    print('Checking rating: $ratingPetugas, has rating: $hasRating');
+    return hasRating;
   }
 
   void _calculateStatusCounts(List<SampahData> data) {
@@ -1427,634 +1630,640 @@ class _HistoryState extends State<History> {
   }
 
 // Helper function untuk menghitung total berat dari string list
-String _calculateTotalWeight(String list) {
-  double total = 0.0;
-  try {
-    final items = list.split(',');
-    for (String item in items) {
-      final trimmedItem = item.trim();
-      if (trimmedItem.contains(':')) {
-        final parts = trimmedItem.split(':');
-        if (parts.length == 2) {
-          final weightStr = parts[1].trim().replaceAll(RegExp(r'[^\d.]'), ''); // Extract numbers only
-          final weight = double.tryParse(weightStr) ?? 0.0;
-          total += weight;
+  String _calculateTotalWeight(String list) {
+    double total = 0.0;
+    try {
+      final items = list.split(',');
+      for (String item in items) {
+        final trimmedItem = item.trim();
+        if (trimmedItem.contains(':')) {
+          final parts = trimmedItem.split(':');
+          if (parts.length == 2) {
+            final weightStr = parts[1]
+                .trim()
+                .replaceAll(RegExp(r'[^\d.]'), ''); // Extract numbers only
+            final weight = double.tryParse(weightStr) ?? 0.0;
+            total += weight;
+          }
         }
       }
+    } catch (e) {
+      return '0.0kg';
     }
-  } catch (e) {
-    return '0.0kg';
+    return '${total.toStringAsFixed(1)}kg';
   }
-  return '${total.toStringAsFixed(1)}kg';
-}
 
-Widget _buildInnerCard({
-  required String name,
-  required String phone,
-  required String fotoSampah,
-  required String status,
-  required String namaUpt,
-  required String location,
-  required String list,
-  required String description,
-  required String mapUrl,
-  required int idSampah,
-  required int idpetugas,
-  required Color statusColor,
-  required String tanggalFormatted,
-  required double? ratingPetugas,
-  required String? catatanPetugas,
-  required bool isExpanded,
-}) {
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black12,
-          blurRadius: 6,
-          offset: Offset(0, 2),
-        )
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Baris atas: Deskripsi + Point + Expand Icon
-        Row(
-          children: [
-            // Kiri: informasi
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '⭐ Sampah Terpilah',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    tanggalFormatted,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-
-            // Coin dan expand icon
-            Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF4F4F4),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        'assets/icons/money 4.png',
-                        width: 20,
-                        height: 20,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        calculatePoints(status)
-                            .toString(), // <- nanti bisa diganti dinamis kalau mau
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      )
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Icon(
-                //   isExpanded
-                //       ? Icons.keyboard_arrow_up
-                //       : Icons.keyboard_arrow_down,
-                //   color: Colors.grey,
-                // ),
-              ],
-            )
-          ],
-        ),
-
-        // Detail isi ketika expanded
-        if (isExpanded) ...[
-          const SizedBox(height: 16),
-          Text('Nama      : $name'),
-          Text('No. HP    : $phone'),
+  Widget _buildInnerCard({
+    required String name,
+    required String phone,
+    required String fotoSampah,
+    required String status,
+    required String namaUpt,
+    required String location,
+    required String list,
+    required String description,
+    required String mapUrl,
+    required int idSampah,
+    required int idpetugas,
+    required Color statusColor,
+    required String tanggalFormatted,
+    required double? ratingPetugas,
+    required String? catatanPetugas,
+    required bool isExpanded,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Baris atas: Deskripsi + Point + Expand Icon
           Row(
             children: [
-              const Text('Status     : '),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  status == 'failed' ? 'Dibatalkan' : status,
-                  style: const TextStyle(color: Colors.black),
+              // Kiri: informasi
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⭐ Sampah Terpilah',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      tanggalFormatted,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
                 ),
               ),
+
+              // Coin dan expand icon
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF4F4F4),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/icons/money 4.png',
+                          width: 20,
+                          height: 20,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          calculatePoints(status)
+                              .toString(), // <- nanti bisa diganti dinamis kalau mau
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Icon(
+                  //   isExpanded
+                  //       ? Icons.keyboard_arrow_up
+                  //       : Icons.keyboard_arrow_down,
+                  //   color: Colors.grey,
+                  // ),
+                ],
+              )
             ],
           ),
-          Text('UPT         : $namaUpt'),
-          Text('Alamat    : $location'),
-          
-          // Tambahan: Detail berat sampah - ditampilkan saat status selesai
-          if (status.toLowerCase() == 'done' && list.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.blue[200]!,
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.scale_rounded,
-                        size: 16,
-                        color: Colors.blue[700],
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Detail Berat Sampah',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.blue[800],
-                        ),
-                      ),
-                    ],
+
+          // Detail isi ketika expanded
+          if (isExpanded) ...[
+            const SizedBox(height: 16),
+            Text('Nama      : $name'),
+            Text('No. HP    : $phone'),
+            Row(
+              children: [
+                const Text('Status     : '),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(5),
                   ),
-                  const SizedBox(height: 12),
-                  // Parse dan tampilkan list sampah dengan format yang rapi
-                  ...list.split(',').map((item) {
-                    final trimmedItem = item.trim();
-                    if (trimmedItem.isEmpty) return const SizedBox.shrink();
-                    
-                    final parts = trimmedItem.split(':');
-                    if (parts.length != 2) {
-                      // Jika format tidak sesuai, tampilkan apa adanya
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: Colors.blue[600],
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                trimmedItem,
-                                style: TextStyle(
-                                  color: Colors.blue[900],
-                                  fontSize: 13,
-                                  height: 1.3,
-                                ),
-                              ),
-                            ),
-                          ],
+                  child: Text(
+                    status == 'failed' ? 'Dibatalkan' : status,
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                ),
+              ],
+            ),
+            Text('UPT         : $namaUpt'),
+            Text('Alamat    : $location'),
+
+            // Tambahan: Detail berat sampah - ditampilkan saat status selesai
+            if (status.toLowerCase() == 'done' && list.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.blue[200]!,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.scale_rounded,
+                          size: 16,
+                          color: Colors.blue[700],
                         ),
-                      );
-                    }
-                    
-                    final itemName = parts[0].trim();
-                    final weight = parts[1].trim();
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: Colors.blue[100]!,
-                            width: 1,
+                        const SizedBox(width: 6),
+                        Text(
+                          'Detail Berat Sampah',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.blue[800],
                           ),
                         ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Icon sampah
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[100],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Icon(
-                                Icons.delete_outline_rounded,
-                                size: 14,
-                                color: Colors.blue[700],
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            // Nama sampah
-                            Expanded(
-                              child: Text(
-                                itemName,
-                                style: TextStyle(
-                                  color: Colors.blue[900],
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ),
-                            // Berat
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[700],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                weight,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  
-                  // Total berat (opsional - bisa dihitung dari list)
-                  if (list.contains(':')) ...[
-                    const SizedBox(height: 4),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            Colors.blue[600]!,
-                            Colors.blue[700]!,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Parse dan tampilkan list sampah dengan format yang rapi
+                    ...list.split(',').map((item) {
+                      final trimmedItem = item.trim();
+                      if (trimmedItem.isEmpty) return const SizedBox.shrink();
+
+                      final parts = trimmedItem.split(':');
+                      if (parts.length != 2) {
+                        // Jika format tidak sesuai, tampilkan apa adanya
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
                             children: [
-                              const Icon(
-                                Icons.calculate_rounded,
-                                size: 16,
-                                color: Colors.white,
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[600],
+                                  shape: BoxShape.circle,
+                                ),
                               ),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'Total Berat',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  trimmedItem,
+                                  style: TextStyle(
+                                    color: Colors.blue[900],
+                                    fontSize: 13,
+                                    height: 1.3,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          Text(
-                            _calculateTotalWeight(list),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                        );
+                      }
+
+                      final itemName = parts[0].trim();
+                      final weight = parts[1].trim();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.blue[100]!,
+                              width: 1,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-          
-          if (catatanPetugas != null) Text('Catatan   : $catatanPetugas'),
-          const SizedBox(height: 12),
-          if (fotoSampah.isNotEmpty)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                '$baseipapi/storage/foto-sampah/$fotoSampah',
-                errorBuilder: (context, error, stackTrace) =>
-                    const Text('Gambar tidak dapat ditampilkan'),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
-              ),
-            )
-          else
-            const Text('Tidak ada foto tersedia.'),
-          const SizedBox(height: 16),
-          // Bagian tombol dan rating
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Left side - Action buttons
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Location button with improved design
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton.icon(
-                      onPressed: () => _openMap(mapUrl),
-                      icon: const Icon(Icons.location_on_rounded, size: 18),
-                      label: const Text(
-                        'Lihat Lokasi',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.green[600],
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-
-                  // Rating button for completed tasks without rating
-                  if (status.toLowerCase() == 'done' &&
-                      !_hasRating(ratingPetugas))
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFF6600).withOpacity(0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton.icon(
-                          onPressed: () =>
-                              _showRatingDialog(idSampah, idpetugas),
-                          icon: const Icon(Icons.star_rounded, size: 18),
-                          label: const Text(
-                            'Beri Rating',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: const Color(0xFFFF6600),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-
-              // Spacer
-              const SizedBox(width: 16),
-
-              // Right side - Rating display (if exists)
-              if (status.toLowerCase() == 'done' && _hasRating(ratingPetugas))
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.amber[50]!,
-                          Colors.orange[50]!,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.amber[200]!,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.amber.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Rating header with stars
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.amber[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.star_rounded,
-                                    color: Colors.amber,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Rating',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12,
-                                      color: Colors.amber[800],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            // Rating value with stars
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF6600),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFFF6600)
-                                        .withOpacity(0.3),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    ratingPetugas.toString(),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  const Icon(
-                                    Icons.star_rounded,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Rating stars visualization
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Row(
-                            children: List.generate(5, (index) {
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 2),
-                                child: Icon(
-                                  index < ratingPetugas!.round()
-                                      ? Icons.star_rounded
-                                      : Icons.star_outline_rounded,
-                                  color: index < ratingPetugas!.round()
-                                      ? Colors.amber[600]
-                                      : Colors.grey[400],
-                                  size: 16,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Icon sampah
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[100],
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                              );
-                            }),
+                                child: Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 14,
+                                  color: Colors.blue[700],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              // Nama sampah
+                              Expanded(
+                                child: Text(
+                                  itemName,
+                                  style: TextStyle(
+                                    color: Colors.blue[900],
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                              // Berat
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[700],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  weight,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      );
+                    }).toList(),
 
-                        // Comment section
-                        if (catatanPetugas != null &&
-                            catatanPetugas.isNotEmpty)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                    // Total berat (opsional - bisa dihitung dari list)
+                    if (list.contains(':')) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.blue[600]!,
+                              Colors.blue[700]!,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.chat_bubble_outline_rounded,
-                                      size: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Komentar',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                  ],
+                                const Icon(
+                                  Icons.calculate_rounded,
+                                  size: 16,
+                                  color: Colors.white,
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  catatanPetugas,
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'Total Berat',
                                   style: TextStyle(
-                                    color: Colors.grey[800],
+                                    color: Colors.white,
                                     fontSize: 13,
-                                    height: 1.4,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
                             ),
+                            Text(
+                              _calculateTotalWeight(list),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+
+            if (catatanPetugas != null) Text('Catatan   : $catatanPetugas'),
+            const SizedBox(height: 12),
+            if (fotoSampah.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  '$baseipapi/storage/foto-sampah/$fotoSampah',
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Text('Gambar tidak dapat ditampilkan'),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                ),
+              )
+            else
+              const Text('Tidak ada foto tersedia.'),
+            const SizedBox(height: 16),
+            // Bagian tombol dan rating
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left side - Action buttons
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Location button with improved design
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
-                      ],
+                        ],
+                      ),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _openMap(mapUrl),
+                        icon: const Icon(Icons.location_on_rounded, size: 18),
+                        label: const Text(
+                          'Lihat Lokasi',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.green[600],
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+
+                    // Rating button for completed tasks without rating
+                    if (status.toLowerCase() == 'done' &&
+                        !_hasRating(ratingPetugas))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF6600).withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: () =>
+                                _showRatingDialog(idSampah, idpetugas),
+                            icon: const Icon(Icons.star_rounded, size: 18),
+                            label: const Text(
+                              'Beri Rating',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFFFF6600),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                // // Spacer
+                // const SizedBox(width: 16),
+
+                // Right side - Rating display (if exists)
+                if (status.toLowerCase() == 'done' && _hasRating(ratingPetugas))
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.amber[50]!,
+                            Colors.orange[50]!,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.amber[200]!,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Rating header with stars
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.amber,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Rating',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                        color: Colors.amber[800],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Spacer(),
+                              // Rating value with stars
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF6600),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFF6600)
+                                          .withOpacity(0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      ratingPetugas.toString(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Rating stars visualization
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: List.generate(5, (index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 2),
+                                  child: Icon(
+                                    index < ratingPetugas!.round()
+                                        ? Icons.star_rounded
+                                        : Icons.star_outline_rounded,
+                                    color: index < ratingPetugas!.round()
+                                        ? Colors.amber[600]
+                                        : Colors.grey[400],
+                                    size: 16,
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+
+                          // Comment section
+                          if (catatanPetugas != null &&
+                              catatanPetugas.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.chat_bubble_outline_rounded,
+                                        size: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Komentar',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    catatanPetugas,
+                                    style: TextStyle(
+                                      color: Colors.grey[800],
+                                      fontSize: 13,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-            ],
-          )
+              ],
+            )
+          ],
         ],
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
+
   Future<void> _openMap(String mapUrl) async {
     final Uri mapUri = Uri.parse(mapUrl);
     if (await canLaunchUrl(mapUri)) {
